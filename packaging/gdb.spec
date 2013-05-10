@@ -92,7 +92,7 @@ cat bfd.lang >> %{name}.lang
 %files
 %manifest %{name}.manifest
 %defattr(-,root,root)
-%doc COPYING COPYING.LIB 
+%license COPYING COPYING.LIB 
 %{_bindir}/*
 %{_datadir}/gdb
 

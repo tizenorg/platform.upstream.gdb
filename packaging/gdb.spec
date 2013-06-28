@@ -6,6 +6,7 @@ Summary:        A GNU source-level debugger for C, C++, Java and other languages
 Url:            http://gnu.org/software/gdb/
 Group:          Development/Debuggers
 Source:         ftp://ftp.gnu.org/gnu/gdb/gdb-%{version}.tar.bz2
+Source1001: 	gdb.manifest
 %define gdb_src gdb-%{version}
 %define gdb_build build-%{_target_platform}
 
@@ -45,6 +46,7 @@ This package provides a program that allows you to run GDB on a different machin
 
 %prep
 %setup -q 
+cp %{SOURCE1001} .
 
 # Files have `# <number> <file>' statements breaking VPATH / find-debuginfo.sh .
 #rm -f gdb/ada-exp.c gdb/ada-lex.c gdb/c-exp.c gdb/cp-name-parser.c gdb/f-exp.c
@@ -88,12 +90,14 @@ cat bfd.lang >> %{name}.lang
 
 %lang_package
 %files
+%manifest %{name}.manifest
 %defattr(-,root,root)
 %doc COPYING COPYING.LIB 
 %{_bindir}/*
 %{_datadir}/gdb
 
 %files server
+%manifest %{name}.manifest
 %defattr(-,root,root)
 %{_bindir}/gdbserver
 %{_mandir}/*/gdbserver.1*
@@ -102,5 +106,6 @@ cat bfd.lang >> %{name}.lang
 %endif
 
 %files devel
+%manifest %{name}.manifest
 %{_includedir}/*.h
 %{_includedir}/gdb/*.h

@@ -1,12 +1,12 @@
 Name:           gdb
-Version:        7.5
+Version:        7.5.1
 Release:        0
 License:        GPL-3.0+
 Summary:        A GNU source-level debugger for C, C++, Java and other languages
 Url:            http://gnu.org/software/gdb/
-Group:          Development/Debuggers
+Group:          Development/Toolchain
 Source:         ftp://ftp.gnu.org/gnu/gdb/gdb-%{version}.tar.bz2
-Source1001: 	gdb.manifest
+Source1001:     gdb.manifest
 %define gdb_src gdb-%{version}
 %define gdb_build build-%{_target_platform}
 
@@ -14,7 +14,7 @@ BuildRequires:  bison
 BuildRequires:  expat-devel
 BuildRequires:  flex
 BuildRequires:  gettext
-BuildRequires: 	python-devel
+BuildRequires:  python-devel
 BuildRequires:  gcc-c++
 BuildRequires:  ncurses-devel
 BuildRequires:  readline-devel
@@ -28,14 +28,12 @@ and printing their data.
 
 %package devel
 Summary:        Development files for gdb
-Group:          Development
 
 %description devel
 Development files for gdb.
 
 %package server
 Summary:        A standalone server for GDB (the GNU source-level debugger)
-Group:          Development/Debuggers
 
 %description server
 GDB, the GNU debugger, allows you to debug programs written in C, C++,
@@ -47,10 +45,6 @@ This package provides a program that allows you to run GDB on a different machin
 %prep
 %setup -q 
 cp %{SOURCE1001} .
-
-# Files have `# <number> <file>' statements breaking VPATH / find-debuginfo.sh .
-#rm -f gdb/ada-exp.c gdb/ada-lex.c gdb/c-exp.c gdb/cp-name-parser.c gdb/f-exp.c
-#rm -f gdb/jv-exp.c gdb/m2-exp.c gdb/objc-exp.c gdb/p-exp.c
 
 # Remove the info and other generated files added by the FSF release
 # process.
@@ -72,8 +66,7 @@ rm -f gdb/doc/*.info-*
 	--with-expat					\
 	--disable-tui					\
 	--enable-64-bit-bfd				\
-	--enable-static --disable-shared --enable-debug	\
-	%{_target_platform}
+	--enable-static --disable-shared --enable-debug
 
 make %{?_smp_mflags}
 
@@ -89,9 +82,10 @@ cat bfd.lang >> %{name}.lang
 %docs_package
 
 %lang_package
+
 %files
-%manifest %{name}.manifest
 %defattr(-,root,root)
+%manifest %{name}.manifest
 %license COPYING COPYING.LIB 
 %{_bindir}/*
 %{_datadir}/gdb

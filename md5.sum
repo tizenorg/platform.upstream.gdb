@@ -460,7 +460,7 @@ e67d8b07516154c4ddbee2e3bab3d75e  bfd/doc/doc.str
 39f61ac0fb56eced56e6894e7bc47cef  bfd/doc/header.sed
 5fa24958e8a60b2f879af658e615ccc0  bfd/doc/makefile.vms
 d7a37304ccd7b245f93df4be02797477  bfd/doc/proto.str
-38b96e25e08a45daa65bce5dae12c37b  bfd/doc/bfdver.texi
+bb790cbe0187b12f8544a2b9c03291f6  bfd/doc/bfdver.texi
 b1848292a4811cd7301fc6201debe63a  bfd/doc/aoutx.texi
 1ec269e34cd7de48135ce9d4aefb98b6  bfd/doc/archive.texi
 f387391c9b6221323eee7e5dc53ab174  bfd/doc/archures.texi
@@ -702,7 +702,7 @@ a04bbfc6092a474c8797b8b4f4b28035  gdb/.dir-locals.el
 c3a142c54fa6dc516b5a14aabc62e78f  gdb/.gitignore
 0e8e9a83ca2de8e7edc3ac4791c379e0  gdb/CONTRIBUTE
 d32239bcb673463ab874e80d47fae504  gdb/COPYING
-29459e2bc17ea3fadc95cf9fab73a172  gdb/ChangeLog
+e1e8bc5ba6ae43cae2782cc947cddc8d  gdb/ChangeLog
 42b9f7c51223e595f66c2210064be682  gdb/ChangeLog-1990
 8f5a03c189727d347a330548f3ea9c98  gdb/ChangeLog-1991
 51d2fa6ce8618d5c87150c7c576f1f6d  gdb/ChangeLog-1992
@@ -770,7 +770,7 @@ fa9ccd1d7488dac4ae8a971f92009437  gdb/amd64-linux-tdep.h
 46aa048480e9be6144599531661ceb41  gdb/amd64-nat.c
 e2cef59310fcc1711a275eec473eeba9  gdb/amd64-nat.h
 142113802069790ef8c2ee9b4a21c1c7  gdb/amd64-sol2-tdep.c
-7b28d4475a2aef79f3bd2202f693d199  gdb/amd64-tdep.c
+50c20b27edfc3ed01757fda355ccfd1c  gdb/amd64-tdep.c
 f083b6bb124c20ad96a53ef849afe5e4  gdb/amd64-tdep.h
 425f01a1645629a9467032d756162678  gdb/amd64-windows-nat.c
 e54adc457de46bdca74af64de296c96c  gdb/amd64-windows-tdep.c
@@ -797,7 +797,7 @@ aa96a769aa9be57e0d727881ee79e62b  gdb/armbsd-tdep.c
 66a73dc1080711a3d55f37d16ddb775e  gdb/armnbsd-nat.c
 826af3810cc9448157a1ea6f7f142c46  gdb/armnbsd-tdep.c
 70fb31e48a90157b9270bca8c4f2a6d6  gdb/armobsd-tdep.c
-625df147df7178dcb64ccdd42b49e1b5  gdb/auto-load.c
+67d374ebefcffbdd46bbf7ba26f1c4a7  gdb/auto-load.c
 d5ad2ba5255773bf8f62a1e39803ec72  gdb/auto-load.h
 b0f639f55c14dd8cc3303f0be9ded626  gdb/auxv.c
 c32d8ef0e03fbf46bf202427bd250c40  gdb/auxv.h
@@ -879,7 +879,7 @@ d3d6859c1a2fade6f71a8aa8ddbb9f98  gdb/dbxread.c
 17abb75d54c0318f0c2929724b6a25da  gdb/dcache.c
 07cb5058ffeffd173b9a0f8270eec8a6  gdb/dcache.h
 13f1974b41f890746469a9b16b2235b5  gdb/dec-thread.c
-71a46655ee2fa3eb03219fa7e564eced  gdb/defs.h
+6ec3e1e9cd24786e7e5df436669be552  gdb/defs.h
 9dd6593e7c927010adcfa22fccb04524  gdb/demangle.c
 3aded3605f7488210ff205cdd7a3b226  gdb/dfp.c
 1cbf5428c93b97b6432801160e3eb48d  gdb/dfp.h
@@ -903,7 +903,7 @@ dddf51f48b09f6c440db53cafac83b22  gdb/dwarf2expr.c
 e1496b320142f1226e038cc5a10ed567  gdb/dwarf2expr.h
 cf7518fce3540c55cdf572ba483b2db2  gdb/dwarf2loc.c
 5a714f27c437a15781b592538ffb7503  gdb/dwarf2loc.h
-2e217e87d839e70d7e144cffda5580ac  gdb/dwarf2read.c
+7ce212a5bdd73280a88448a516f11b7c  gdb/dwarf2read.c
 f852d804f582274b9a240a103a823ae2  gdb/elfread.c
 23632a118398a1f66b9f91f2ffe78a12  gdb/environ.c
 e8d655fd58c17483b268477190e1fc92  gdb/environ.h
@@ -935,7 +935,7 @@ b06f65b9e9de3a9d15af70e73960075a  gdb/findcmd.c
 4e1313fbee885087315bf3dc9176f6fe  gdb/frame-base.h
 98a7d20803c6682892bf3110e757fcf4  gdb/frame-unwind.c
 a77a6309ae039cd6ce09e7856e1ef9a4  gdb/frame-unwind.h
-db59dfecb1dc4f3d66c405c9e656a34b  gdb/frame.c
+fcbf803fbaa872738bfef308c62d698f  gdb/frame.c
 cdf2e9c0f80c87d02cde560cec4d77aa  gdb/frame.h
 c7bef879f9f50b1a6046da8cab7dd489  gdb/frv-linux-tdep.c
 be96fa00f3aa213f9848a1d76688973b  gdb/frv-tdep.c
@@ -1020,8 +1020,8 @@ f05b021eaf672b40dd32a733b937b84f  gdb/i386-nat.h
 e6d9a5f907836a846af13e0bc7a1b79b  gdb/i386-nto-tdep.c
 6f2bafd5495abc9c29d9a6cbf78b2fd9  gdb/i386-sol2-nat.c
 9eb584aa3c5ac9359b639d0a383b8fb0  gdb/i386-sol2-tdep.c
-0c876d7b6be969617736270fc82f5671  gdb/i386-tdep.c
-e076c225e034a0332afd2c9ffc7986f7  gdb/i386-tdep.h
+f2da753bd400df436e9ed3e6a0b1c7cb  gdb/i386-tdep.c
+cedd68eec18a7754e6cfe8aa897f4346  gdb/i386-tdep.h
 75478759b42ee713ae183e5f37af167b  gdb/i386-windows-nat.c
 78cb575ef6664b5720c02471febbb18c  gdb/i386bsd-nat.c
 06dbf1e75a68d5d3797fb59e05937d85  gdb/i386bsd-nat.h
@@ -1057,12 +1057,12 @@ b734ec894047c2a575083b86e1a0273f  gdb/inf-ptrace.h
 c35fd23919a8cca9b4e0d148b4000459  gdb/inf-ttrace.h
 019a5761d16393daa8c8c5811b4d8e33  gdb/infcall.c
 56b778f95084e0c4623e87cdb168a776  gdb/infcall.h
-93ca5451a086a4dd3298faacfd238bad  gdb/infcmd.c
+5c99751f67ef932fc6ac5861d6c4a52b  gdb/infcmd.c
 987dc2641adfa8dd5ed1d3083931682a  gdb/inferior.c
 d82c6a59f0e5f85cd27c1aedccb1e001  gdb/inferior.h
 09772df7a350117869dc7dab168a9282  gdb/inflow.c
 db212b74175c347b52d0b5fb3faf026d  gdb/inflow.h
-fb37b904cdfd921d9ac5089e55a17076  gdb/infrun.c
+a17486c491f3642e38773d0da02f1174  gdb/infrun.c
 953d0e968f674d12486290853e9e386d  gdb/inline-frame.c
 9e313f674a7c2cdb0541ea52f806d134  gdb/inline-frame.h
 7c92bb52acde002e570a5b1e9683c787  gdb/interps.c
@@ -1080,7 +1080,7 @@ d58fdfb892582a70c87804560a837ea2  gdb/jv-valprint.c
 e1077c322c7202b154cf999a053fe9d7  gdb/language.c
 997423099e93f7ac61dde4d51089bec1  gdb/m2-exp.y
 49592faf95b556fe36281b2a516a9f70  gdb/language.h
-0a4df2eaefef5254d81229ccbfb2f294  gdb/linespec.c
+476a72e1b5116df354a687c1750ebe7e  gdb/linespec.c
 5497e3682e3afaab892ca11a66ca2950  gdb/linespec.h
 a703ad4a4ed36314b64a5c9a57007719  gdb/linux-fork.c
 18d36d4834f1c8326d00493bb21ce8e4  gdb/linux-fork.h
@@ -1120,7 +1120,7 @@ c670ac4662aaa13a5551f4692cf6729e  gdb/macroexp.c
 adababafd40d86c626dcb94e6b368b31  gdb/macroscope.h
 c6524f98f7a919834c62e514ff36ef97  gdb/macrotab.c
 93a1071b922cbadf8f162294f2fe74e3  gdb/macrotab.h
-7d6447061ae48bb0860d1eda7387df38  gdb/main.c
+1b2200f29e5649dc18f9bb1da5366636  gdb/main.c
 7528c49ee7049af565a08fcedac5ae77  gdb/main.h
 6f347e70580b547f6ab8ba8960c5f3d4  gdb/maint.c
 d245e6a10a53596f4942f3aeee3e1329  gdb/mdebugread.c
@@ -1193,7 +1193,7 @@ bf8f83672e228dfd73aa2647e631e612  gdb/p-valprint.c
 38ecc77ff4af359817f6ae0440dffa6d  gdb/parser-defs.h
 0f9c35e0e25bf30b79cbab966d8573fa  gdb/posix-hdep.c
 414be542ca82006e906f5af586a97bf1  gdb/ppc-linux-nat.c
-2526a97d9102f08cee7f37732a1ccc1c  gdb/ppc-linux-tdep.c
+e74183d73a248605a9e133a3d8564d7e  gdb/ppc-linux-tdep.c
 741872aee583b49384eb91eb4930bbd3  gdb/ppc-linux-tdep.h
 c675b712b585236dd600533025703472  gdb/ppc-sysv-tdep.c
 791d2242ccf354b862988e98710f3bc9  gdb/ppc-tdep.h
@@ -1343,7 +1343,7 @@ cdf6a59fc4b82140ee363c8c7bc58bce  gdb/stack.h
 e71fdcbe183dab6e9bb2a6e983982a66  gdb/std-operator.def
 a3f6ba3854e8f56a0d99669d75bcfb03  gdb/std-regs.c
 e444811cef88edbfb0ac4dee7c90d538  gdb/symfile-mem.c
-6354a2665263c1921d37e51d150257ef  gdb/symfile.c
+bdfcfe703b9b3adb62342e6eaa76711a  gdb/symfile.c
 b6f486982248fc430b80784534e1cab5  gdb/symfile.h
 969b1e7fc926eefa49cdbbc025c406df  gdb/symmisc.c
 df40a3dbfb38349a08392d9adba9e75e  gdb/symtab.c
@@ -1385,7 +1385,7 @@ b799cb34404e6370e33f0853aaea7030  gdb/valarith.c
 e1a32655e26049221103a5c751396ae7  gdb/valops.c
 2f64099e7de31e998ff209296465ede3  gdb/valprint.c
 0e38e4a97766782f0a93c93d1734fa6a  gdb/valprint.h
-8c157b6a085625450ce750136373cecd  gdb/value.c
+2fe9334f36ea9b3477d34eef6f18f75c  gdb/value.c
 d97bf4af58b9cec40578126c0fda8fed  gdb/value.h
 2b37645cdd19555e06775ebad88bf225  gdb/varobj.c
 874e03757eff5c0d2c086e2cf7967144  gdb/varobj.h
@@ -1396,7 +1396,7 @@ c38c7d0a945ebc05b1efdc5d78b7d538  gdb/vax-tdep.c
 89248bc9aae5dac9bc9716fac67aad5b  gdb/vaxnbsd-tdep.c
 dbbd1783603802bffc9fce0683394796  gdb/vaxobsd-tdep.c
 fe8a5f81dd9b4284facd03f11f79a03e  gdb/version.h
-183d476e5f65a2f5252a5043ba3688c0  gdb/version.in
+5d4b8fa24780e4e25297aa77264e951c  gdb/version.in
 116c45a916c6d2f004d466d50497fb14  gdb/windows-nat.c
 5d46a3efdb81bad1cea8a80c561eac32  gdb/windows-nat.h
 b7b59da8f83a39a200ed5e4ed1780e9f  gdb/windows-tdep.c
@@ -1421,7 +1421,7 @@ cc8aa5d06a8539a75b2fbb82072566a1  gdb/xtensa-tdep.h
 8ccfd91194d0a3c2d817d60570520445  gdb/xtensa-xtregs.c
 a0ee257136bcbc46c0333b556d63869c  gdb/cli/cli-cmds.c
 92be51e5007e0ac5587384d8a17a38d3  gdb/cli/cli-cmds.h
-89b4b6742131967b5fd0687b1464bf47  gdb/cli/cli-decode.c
+82f0984edf6fadf2a701851233277865  gdb/cli/cli-decode.c
 804d7d0ef72adca597ff2b03afe1b029  gdb/cli/cli-decode.h
 022d3434d85e50986e7d0bb6b9de4712  gdb/cli/cli-dump.c
 2f8090cd6fd1c4c34f667e03b65047d3  gdb/cli/cli-dump.h
@@ -1452,7 +1452,7 @@ b8cb96ba4c9861852f641c38ad9e57bd  gdb/common/i386-xstate.h
 09a783c56d0edb795c3ef85c3a6aa819  gdb/common/linux-osdata.h
 ea27e54a6db2efe7194a240a07c611f7  gdb/common/linux-procfs.c
 0ab2dfbf3272bb9fdb87f6d3d3058e84  gdb/common/linux-procfs.h
-fe1b1a4e094025abab299289162722a4  gdb/common/linux-ptrace.c
+7b78ee5b26d9b7f737a1359842acb832  gdb/common/linux-ptrace.c
 bf52cb2bb8ce8ed53d2254f2ec282df2  gdb/common/linux-ptrace.h
 61d1da6a52787d2e1b649008559f8abb  gdb/common/ptid.c
 36aff2da1a41f691e30ea187cd5c818e  gdb/common/ptid.h
@@ -1541,7 +1541,7 @@ dd0e12186d87daa399b8d1fa21afb146  gdb/config/vax/nbsdaout.mh
 2b0bfbd4c6e9614c300b8887b592197d  gdb/config/xtensa/linux.mh
 16721564da743eab7c2935f361f24ed5  gdb/contrib/test_pubnames_and_indexes.py
 b5a451f9ce631db17dd56dabc9c19321  gdb/data-directory/Makefile.in
-19ba206965f8b1b819fd825c3e3e8b71  gdb/doc/ChangeLog
+b77e132264d70f54da585a62cf1f9245  gdb/doc/ChangeLog
 cde55cb7bff1f00bd1c4b1ec0336c922  gdb/doc/LRS
 b2d5af403b33b8fca80aee36ba84b648  gdb/doc/Makefile.in
 d5d06eaf9b4d44aa442a4a281aa9aea4  gdb/doc/a4rc.sed
@@ -1549,7 +1549,7 @@ d5d06eaf9b4d44aa442a4a281aa9aea4  gdb/doc/a4rc.sed
 16323a3dc38234990af7a5a8ad37b5cd  gdb/doc/all-cfg.texi
 237d78bddccb0bb9dc86911e194aac8e  gdb/doc/annotate.texinfo
 ab0fe311032294b952da80585b8b90e7  gdb/doc/fdl.texi
-4dbdebad6f40d1cae89f1151121af42d  gdb/doc/gdb.texinfo
+92eb1faaac0ff2f6637bac5f08dda3cc  gdb/doc/gdb.texinfo
 b8a3eda0db9943a56763cdb63b3cec42  gdb/doc/gdbint.texinfo
 bf96494e6e4d346175babd5ef9781882  gdb/doc/gpl.texi
 73ec71cd3b2e7f61bc530f19d4b35056  gdb/doc/lpsrc.sed
@@ -1562,13 +1562,13 @@ d39233c86ed6a6dc9e853ae6a11fe03e  gdb/doc/stack_frame.pdf
 6076d300a46651562d4ecd0604442414  gdb/doc/stack_frame.png
 553b7fe1bf4b5d8b96fdb8cd83503de1  gdb/doc/stack_frame.svg
 f81a0e00e0cb9e41b078069fb9bedb07  gdb/doc/stack_frame.txt
-351868531c2644b422d15ccca799e26a  gdb/doc/gdb.info
-4487a374ee47961b38fa1b4687eee060  gdb/doc/gdb.info-1
-6a2d5b40b94f5a64189da1293f820859  gdb/doc/gdb.info-2
-d7f703d8770387977223c1678d0efb63  gdb/doc/gdb.info-3
-3cdabe049d6e72d22e430f6e56c4480c  gdb/doc/gdb.info-4
-abd3f30779c3daf2959081a7d0fd13e0  gdb/doc/gdb.info-5
-9a73aeebc39dc6563ec0d70395c24d51  gdb/doc/gdb.info-6
+64cb5346f64c4a62ae82372c2dba0f86  gdb/doc/gdb.info
+6f50daa86b752dde6bf04c006f1d8f4e  gdb/doc/gdb.info-1
+71445fbe9140bebe39c0ae43d9242c4e  gdb/doc/gdb.info-2
+6d67349092e2bbcc92d07a97c19c46c7  gdb/doc/gdb.info-3
+d5f1a2bdb3237a159b380b9a2c54793b  gdb/doc/gdb.info-4
+12e10ca75f4ebc08a124928318fe4bba  gdb/doc/gdb.info-5
+c31a35da6ad97a7f473ad24c19590229  gdb/doc/gdb.info-6
 05c0d0b2a8b9edbc5db07192d1388b12  gdb/doc/gdbint.info
 751be19074a19c3f654f3d2537b4336e  gdb/doc/gdbint.info-1
 a003c8e79cb28d422bbb83034c17da12  gdb/doc/gdbint.info-2
@@ -1777,7 +1777,7 @@ a238f6359a5d0f298234e00f685d548c  gdb/features/rs6000/powerpc-vsx32l.xml
 376e396dd67d075bacc312f2c0a194fe  gdb/features/rs6000/rs6000.c
 31a4eafb186358843e27350b150e180e  gdb/features/rs6000/rs6000.xml
 94230696f6e1981ae284eb1d31607f8e  gdb/gdbserver/.gitignore
-8d50f02f0a6915c495681cf9b28934f9  gdb/gdbserver/ChangeLog
+a2e3adfccd75ab997a5e12061b952ad7  gdb/gdbserver/ChangeLog
 dde2aa36479f53e8fa976c08bb81fc56  gdb/gdbserver/Makefile.in
 791b58ddf159b59c7d9375e2c2f00a07  gdb/gdbserver/README
 0e796e5e05adc41096c8f711836e9f7e  gdb/gdbserver/acinclude.m4
@@ -1791,7 +1791,7 @@ ab1f29be3446ecf5e2b781969e77d4bb  gdb/gdbserver/configure.srv
 a06d2fc06d24c8ff8e1eacce34aa6cd7  gdb/gdbserver/dll.c
 7798a56033d81424a9b44b065d808946  gdb/gdbserver/event-loop.c
 475cc2ff3a61f243746075c4cd840cc3  gdb/gdbserver/gdb_proc_service.h
-0a3f5f95849acd6f4a783c0ca75b6e5c  gdb/gdbserver/gdbreplay.c
+9837e218420b54aa1079bb86be4f1c74  gdb/gdbserver/gdbreplay.c
 f0e3f141168f9e49b60877d30817cc61  gdb/gdbserver/gdbserver.1
 9cec9bf1ae90c6dd37fb731b055b8bde  gdb/gdbserver/gdbthread.h
 34cd731f76620c1d39d318c510cf782a  gdb/gdbserver/hostio-errno.c
@@ -1805,7 +1805,7 @@ bdacf42a94348b7665d43b9eb8a98f69  gdb/gdbserver/linux-amd64-ipa.c
 719b265ba65d8c185d19a9de4ed9815a  gdb/gdbserver/linux-arm-low.c
 1edf0686a3ef6e743686033944310f83  gdb/gdbserver/linux-bfin-low.c
 cba8bd803a9842d2480a89ddad0a8147  gdb/gdbserver/linux-cris-low.c
-803fbc985d226837d1f5e297997e26f4  gdb/gdbserver/linux-crisv32-low.c
+c7e69fab3796b52ada36bfe1d3859914  gdb/gdbserver/linux-crisv32-low.c
 100dce3c66e8c38e807c1517d1f20f23  gdb/gdbserver/linux-i386-ipa.c
 a4138055c1b6e3a5ff3fa2c260b87976  gdb/gdbserver/linux-ia64-low.c
 a56ae41ac0c3dc2a2ab35b9647ea34d1  gdb/gdbserver/linux-low.c
@@ -1836,7 +1836,7 @@ f7bac380dcb49575b757695b72fd6084  gdb/gdbserver/mem-break.h
 58a941c8ff873a865d474eece1de9f1e  gdb/gdbserver/regcache.h
 2a349d85d5e1a3a219380e55ee083220  gdb/gdbserver/remote-utils.c
 f7800406d7f0a7dc2a57b4ca690a3285  gdb/gdbserver/server.c
-f61b46da0ace58fe7e171f964837d920  gdb/gdbserver/server.h
+943b1d8855a00bb20280232bcca6dec9  gdb/gdbserver/server.h
 7d7b0321c7c4e80e33c15fda1c9a0c98  gdb/gdbserver/spu-low.c
 ab8791abc79fb06583ba8f6e830adcc0  gdb/gdbserver/target.c
 e6edecda64b09d5ab8c68f47476e410e  gdb/gdbserver/target.h
@@ -1975,8 +1975,8 @@ c20fd87765652ad7ba50f43a0ec95088  gdb/osf-share/cma_util.h
 7cd3745f37bbbfcd24086735939ead52  gdb/osf-share/HP800/cma_thread_io.h
 36cb16e3cf86ddd4609d275a6a3052f5  gdb/osf-share/RIOS/cma_thread_io.h
 1851bff0653201a488dcae18dde7efad  gdb/po/gdbtext
-74b34d720e20e5ffaa85d11127d51ec5  gdb/po/gdb.pot
-41d7ed66b6e42064caddff286fc26136  gdb/python/py-auto-load.c
+35aeb6693f11ff68e347650ec57f8bd5  gdb/po/gdb.pot
+effd93924993d455c130ac3c633a6c06  gdb/python/py-auto-load.c
 d46f38c49ba79ffcc1fe58e6babe8493  gdb/python/py-block.c
 be8cbd2c7ccd83e31f62e01605df83b8  gdb/python/py-bpevent.c
 bb535075049a1e977b2b25081908b990  gdb/python/py-breakpoint.c
@@ -2011,7 +2011,7 @@ a65d01a6be1d6e49f1a76f867a77a65f  gdb/python/py-value.c
 df61f04da42752ab5d9115d036f22430  gdb/python/python-config.py
 fae4b5c88e230ab947fae2d1ed72f686  gdb/python/python-internal.h
 bc441a666242c968665db9d8c4545eab  gdb/python/python.c
-06701c32366f9f2f6b2f847e9242a566  gdb/python/python.h
+c3120dbddd6d105aed603c88ed4c2581  gdb/python/python.h
 0ede955be53064e857fca1abcd4af3d5  gdb/python/lib/gdb/__init__.py
 0b0f0baea9b60fb07eb7f687730da3f5  gdb/python/lib/gdb/printing.py
 9153dfb2c33ccfb638dcaf82a0c6f411  gdb/python/lib/gdb/prompt.py
@@ -2107,7 +2107,7 @@ ea9cbcd95f79798e1a692f4abf93a2c7  gdb/syscalls/mips-n32-linux.xml
 c0ec02b9ad0757a03d9dea6ea6b8adb0  gdb/syscalls/ppc64-linux.xml
 1ec17336100dcc40f3964c8027955d28  gdb/syscalls/sparc-linux.xml
 92757f46acf7c629f8cecaaf0304f2c4  gdb/syscalls/sparc64-linux.xml
-7c67ab0a288eb2b773b073a92e3a64d1  gdb/testsuite/ChangeLog
+58f1dadc84eb046cf227cbea0ba7deb5  gdb/testsuite/ChangeLog
 8181316b8b2460853fe22c659ba1071e  gdb/testsuite/Makefile.in
 1b9bb551736dbc95577c91620b81fb6c  gdb/testsuite/TODO
 a225f3bdf3ee20da9623fd4c54b5454b  gdb/testsuite/aclocal.m4
@@ -2425,6 +2425,9 @@ f649c736950b5fd624424e3a7f370e4f  gdb/testsuite/gdb.arch/amd64-prologue-xmm.c
 0263f89000d75b0d113a836aaf5daacf  gdb/testsuite/gdb.arch/amd64-prologue-xmm.exp
 e3a9f564be714835504436d7e8d0f0ce  gdb/testsuite/gdb.arch/amd64-prologue-xmm.s
 265407290bc6234802cf2a634ecea75c  gdb/testsuite/gdb.arch/amd64-pseudo.c
+ae401dd7f797623b002f3a31faea1b29  gdb/testsuite/gdb.arch/amd64-tailcall-ret.S
+f76e72540158df1b94356cf00a331b06  gdb/testsuite/gdb.arch/amd64-tailcall-ret.c
+62d774d8e3ab2df4f8e4e4976557e300  gdb/testsuite/gdb.arch/amd64-tailcall-ret.exp
 a3bc5b058e9a28b8c8961be3f48a0613  gdb/testsuite/gdb.arch/amd64-word.exp
 075421c7c7df13e3432011aea5c623e1  gdb/testsuite/gdb.arch/arm-disp-step.S
 f44f55476bfcc00aab9ef07183adf7a9  gdb/testsuite/gdb.arch/arm-disp-step.exp
@@ -3051,6 +3054,8 @@ e48c21a0eeb78774c8761fbef657bdf1  gdb/testsuite/gdb.base/step-line.c
 98cd6b7b1e6e3b7431873224eef42ee2  gdb/testsuite/gdb.base/step-line.inp
 18720b2bb9f88cd34aab612f18a606f5  gdb/testsuite/gdb.base/step-resume-infcall.c
 12b0ee8c5ec65ce23abc5ff7a695671f  gdb/testsuite/gdb.base/step-resume-infcall.exp
+28eae0dd3a433e1c2d87bf5fb9c5d32f  gdb/testsuite/gdb.base/step-symless.c
+4acf5ba9179f799a0f20efb12216cb14  gdb/testsuite/gdb.base/step-symless.exp
 9ffc2cd8e384888785a57bd5ed8168d2  gdb/testsuite/gdb.base/step-test.c
 632fb2a218b330d0bdf4157005e9e142  gdb/testsuite/gdb.base/step-test.exp
 1ea088b852b87134ad1b9038b0dd2204  gdb/testsuite/gdb.base/store.c
@@ -3087,7 +3092,7 @@ e0f4a00d7eb2641628c91c705b4592d0  gdb/testsuite/gdb.base/unwindonsignal.c
 a7f582dad7c86be966dc26a2dfd2a9b3  gdb/testsuite/gdb.base/valgrind-db-attach.c
 9aeaebc9306f400ea147ed756128d580  gdb/testsuite/gdb.base/valgrind-db-attach.exp
 3cd0507c8af37b5788e02cd161262bd0  gdb/testsuite/gdb.base/valgrind-infcall.c
-442ca0b023d931a86fd214e05a52777e  gdb/testsuite/gdb.base/valgrind-infcall.exp
+9e65bd5d29634331e26bdf7ce0242320  gdb/testsuite/gdb.base/valgrind-infcall.exp
 319b40e0e783d65b296cdf21f0c3e0a0  gdb/testsuite/gdb.base/value-double-free.c
 abb7f938274118488161ab577968dc69  gdb/testsuite/gdb.base/value-double-free.exp
 96414feab41b4954360074ac656e2b8e  gdb/testsuite/gdb.base/varargs.c
@@ -3111,9 +3116,9 @@ d9e17bb34177d4e5e5451b7a1ccc23b7  gdb/testsuite/gdb.base/watchpoint-cond-gone.c
 4b740c38221dedee87164d2672b91f79  gdb/testsuite/gdb.base/watchpoint-cond-gone.exp
 2a9ad92ef6a4f856d2f8cbc74d71b42e  gdb/testsuite/gdb.base/watchpoint-delete.c
 30b9cb8e733e54fea5cdbf71702b0ee8  gdb/testsuite/gdb.base/watchpoint-delete.exp
-c874d720fe6c68976f66ff27c6da946c  gdb/testsuite/gdb.base/watchpoint-hw.c
 0aaae63688bb03c5d7396d83b97588e0  gdb/testsuite/gdb.base/watchpoint-hw-hit-once.c
 545ef21168a1434c070b48ee8d6b884e  gdb/testsuite/gdb.base/watchpoint-hw-hit-once.exp
+c874d720fe6c68976f66ff27c6da946c  gdb/testsuite/gdb.base/watchpoint-hw.c
 c058ad583be695298ac6baba7ade02e6  gdb/testsuite/gdb.base/watchpoint-hw.exp
 2438fd3bcbad761182cfd4776499434e  gdb/testsuite/gdb.base/watchpoint-solib-shr.c
 14bb4ed2e7a3ca9f01b6456cd8dee9f0  gdb/testsuite/gdb.base/watchpoint-solib.c
@@ -3704,11 +3709,11 @@ d1035b543709f23158df094b6d49742b  gdb/testsuite/gdb.hp/gdb.objdbg/tools/test-obj
 103f30848803219a9db8fe445895dfa2  gdb/testsuite/gdb.java/Makefile.in
 63f3a0db56477a8a423a38f20de3205f  gdb/testsuite/gdb.java/jmain.exp
 030f9fc25e9acc988163f24817c83ee9  gdb/testsuite/gdb.java/jmain.java
-c194af5391bc7c1310b9621d1d1d811e  gdb/testsuite/gdb.java/jmisc.exp
+3955386528896b182c48284e87177f4b  gdb/testsuite/gdb.java/jmisc.exp
 e3a680cfde66129ed9607ad7c20fd6a0  gdb/testsuite/gdb.java/jmisc.java
 da2c5a6f26856d356b914dc3e303e201  gdb/testsuite/gdb.java/jnpe.exp
 df1554dc0e0d4fec69b18ca35eef22d2  gdb/testsuite/gdb.java/jnpe.java
-12eba58e54fd44ff325d66cf0109819c  gdb/testsuite/gdb.java/jprint.exp
+a82d1599333d72e980e75a14f430d631  gdb/testsuite/gdb.java/jprint.exp
 3035031cd2f267e7197722302f799e27  gdb/testsuite/gdb.java/jprint.java
 0520f99c4fca800e611dfe1727ff2817  gdb/testsuite/gdb.java/jv-exp.exp
 83388566b538e9cc2ef8c8bdef0dbd44  gdb/testsuite/gdb.java/jv-print.exp
@@ -3718,9 +3723,11 @@ df1554dc0e0d4fec69b18ca35eef22d2  gdb/testsuite/gdb.java/jnpe.java
 4cbe227c3ce3b7553c6b43bf0a2c0c0a  gdb/testsuite/gdb.linespec/ls-dollar.cc
 4f0e3058d0a23ac693c2b87bffbf746b  gdb/testsuite/gdb.linespec/ls-dollar.exp
 25fb37697e4b6d3bef5326907b5e2cbf  gdb/testsuite/gdb.linespec/ls-errs.c
-23270f6411b79fa118844d240102be79  gdb/testsuite/gdb.linespec/ls-errs.exp
+b9d5ea9a7010aff7b0764321f6835b85  gdb/testsuite/gdb.linespec/ls-errs.exp
 52412320dfc03bbc8ae9e0a5956b2d5a  gdb/testsuite/gdb.linespec/lspec.cc
 76efa0be5b547481043ba197cad7a14e  gdb/testsuite/gdb.linespec/lspec.h
+d01390218de5119422806a50774518f3  gdb/testsuite/gdb.linespec/thread.c
+f5cfa5bb073e9fdd45d686a0b26adac4  gdb/testsuite/gdb.linespec/thread.exp
 6db4b606c9a0b27272f4c918408081cb  gdb/testsuite/gdb.linespec/base/one/thefile.cc
 6063637e818b9601823ea95e95cfcfab  gdb/testsuite/gdb.linespec/base/two/thefile.cc
 1efe6f6402cbf322cd8aa810521f4b17  gdb/testsuite/gdb.mi/ChangeLog-1999-2003
@@ -3785,6 +3792,8 @@ ee24692225ea85b28daabbd1ad974b62  gdb/testsuite/gdb.mi/mi-var-child.c
 3f48c06500859c3cf308754bac65f6b0  gdb/testsuite/gdb.mi/mi-var-cmd.exp
 8598dd80f7a0084ddc50cb8423376a93  gdb/testsuite/gdb.mi/mi-var-cp.cc
 dc5043efc1e27dfee24432a323fe296e  gdb/testsuite/gdb.mi/mi-var-cp.exp
+9fdfa766cff302c6f682209875fa3279  gdb/testsuite/gdb.mi/mi-var-create-rtti.c
+7834fe61dc99271281caec6a49e05e01  gdb/testsuite/gdb.mi/mi-var-create-rtti.exp
 7f8ccbc524207bc51ed381afeffdb3d7  gdb/testsuite/gdb.mi/mi-var-display.exp
 a9474410222ee8fab31dfb464e59198c  gdb/testsuite/gdb.mi/mi-var-invalidate.exp
 24d9eae00eb2ddcc9946624160a680cb  gdb/testsuite/gdb.mi/mi-var-rtti.cc
@@ -3961,6 +3970,9 @@ b4d2852e0a6c20f6a94cb2bea32b7428  gdb/testsuite/gdb.python/python.c
 4262afd139ccc75abebdbd4a936378c5  gdb/testsuite/gdb.python/source1
 01f60a446360a6a9e07afb55ac6cd5d9  gdb/testsuite/gdb.python/source2.py
 5d0857368c33e2992acae395c7353dee  gdb/testsuite/gdb.reverse/Makefile.in
+e158161c9ef174b36b69bb8e7b48f367  gdb/testsuite/gdb.reverse/amd64-tailcall-reverse.S
+e40f94b35f639d77782865bf77869423  gdb/testsuite/gdb.reverse/amd64-tailcall-reverse.c
+6a6a93044bdd636106d2c5622a63ae12  gdb/testsuite/gdb.reverse/amd64-tailcall-reverse.exp
 e1f07c48544f9e652a81e4fc357822ac  gdb/testsuite/gdb.reverse/break-precsave.exp
 b749c2f0e459adb076c510d07419c9b6  gdb/testsuite/gdb.reverse/break-reverse.c
 d2afd35b6abf06808c0db8cd3d6f974b  gdb/testsuite/gdb.reverse/break-reverse.exp
@@ -3989,6 +4001,11 @@ b34b810f445106b670055e89fd6d4f61  gdb/testsuite/gdb.reverse/machinestate.exp
 e7b8677e478b90ad5c33f356e36bd734  gdb/testsuite/gdb.reverse/sigall-precsave.exp
 b48715211845417cac4850ca50b276f4  gdb/testsuite/gdb.reverse/sigall-reverse.c
 7cb15f12754160514415b7c3091a9856  gdb/testsuite/gdb.reverse/sigall-reverse.exp
+22794bd0ee0b96cacdd4742106dfc2f0  gdb/testsuite/gdb.reverse/singlejmp-reverse-nodebug.S
+053fa5e737f4a8ea969ab77b4e21f9c3  gdb/testsuite/gdb.reverse/singlejmp-reverse-nodebug.c
+9bf9af6d7b26ea37ec31e24161532d69  gdb/testsuite/gdb.reverse/singlejmp-reverse.S
+4c01008b4dbc1795c3d681d1ba8386f8  gdb/testsuite/gdb.reverse/singlejmp-reverse.c
+45c3827c8d3742e35c4bda7b728074e2  gdb/testsuite/gdb.reverse/singlejmp-reverse.exp
 f17cfbb6458a72c312f00c807cc6c33f  gdb/testsuite/gdb.reverse/solib-precsave.exp
 0739a17b9f89c3f77f566fbb0fa04e86  gdb/testsuite/gdb.reverse/solib-reverse.c
 2812d36b3d0fa46d067e16019e504aea  gdb/testsuite/gdb.reverse/solib-reverse.exp
@@ -4213,7 +4230,7 @@ f3b186643f452e1f8a949613a87ac99a  gdb/testsuite/lib/cell.exp
 6b64019bc3b989ff3c4f43d7d05d9989  gdb/testsuite/lib/fortran.exp
 5cd24413a6dbb7177ca707c2b64607d3  gdb/testsuite/lib/future.exp
 d239eaeaacac1055125b70b9a9760421  gdb/testsuite/lib/gdb-python.exp
-15bba05edc13cbd18287147a37ad99e1  gdb/testsuite/lib/gdb.exp
+906f477f9b33d6f8625394a429c225ac  gdb/testsuite/lib/gdb.exp
 50b624a3bb3f5fe169fddeaf02daa20a  gdb/testsuite/lib/gdbserver-support.exp
 777cf66a4347ab65ba50690bfe3b2ab4  gdb/testsuite/lib/go.exp
 124f4627e54084a8df56842b401576f4  gdb/testsuite/lib/java.exp
@@ -4689,7 +4706,7 @@ a97c47969dfc92a7666dfe3c2e1e1448  libdecnumber/dpd/decimal32Symbols.h
 0f6db29710e7075c2fd62bc4478b3b8d  libdecnumber/dpd/decimal64Symbols.h
 99c2e5e712b990ee07be10f53e41f3fb  libiberty/.gitignore
 a916467b91076e631dd8edb7424769c7  libiberty/COPYING.LIB
-6a9fd50468b78362739488bf7b845843  libiberty/ChangeLog
+870f4a13c436d221ef483dcc434724f6  libiberty/ChangeLog
 78cbb9fa07796e2b83ec5539ebd53589  libiberty/Makefile.in
 c68dbf7834af4281ebd84caa3fd54680  libiberty/README
 8797cb1a6faa84f3c7fe3d12164a4b13  libiberty/_doprnt.c
@@ -4750,7 +4767,7 @@ fe4e25fb7df7cacdc921eaf39ce595af  libiberty/maint-tool
 e7487c25e2021939bf5af58e8cd70a3f  libiberty/make-relative-prefix.c
 0172f6488e44155e35d94e3f2c5c3c5c  libiberty/make-temp-file.c
 379561229f99437be05ede87fbcf8533  libiberty/makefile.vms
-7005e9cc6647b299a791a6af3904e49b  libiberty/md5.c
+4e8442fe28956a3c8f62353b4b036c6b  libiberty/md5.c
 de9bd20436bf2cb64d8c374c110ce315  libiberty/memchr.c
 33320d312ab390ca0eb5c43c9e349d57  libiberty/memcmp.c
 c90c2f09bdcbd65b4732a4be25a56d12  libiberty/memcpy.c

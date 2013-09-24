@@ -1,0 +1,5 @@
+* Tue Sep 24 2013 Anas Nashif <anas.nashif@intel.com> upstream/7.5.1@47cabd6
+- Update to 7.5.1
+- Set license using %license
+- resetting manifest requested domain to floor
+

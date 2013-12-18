@@ -17,7 +17,6 @@ BuildRequires:  gettext
 BuildRequires:  python-devel
 BuildRequires:  gcc-c++
 BuildRequires:  ncurses-devel
-BuildRequires:  readline-devel
 BuildRequires:  rpm-devel
 BuildRequires:  makeinfo
 
@@ -62,9 +61,7 @@ rm -f gdb/doc/*.info-*
 	--with-separate-debug-dir=/usr/lib/debug	\
 	--disable-sim					\
 	--disable-rpath					\
-	--with-system-readline				\
 	--with-expat					\
-	--disable-tui					\
 	--enable-64-bit-bfd				\
 	--enable-static --disable-shared --enable-debug
 

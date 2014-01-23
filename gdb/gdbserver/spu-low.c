@@ -1,5 +1,5 @@
 /* Low level interface to SPUs, for the remote server for GDB.
-   Copyright (C) 2006-2012 Free Software Foundation, Inc.
+   Copyright (C) 2006-2013 Free Software Foundation, Inc.
 
    Contributed by Ulrich Weigand <uweigand@de.ibm.com>.
 
@@ -20,7 +20,7 @@
 
 #include "server.h"
 
-#include <sys/wait.h>
+#include "gdb_wait.h"
 #include <stdio.h>
 #include <sys/ptrace.h>
 #include <fcntl.h>
@@ -50,9 +50,6 @@
 /* PPU side system calls.  */
 #define INSTR_SC	0x44000002
 #define NR_spu_run	0x0116
-
-/* Get current thread ID (Linux task ID).  */
-#define current_ptid ((struct inferior_list_entry *)current_inferior)->id
 
 /* These are used in remote-utils.c.  */
 int using_threads = 0;
@@ -276,6 +273,12 @@ spu_create_inferior (char *program, char **allargs)
 
   if (pid == 0)
     {
+      if (!remote_connection_is_stdio ())
+	{
+	  close (listen_desc);
+	  if (gdb_connected ())
+	    close (remote_desc);
+	}
       ptrace (PTRACE_TRACEME, 0, 0, 0);
 
       setpgid (0, 0);

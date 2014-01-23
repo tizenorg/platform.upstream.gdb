@@ -23,6 +23,8 @@
 #include "elf/internal.h"
 #include "elf/mips.h"
 
+extern bfd_boolean _bfd_mips_elf_mkobject
+  (bfd *);
 extern bfd_boolean _bfd_mips_elf_new_section_hook
   (bfd *, asection *);
 extern void _bfd_mips_elf_symbol_processing
@@ -150,6 +152,8 @@ extern bfd_boolean _bfd_mips_elf_init_stubs
    asection *(*) (const char *, asection *, asection *));
 extern bfd_vma _bfd_mips_elf_plt_sym_val
   (bfd_vma, const asection *, const arelent *rel);
+extern long _bfd_mips_elf_get_synthetic_symtab
+  (bfd *, long, asymbol **, long, asymbol **, asymbol **);
 extern void _bfd_mips_post_process_headers
   (bfd *abfd, struct bfd_link_info *link_info);
 

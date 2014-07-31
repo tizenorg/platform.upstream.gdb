@@ -1,6 +1,5 @@
 /* Shared library support for IRIX.
-   Copyright (C) 1993-1996, 1998-2002, 2004, 2007-2012 Free Software
-   Foundation, Inc.
+   Copyright (C) 1993-2014 Free Software Foundation, Inc.
 
    This file was created using portions of irix5-nat.c originally
    contributed to GDB by Ian Lance Taylor.
@@ -31,6 +30,7 @@
 #include "gdbcore.h"
 #include "target.h"
 #include "inferior.h"
+#include "infrun.h"
 #include "gdbthread.h"
 
 #include "solist.h"
@@ -142,7 +142,7 @@ extract_mips_address (void *addr, int len, enum bfd_endian byte_order)
 static struct lm_info
 fetch_lm_info (CORE_ADDR addr)
 {
-  enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch);
+  enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
   struct lm_info li;
   union irix_obj_info buf;
 
@@ -153,13 +153,13 @@ fetch_lm_info (CORE_ADDR addr)
      with one of the other cases.  (We don't want to incur a memory error
      if we were to read a larger region that generates an error due to
      being at the end of a page or the like.)  */
-  read_memory (addr, (char *) &buf, sizeof (buf.ol32));
+  read_memory (addr, (gdb_byte *) &buf, sizeof (buf.ol32));
 
   if (extract_unsigned_integer (buf.magic.b, sizeof (buf.magic), byte_order)
       != 0xffffffff)
     {
       /* Use buf.ol32...  */
-      char obj_buf[432];
+      gdb_byte obj_buf[432];
       CORE_ADDR obj_addr = extract_mips_address (&buf.ol32.data,
 						 sizeof (buf.ol32.data),
 						 byte_order);
@@ -183,7 +183,7 @@ fetch_lm_info (CORE_ADDR addr)
 
       /* Read rest of buffer.  */
       read_memory (addr + sizeof (buf.ol32),
-		   ((char *) &buf) + sizeof (buf.ol32),
+		   ((gdb_byte *) &buf) + sizeof (buf.ol32),
 		   sizeof (buf.oi32) - sizeof (buf.ol32));
 
       /* Fill in fields using buffer contents.  */
@@ -210,7 +210,7 @@ fetch_lm_info (CORE_ADDR addr)
 
       /* Read rest of buffer.  */
       read_memory (addr + sizeof (buf.ol32),
-		   ((char *) &buf) + sizeof (buf.ol32),
+		   ((gdb_byte *) &buf) + sizeof (buf.ol32),
 		   sizeof (buf.oi64) - sizeof (buf.ol32));
 
       /* Fill in fields using buffer contents.  */
@@ -282,13 +282,13 @@ static CORE_ADDR debug_base;	/* Base of dynamic linker structures.  */
 static CORE_ADDR
 locate_base (void)
 {
-  struct minimal_symbol *msymbol;
+  struct bound_minimal_symbol msymbol;
   CORE_ADDR address = 0;
 
   msymbol = lookup_minimal_symbol (DEBUG_BASE, NULL, symfile_objfile);
-  if ((msymbol != NULL) && (SYMBOL_VALUE_ADDRESS (msymbol) != 0))
+  if ((msymbol.minsym != NULL) && (BMSYMBOL_VALUE_ADDRESS (msymbol) != 0))
     {
-      address = SYMBOL_VALUE_ADDRESS (msymbol);
+      address = BMSYMBOL_VALUE_ADDRESS (msymbol);
     }
   return (address);
 }
@@ -306,7 +306,7 @@ disable_break (void)
   /* Note that breakpoint address and original contents are in our address
      space, so we just need to write the original contents back.  */
 
-  if (deprecated_remove_raw_breakpoint (target_gdbarch, base_breakpoint) != 0)
+  if (deprecated_remove_raw_breakpoint (target_gdbarch (), base_breakpoint) != 0)
     {
       status = 0;
     }
@@ -339,7 +339,7 @@ enable_break (void)
       if (!entry_point_address_query (&entry_point))
 	return 0;
 
-      base_breakpoint = deprecated_insert_raw_breakpoint (target_gdbarch,
+      base_breakpoint = deprecated_insert_raw_breakpoint (target_gdbarch (),
 							  aspace, entry_point);
 
       if (base_breakpoint != NULL)
@@ -453,10 +453,10 @@ irix_solib_create_inferior_hook (int from_tty)
 static struct so_list *
 irix_current_sos (void)
 {
-  enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch);
-  int addr_size = gdbarch_addr_bit (target_gdbarch) / TARGET_CHAR_BIT;
+  enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
+  int addr_size = gdbarch_addr_bit (target_gdbarch ()) / TARGET_CHAR_BIT;
   CORE_ADDR lma;
-  char addr_buf[8];
+  gdb_byte addr_buf[8];
   struct so_list *head = 0;
   struct so_list **link_ptr = &head;
   int is_first = 1;
@@ -545,10 +545,10 @@ irix_current_sos (void)
 static int
 irix_open_symbol_file_object (void *from_ttyp)
 {
-  enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch);
-  int addr_size = gdbarch_addr_bit (target_gdbarch) / TARGET_CHAR_BIT;
+  enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
+  int addr_size = gdbarch_addr_bit (target_gdbarch ()) / TARGET_CHAR_BIT;
   CORE_ADDR lma;
-  char addr_buf[8];
+  gdb_byte addr_buf[8];
   struct lm_info lm;
   struct cleanup *cleanups;
   int errcode;

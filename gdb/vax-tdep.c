@@ -1,7 +1,6 @@
 /* Target-dependent code for the VAX.
 
-   Copyright (C) 1986, 1989, 1991-1992, 1995-1996, 1998-2000, 2002-2005,
-   2007-2012 Free Software Foundation, Inc.
+   Copyright (C) 1986-2014 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -33,7 +32,7 @@
 #include "trad-frame.h"
 #include "value.h"
 
-#include "gdb_string.h"
+#include <string.h>
 
 #include "vax-tdep.h"
 
@@ -86,7 +85,7 @@ vax_supply_gregset (const struct regset *regset, struct regcache *regcache,
 
 /* VAX register set.  */
 
-static struct regset vax_gregset =
+static const struct regset vax_gregset =
 {
   NULL,
   vax_supply_gregset

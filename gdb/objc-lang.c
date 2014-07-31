@@ -1,6 +1,6 @@
 /* Objective-C language support routines for GDB, the GNU debugger.
 
-   Copyright (C) 2002-2005, 2007-2012 Free Software Foundation, Inc.
+   Copyright (C) 2002-2014 Free Software Foundation, Inc.
 
    Contributed by Apple Computer, Inc.
    Written by Michael Snyder.
@@ -26,6 +26,7 @@
 #include "expression.h"
 #include "parser-defs.h"
 #include "language.h"
+#include "varobj.h"
 #include "c-lang.h"
 #include "objc-lang.h"
 #include "exceptions.h"
@@ -33,7 +34,7 @@
 #include "value.h"
 #include "symfile.h"
 #include "objfiles.h"
-#include "gdb_string.h"		/* for strchr */
+#include <string.h>		/* for strchr */
 #include "target.h"		/* for target_has_execution */
 #include "gdbcore.h"
 #include "gdbcmd.h"
@@ -44,6 +45,7 @@
 #include "infcall.h"
 #include "valprint.h"
 #include "gdb_assert.h"
+#include "cli/cli-utils.h"
 
 #include <ctype.h>
 
@@ -82,7 +84,7 @@ static const struct objfile_data *objc_objfile_data;
    suitably defined.  */
 
 struct symbol *
-lookup_struct_typedef (char *name, struct block *block, int noerr)
+lookup_struct_typedef (char *name, const struct block *block, int noerr)
 {
   struct symbol *sym;
 
@@ -118,9 +120,9 @@ lookup_objc_class (struct gdbarch *gdbarch, char *classname)
       return 0;
     }
 
-  if (lookup_minimal_symbol("objc_lookUpClass", 0, 0))
+  if (lookup_minimal_symbol("objc_lookUpClass", 0, 0).minsym)
     function = find_function_in_inferior("objc_lookUpClass", NULL);
-  else if (lookup_minimal_symbol ("objc_lookup_class", 0, 0))
+  else if (lookup_minimal_symbol ("objc_lookup_class", 0, 0).minsym)
     function = find_function_in_inferior("objc_lookup_class", NULL);
   else
     {
@@ -147,9 +149,9 @@ lookup_child_selector (struct gdbarch *gdbarch, char *selname)
       return 0;
     }
 
-  if (lookup_minimal_symbol("sel_getUid", 0, 0))
+  if (lookup_minimal_symbol("sel_getUid", 0, 0).minsym)
     function = find_function_in_inferior("sel_getUid", NULL);
-  else if (lookup_minimal_symbol ("sel_get_any_uid", 0, 0))
+  else if (lookup_minimal_symbol ("sel_get_any_uid", 0, 0).minsym)
     function = find_function_in_inferior("sel_get_any_uid", NULL);
   else
     {
@@ -179,17 +181,17 @@ value_nsstring (struct gdbarch *gdbarch, char *ptr, int len)
   stringValue[2] = value_string(ptr, len, char_type);
   stringValue[2] = value_coerce_array(stringValue[2]);
   /* _NSNewStringFromCString replaces "istr" after Lantern2A.  */
-  if (lookup_minimal_symbol("_NSNewStringFromCString", 0, 0))
+  if (lookup_minimal_symbol("_NSNewStringFromCString", 0, 0).minsym)
     {
       function = find_function_in_inferior("_NSNewStringFromCString", NULL);
       nsstringValue = call_function_by_hand(function, 1, &stringValue[2]);
     }
-  else if (lookup_minimal_symbol("istr", 0, 0))
+  else if (lookup_minimal_symbol("istr", 0, 0).minsym)
     {
       function = find_function_in_inferior("istr", NULL);
       nsstringValue = call_function_by_hand(function, 1, &stringValue[2]);
     }
-  else if (lookup_minimal_symbol("+[NSString stringWithCString:]", 0, 0))
+  else if (lookup_minimal_symbol("+[NSString stringWithCString:]", 0, 0).minsym)
     {
       function
 	= find_function_in_inferior("+[NSString stringWithCString:]", NULL);
@@ -282,160 +284,6 @@ objc_demangle (const char *mangled, int options)
     return NULL;	/* Not an objc mangled name.  */
 }
 
-/* Print the character C on STREAM as part of the contents of a
-   literal string whose delimiter is QUOTER.  Note that that format
-   for printing characters and strings is language specific.  */
-
-static void
-objc_emit_char (int c, struct type *type, struct ui_file *stream, int quoter)
-{
-  c &= 0xFF;			/* Avoid sign bit follies.  */
-
-  if (PRINT_LITERAL_FORM (c))
-    {
-      if (c == '\\' || c == quoter)
-	{
-	  fputs_filtered ("\\", stream);
-	}
-      fprintf_filtered (stream, "%c", c);
-    }
-  else
-    {
-      switch (c)
-	{
-	case '\n':
-	  fputs_filtered ("\\n", stream);
-	  break;
-	case '\b':
-	  fputs_filtered ("\\b", stream);
-	  break;
-	case '\t':
-	  fputs_filtered ("\\t", stream);
-	  break;
-	case '\f':
-	  fputs_filtered ("\\f", stream);
-	  break;
-	case '\r':
-	  fputs_filtered ("\\r", stream);
-	  break;
-	case '\033':
-	  fputs_filtered ("\\e", stream);
-	  break;
-	case '\007':
-	  fputs_filtered ("\\a", stream);
-	  break;
-	default:
-	  fprintf_filtered (stream, "\\%.3o", (unsigned int) c);
-	  break;
-	}
-    }
-}
-
-static void
-objc_printchar (int c, struct type *type, struct ui_file *stream)
-{
-  fputs_filtered ("'", stream);
-  objc_emit_char (c, type, stream, '\'');
-  fputs_filtered ("'", stream);
-}
-
-/* Print the character string STRING, printing at most LENGTH
-   characters.  Printing stops early if the number hits print_max;
-   repeat counts are printed as appropriate.  Print ellipses at the
-   end if we had to stop before printing LENGTH characters, or if
-   FORCE_ELLIPSES.  */
-
-static void
-objc_printstr (struct ui_file *stream, struct type *type,
-	       const gdb_byte *string, unsigned int length,
-	       const char *encoding, int force_ellipses,
-	       const struct value_print_options *options)
-{
-  unsigned int i;
-  unsigned int things_printed = 0;
-  int in_quotes = 0;
-  int need_comma = 0;
-
-  /* If the string was not truncated due to `set print elements', and
-     the last byte of it is a null, we don't print that, in
-     traditional C style.  */
-  if ((!force_ellipses) && length > 0 && string[length-1] == '\0')
-    length--;
-
-  if (length == 0)
-    {
-      fputs_filtered ("\"\"", stream);
-      return;
-    }
-
-  for (i = 0; i < length && things_printed < options->print_max; ++i)
-    {
-      /* Position of the character we are examining to see whether it
-	 is repeated.  */
-      unsigned int rep1;
-      /* Number of repetitions we have detected so far.  */
-      unsigned int reps;
-
-      QUIT;
-
-      if (need_comma)
-	{
-	  fputs_filtered (", ", stream);
-	  need_comma = 0;
-	}
-
-      rep1 = i + 1;
-      reps = 1;
-      while (rep1 < length && string[rep1] == string[i])
-	{
-	  ++rep1;
-	  ++reps;
-	}
-
-      if (reps > options->repeat_count_threshold)
-	{
-	  if (in_quotes)
-	    {
-	      if (options->inspect_it)
-		fputs_filtered ("\\\", ", stream);
-	      else
-		fputs_filtered ("\", ", stream);
-	      in_quotes = 0;
-	    }
-	  objc_printchar (string[i], type, stream);
-	  fprintf_filtered (stream, " <repeats %u times>", reps);
-	  i = rep1 - 1;
-	  things_printed += options->repeat_count_threshold;
-	  need_comma = 1;
-	}
-      else
-	{
-	  if (!in_quotes)
-	    {
-	      if (options->inspect_it)
-		fputs_filtered ("\\\"", stream);
-	      else
-		fputs_filtered ("\"", stream);
-	      in_quotes = 1;
-	    }
-	  objc_emit_char (string[i], type, stream, '"');
-	  ++things_printed;
-	}
-    }
-
-  /* Terminate the quotes if necessary.  */
-  if (in_quotes)
-    {
-      if (options->inspect_it)
-	fputs_filtered ("\\\"", stream);
-      else
-	fputs_filtered ("\"", stream);
-    }
-
-  if (force_ellipses || i < length)
-    fputs_filtered ("...", stream);
-}
-
 /* Determine if we are currently in the Objective-C dispatch function.
    If so, get the address of the method function that the dispatcher
    would call and use that as the function to step into instead.  Also
@@ -507,19 +355,19 @@ static const struct op_print objc_op_print_tab[] =
 
 const struct language_defn objc_language_defn = {
   "objective-c",		/* Language name */
+  "Objective-C",
   language_objc,
   range_check_off,
-  type_check_off,
   case_sensitive_on,
   array_row_major,
   macro_expansion_c,
   &exp_descriptor_standard,
-  objc_parse,
-  objc_error,
+  c_parse,
+  c_error,
   null_post_parser,
-  objc_printchar,		/* Print a character constant */
-  objc_printstr,		/* Function to print string constant */
-  objc_emit_char,
+  c_printchar,		       /* Print a character constant */
+  c_printstr,		       /* Function to print string constant */
+  c_emit_char,
   c_print_type,			/* Print a type using appropriate syntax */
   c_print_typedef,		/* Print a typedef using appropriate syntax */
   c_val_print,			/* Print a value using appropriate syntax */
@@ -543,6 +391,7 @@ const struct language_defn objc_language_defn = {
   default_get_string,
   NULL,				/* la_get_symbol_name_cmp */
   iterate_over_symbols,
+  &default_varobj_ops,
   LANG_MAGIC
 };
 
@@ -580,7 +429,8 @@ start_msglist(void)
 void
 add_msglist(struct stoken *str, int addcolon)
 {
-  char *s, *p;
+  char *s;
+  const char *p;
   int len, plen;
 
   if (str == 0)			/* Unnamed arg, or...  */
@@ -615,7 +465,7 @@ add_msglist(struct stoken *str, int addcolon)
 }
 
 int
-end_msglist(void)
+end_msglist (struct parser_state *ps)
 {
   int val = msglist_len;
   struct selname *sel = selname_chain;
@@ -625,12 +475,12 @@ end_msglist(void)
   selname_chain = sel->next;
   msglist_len = sel->msglist_len;
   msglist_sel = sel->msglist_sel;
-  selid = lookup_child_selector (parse_gdbarch, p);
+  selid = lookup_child_selector (parse_gdbarch (ps), p);
   if (!selid)
     error (_("Can't find selector \"%s\""), p);
-  write_exp_elt_longcst (selid);
+  write_exp_elt_longcst (ps, selid);
   xfree(p);
-  write_exp_elt_longcst (val);	/* Number of args */
+  write_exp_elt_longcst (ps, val);	/* Number of args */
   xfree(sel);
 
   return val;
@@ -744,7 +594,7 @@ selectors_info (char *regexp, int from_tty)
   ALL_MSYMBOLS (objfile, msymbol)
     {
       QUIT;
-      name = SYMBOL_NATURAL_NAME (msymbol);
+      name = MSYMBOL_NATURAL_NAME (msymbol);
       if (name
           && (name[0] == '-' || name[0] == '+')
 	  && name[1] == '[')		/* Got a method name.  */
@@ -758,7 +608,7 @@ selectors_info (char *regexp, int from_tty)
 	    {
 	      complaint (&symfile_complaints, 
 			 _("Bad method name '%s'"), 
-			 SYMBOL_NATURAL_NAME (msymbol));
+			 MSYMBOL_NATURAL_NAME (msymbol));
 	      continue;
 	    }
 	  if (regexp == NULL || re_exec(++name) != 0)
@@ -782,7 +632,7 @@ selectors_info (char *regexp, int from_tty)
       ALL_MSYMBOLS (objfile, msymbol)
 	{
 	  QUIT;
-	  name = SYMBOL_NATURAL_NAME (msymbol);
+	  name = MSYMBOL_NATURAL_NAME (msymbol);
 	  if (name &&
 	     (name[0] == '-' || name[0] == '+') &&
 	      name[1] == '[')		/* Got a method name.  */
@@ -895,7 +745,7 @@ classes_info (char *regexp, int from_tty)
   ALL_MSYMBOLS (objfile, msymbol)
     {
       QUIT;
-      name = SYMBOL_NATURAL_NAME (msymbol);
+      name = MSYMBOL_NATURAL_NAME (msymbol);
       if (name &&
 	 (name[0] == '-' || name[0] == '+') &&
 	  name[1] == '[')			/* Got a method name.  */
@@ -919,7 +769,7 @@ classes_info (char *regexp, int from_tty)
       ALL_MSYMBOLS (objfile, msymbol)
 	{
 	  QUIT;
-	  name = SYMBOL_NATURAL_NAME (msymbol);
+	  name = MSYMBOL_NATURAL_NAME (msymbol);
 	  if (name &&
 	     (name[0] == '-' || name[0] == '+') &&
 	      name[1] == '[')			/* Got a method name.  */
@@ -967,15 +817,13 @@ parse_selector (char *method, char **selector)
 
   s1 = method;
 
-  while (isspace (*s1))
-    s1++;
+  s1 = skip_spaces (s1);
   if (*s1 == '\'') 
     {
       found_quote = 1;
       s1++;
     }
-  while (isspace (*s1))
-    s1++;
+  s1 = skip_spaces (s1);
    
   nselector = s1;
   s2 = s1;
@@ -994,14 +842,12 @@ parse_selector (char *method, char **selector)
     }
   *s1++ = '\0';
 
-  while (isspace (*s2))
-    s2++;
+  s2 = skip_spaces (s2);
   if (found_quote)
     {
       if (*s2 == '\'') 
 	s2++;
-      while (isspace (*s2))
-	s2++;
+      s2 = skip_spaces (s2);
     }
 
   if (selector != NULL)
@@ -1030,21 +876,18 @@ parse_method (char *method, char *type, char **class,
   
   s1 = method;
 
-  while (isspace (*s1))
-    s1++;
+  s1 = skip_spaces (s1);
   if (*s1 == '\'') 
     {
       found_quote = 1;
       s1++;
     }
-  while (isspace (*s1))
-    s1++;
+  s1 = skip_spaces (s1);
   
   if ((s1[0] == '+') || (s1[0] == '-'))
     ntype = *s1++;
 
-  while (isspace (*s1))
-    s1++;
+  s1 = skip_spaces (s1);
 
   if (*s1 != '[')
     return NULL;
@@ -1055,14 +898,12 @@ parse_method (char *method, char *type, char **class,
     s1++;
   
   s2 = s1;
-  while (isspace (*s2))
-    s2++;
+  s2 = skip_spaces (s2);
   
   if (*s2 == '(')
     {
       s2++;
-      while (isspace (*s2))
-	s2++;
+      s2 = skip_spaces (s2);
       ncategory = s2;
       while (isalnum (*s2) || (*s2 == '_'))
 	s2++;
@@ -1090,15 +931,13 @@ parse_method (char *method, char *type, char **class,
   *s1++ = '\0';
   s2++;
 
-  while (isspace (*s2))
-    s2++;
+  s2 = skip_spaces (s2);
   if (found_quote)
     {
       if (*s2 != '\'') 
 	return NULL;
       s2++;
-      while (isspace (*s2))
-	s2++;
+      s2 = skip_spaces (s2);
     }
 
   if (type != NULL)
@@ -1151,13 +990,11 @@ find_methods (char type, const char *class, const char *category,
 
       ALL_OBJFILE_MSYMBOLS (objfile, msymbol)
 	{
-	  struct gdbarch *gdbarch = get_objfile_arch (objfile);
-
 	  QUIT;
 
 	  /* Check the symbol name first as this can be done entirely without
 	     sending any query to the target.  */
-	  symname = SYMBOL_NATURAL_NAME (msymbol);
+	  symname = MSYMBOL_NATURAL_NAME (msymbol);
 	  if (symname == NULL)
 	    continue;
 
@@ -1219,6 +1056,11 @@ uniquify_strings (VEC (const_char_ptr) **strings)
   const char *elem, *last = NULL;
   int out;
 
+  /* If the vector is empty, there's nothing to do.  This explicit
+     check is needed to avoid invoking qsort with NULL. */
+  if (VEC_empty (const_char_ptr, *strings))
+    return;
+
   qsort (VEC_address (const_char_ptr, *strings),
 	 VEC_length (const_char_ptr, *strings),
 	 sizeof (const_char_ptr),
@@ -1238,7 +1080,7 @@ uniquify_strings (VEC (const_char_ptr) **strings)
 }
 
 /* 
- * Function: find_imps (char *selector, struct symbol **sym_arr)
+ * Function: find_imps (const char *selector, struct symbol **sym_arr)
  *
  * Input:  a string representing a selector
  *         a pointer to an array of symbol pointers
@@ -1267,8 +1109,8 @@ uniquify_strings (VEC (const_char_ptr) **strings)
  *       be the index of the first non-debuggable one).
  */
 
-char *
-find_imps (char *method, VEC (const_char_ptr) **symbol_names)
+const char *
+find_imps (const char *method, VEC (const_char_ptr) **symbol_names)
 {
   char type = '\0';
   char *class = NULL;
@@ -1310,11 +1152,12 @@ find_imps (char *method, VEC (const_char_ptr) **symbol_names)
 		       SYMBOL_NATURAL_NAME (sym));
       else
 	{
-	  struct minimal_symbol *msym = lookup_minimal_symbol (selector, 0, 0);
+	  struct bound_minimal_symbol msym
+	    = lookup_minimal_symbol (selector, 0, 0);
 
-	  if (msym != NULL) 
+	  if (msym.minsym != NULL) 
 	    VEC_safe_push (const_char_ptr, *symbol_names,
-			   SYMBOL_NATURAL_NAME (msym));
+			   MSYMBOL_NATURAL_NAME (msym.minsym));
 	}
     }
 
@@ -1418,25 +1261,23 @@ find_objc_msgsend (void)
 
   for (i = 0; i < nmethcalls; i++)
     {
-      struct minimal_symbol *func;
+      struct bound_minimal_symbol func;
 
       /* Try both with and without underscore.  */
-      func = lookup_minimal_symbol (methcalls[i].name, NULL, NULL);
-      if ((func == NULL) && (methcalls[i].name[0] == '_'))
+      func = lookup_bound_minimal_symbol (methcalls[i].name);
+      if ((func.minsym == NULL) && (methcalls[i].name[0] == '_'))
 	{
-	  func = lookup_minimal_symbol (methcalls[i].name + 1, NULL, NULL);
+	  func = lookup_bound_minimal_symbol (methcalls[i].name + 1);
 	}
-      if (func == NULL)
+      if (func.minsym == NULL)
 	{ 
 	  methcalls[i].begin = 0;
 	  methcalls[i].end = 0;
 	  continue; 
 	}
 
-      methcalls[i].begin = SYMBOL_VALUE_ADDRESS (func);
-      do {
-	methcalls[i].end = SYMBOL_VALUE_ADDRESS (++func);
-      } while (methcalls[i].begin == methcalls[i].end);
+      methcalls[i].begin = BMSYMBOL_VALUE_ADDRESS (func);
+      methcalls[i].end = minimal_symbol_upper_bound (func);
     }
 }
 

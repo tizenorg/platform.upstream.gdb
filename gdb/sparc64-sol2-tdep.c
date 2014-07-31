@@ -1,6 +1,6 @@
 /* Target-dependent code for Solaris UltraSPARC.
 
-   Copyright (C) 2003-2004, 2006-2012 Free Software Foundation, Inc.
+   Copyright (C) 2003-2014 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -33,7 +33,7 @@
 #include "solib-svr4.h"
 
 /* From <sys/regset.h>.  */
-const struct sparc_gregset sparc64_sol2_gregset =
+const struct sparc_gregmap sparc64_sol2_gregmap =
 {
   32 * 8,			/* "tstate" */
   33 * 8,			/* %pc */
@@ -44,6 +44,12 @@ const struct sparc_gregset sparc64_sol2_gregset =
   1 * 8,			/* %g1 */
   16 * 8,			/* %l0 */
   8				/* sizeof (%y) */
+};
+
+const struct sparc_fpregmap sparc64_sol2_fpregmap =
+{
+  0 * 8,			/* %f0 */
+  33 * 8,			/* %fsr */
 };
 
 

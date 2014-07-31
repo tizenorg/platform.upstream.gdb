@@ -1,4 +1,4 @@
-/* Copyright (C) 2007-2012 Free Software Foundation, Inc.
+/* Copyright (C) 2007-2014 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -31,9 +31,11 @@
 #ifdef __x86_64__
 /* Defined in auto-generated file reg-amd64.c.  */
 void init_registers_amd64 (void);
+extern const struct target_desc *tdesc_amd64;
 #else
 /* Defined in auto-generated file reg-i386.c.  */
 void init_registers_i386 (void);
+extern const struct target_desc *tdesc_i386;
 #endif
 
 static struct i386_debug_reg_state debug_reg_state;
@@ -93,18 +95,36 @@ i386_dr_low_get_status (void)
   return debug_reg_state.dr_status_mirror;
 }
 
-/* Watchpoint support.  */
+/* Breakpoint/watchpoint support.  */
 
 static int
-i386_insert_point (char type, CORE_ADDR addr, int len)
+i386_supports_z_point_type (char z_type)
+{
+  switch (z_type)
+    {
+    case Z_PACKET_WRITE_WP:
+    case Z_PACKET_ACCESS_WP:
+      return 1;
+    default:
+      return 0;
+    }
+}
+
+static int
+i386_insert_point (enum raw_bkpt_type type, CORE_ADDR addr,
+		   int size, struct raw_breakpoint *bp)
 {
   switch (type)
     {
-    case '2':
-    case '3':
-    case '4':
-      return i386_low_insert_watchpoint (&debug_reg_state,
-					 type, addr, len);
+    case raw_bkpt_type_write_wp:
+    case raw_bkpt_type_access_wp:
+      {
+	enum target_hw_bp_type hw_type
+	  = raw_bkpt_type_to_target_hw_bp_type (type);
+
+	return i386_low_insert_watchpoint (&debug_reg_state,
+					   hw_type, addr, size);
+      }
     default:
       /* Unsupported.  */
       return 1;
@@ -112,15 +132,20 @@ i386_insert_point (char type, CORE_ADDR addr, int len)
 }
 
 static int
-i386_remove_point (char type, CORE_ADDR addr, int len)
+i386_remove_point (enum raw_bkpt_type type, CORE_ADDR addr,
+		   int size, struct raw_breakpoint *bp)
 {
   switch (type)
     {
-    case '2':
-    case '3':
-    case '4':
-      return i386_low_remove_watchpoint (&debug_reg_state,
-					 type, addr, len);
+    case raw_bkpt_type_write_wp:
+    case raw_bkpt_type_access_wp:
+      {
+	enum target_hw_bp_type hw_type
+	  = raw_bkpt_type_to_target_hw_bp_type (type);
+
+	return i386_low_remove_watchpoint (&debug_reg_state,
+					   hw_type, addr, size);
+      }
     default:
       /* Unsupported.  */
       return 1;
@@ -399,17 +424,19 @@ static const unsigned char i386_win32_breakpoint = 0xcc;
 #define i386_win32_breakpoint_len 1
 
 static void
-init_windows_x86 (void)
+i386_arch_setup (void)
 {
 #ifdef __x86_64__
   init_registers_amd64 ();
+  win32_tdesc = tdesc_amd64;
 #else
   init_registers_i386 ();
+  win32_tdesc = tdesc_i386;
 #endif
 }
 
 struct win32_target_ops the_low_target = {
-  init_windows_x86,
+  i386_arch_setup,
   sizeof (mappings) / sizeof (mappings[0]),
   i386_initial_stuff,
   i386_get_thread_context,
@@ -420,6 +447,7 @@ struct win32_target_ops the_low_target = {
   i386_single_step,
   &i386_win32_breakpoint,
   i386_win32_breakpoint_len,
+  i386_supports_z_point_type,
   i386_insert_point,
   i386_remove_point,
   i386_stopped_by_watchpoint,

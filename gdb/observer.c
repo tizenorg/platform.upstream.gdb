@@ -1,6 +1,6 @@
 /* GDB Notifications to Observers.
 
-   Copyright (C) 2003-2004, 2007-2012 Free Software Foundation, Inc.
+   Copyright (C) 2003-2014 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -54,7 +54,7 @@
 #include "command.h"
 #include "gdbcmd.h"
 
-static int observer_debug;
+static unsigned int observer_debug;
 static void
 show_observer_debug (struct ui_file *file, int from_tty,
 		     struct cmd_list_element *c, const char *value)
@@ -89,9 +89,9 @@ struct observer_list
 static struct observer_list *
 xalloc_observer_list_node (void)
 {
-  struct observer_list *node = XMALLOC (struct observer_list);
+  struct observer_list *node = XNEW (struct observer_list);
 
-  node->observer = XMALLOC (struct observer);
+  node->observer = XNEW (struct observer);
   return node;
 }
 
@@ -209,14 +209,14 @@ extern initialize_file_ftype _initialize_observer; /* -Wmissing-prototypes */
 void
 _initialize_observer (void)
 {
-  add_setshow_zinteger_cmd ("observer", class_maintenance,
-			    &observer_debug, _("\
+  add_setshow_zuinteger_cmd ("observer", class_maintenance,
+			     &observer_debug, _("\
 Set observer debugging."), _("\
 Show observer debugging."), _("\
 When non-zero, observer debugging is enabled."),
-			    NULL,
-			    show_observer_debug,
-			    &setdebuglist, &showdebuglist);
+			     NULL,
+			     show_observer_debug,
+			     &setdebuglist, &showdebuglist);
 }
 
 #include "observer.inc"

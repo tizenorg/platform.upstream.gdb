@@ -1,6 +1,6 @@
 /* BSD Kernel Data Access Library (libkvm) interface.
 
-   Copyright (C) 2004-2005, 2007-2012 Free Software Foundation, Inc.
+   Copyright (C) 2004-2014 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -101,11 +101,11 @@ bsd_kvm_open (char *filename, int from_tty)
   target_fetch_registers (get_current_regcache (), -1);
 
   reinit_frame_cache ();
-  print_stack_frame (get_selected_frame (NULL), -1, 1);
+  print_stack_frame (get_selected_frame (NULL), 0, SRC_AND_LOC, 1);
 }
 
 static void
-bsd_kvm_close (int quitting)
+bsd_kvm_close (struct target_ops *self)
 {
   if (core_kd)
     {
@@ -131,19 +131,31 @@ bsd_kvm_xfer_memory (CORE_ADDR addr, ULONGEST len,
   return nbytes;
 }
 
-static LONGEST
+static enum target_xfer_status
 bsd_kvm_xfer_partial (struct target_ops *ops, enum target_object object,
 		      const char *annex, gdb_byte *readbuf,
 		      const gdb_byte *writebuf,
-		      ULONGEST offset, LONGEST len)
+		      ULONGEST offset, ULONGEST len, ULONGEST *xfered_len)
 {
   switch (object)
     {
     case TARGET_OBJECT_MEMORY:
-      return bsd_kvm_xfer_memory (offset, len, readbuf, writebuf);
+      {
+	LONGEST ret = bsd_kvm_xfer_memory (offset, len, readbuf, writebuf);
+
+	if (ret < 0)
+	  return TARGET_XFER_E_IO;
+	else if (ret == 0)
+	  return TARGET_XFER_EOF;
+	else
+	  {
+	    *xfered_len = (ULONGEST) ret;
+	    return TARGET_XFER_OK;
+	  }
+      }
 
     default:
-      return -1;
+      return TARGET_XFER_E_IO;
     }
 }
 
@@ -287,7 +299,7 @@ bsd_kvm_proc_cmd (char *arg, int fromtty)
   target_fetch_registers (get_current_regcache (), -1);
 
   reinit_frame_cache ();
-  print_stack_frame (get_selected_frame (NULL), -1, 1);
+  print_stack_frame (get_selected_frame (NULL), 0, SRC_AND_LOC, 1);
 }
 
 #endif
@@ -307,7 +319,7 @@ bsd_kvm_pcb_cmd (char *arg, int fromtty)
   target_fetch_registers (get_current_regcache (), -1);
 
   reinit_frame_cache ();
-  print_stack_frame (get_selected_frame (NULL), -1, 1);
+  print_stack_frame (get_selected_frame (NULL), 0, SRC_AND_LOC, 1);
 }
 
 static int

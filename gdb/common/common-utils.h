@@ -1,6 +1,6 @@
 /* Shared general utility routines for GDB, the GNU debugger.
 
-   Copyright (C) 1986, 1988-2012 Free Software Foundation, Inc.
+   Copyright (C) 1986-2014 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -25,6 +25,24 @@
 #include <stddef.h>
 #include <stdarg.h>
 
+/* If possible, define FUNCTION_NAME, a macro containing the name of
+   the function being defined.  Since this macro may not always be
+   defined, all uses must be protected by appropriate macro definition
+   checks (Eg: "#ifdef FUNCTION_NAME").
+
+   Version 2.4 and later of GCC define a magical variable `__PRETTY_FUNCTION__'
+   which contains the name of the function currently being defined.
+   This is broken in G++ before version 2.6.
+   C9x has a similar variable called __func__, but prefer the GCC one since
+   it demangles C++ function names.  */
+#if (GCC_VERSION >= 2004)
+#define FUNCTION_NAME		__PRETTY_FUNCTION__
+#else
+#if defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L
+#define FUNCTION_NAME		__func__  /* ARI: func */
+#endif
+#endif
+
 extern void malloc_failure (long size) ATTRIBUTE_NORETURN;
 extern void internal_error (const char *file, int line, const char *, ...)
      ATTRIBUTE_NORETURN ATTRIBUTE_PRINTF (3, 4);
@@ -43,15 +61,14 @@ char *xstrprintf (const char *format, ...) ATTRIBUTE_PRINTF (1, 2);
 char *xstrvprintf (const char *format, va_list ap)
      ATTRIBUTE_PRINTF (1, 0);
 
-/* Like asprintf/vasprintf but get an internal_error if the call
-   fails.  */
-void xasprintf (char **ret, const char *format, ...)
-     ATTRIBUTE_PRINTF (2, 3);
-void xvasprintf (char **ret, const char *format, va_list ap)
-     ATTRIBUTE_PRINTF (2, 0);
-
 /* Like snprintf, but throw an error if the output buffer is too small.  */
 int xsnprintf (char *str, size_t size, const char *format, ...)
      ATTRIBUTE_PRINTF (3, 4);
+
+/* Make a copy of the string at PTR with LEN characters
+   (and add a null character at the end in the copy).
+   Uses malloc to get the space.  Returns the address of the copy.  */
+
+char *savestring (const char *ptr, size_t len);
 
 #endif

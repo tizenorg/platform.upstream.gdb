@@ -8,6 +8,8 @@
 /f-exp.c
 /gdb
 /gdbtui
+/gcore
+/go-exp.c
 /init.c
 /jit-reader.h
 /jv-exp.c

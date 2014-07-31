@@ -1,6 +1,5 @@
 /* Matsushita 10300 specific support for 32-bit ELF
-   Copyright 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
-   2006, 2007, 2008, 2009, 2010, 2011, 2012 Free Software Foundation, Inc.
+   Copyright (C) 1996-2014 Free Software Foundation, Inc.
 
    This file is part of BFD, the Binary File Descriptor library.
 
@@ -604,7 +603,7 @@ static reloc_howto_type elf_mn10300_howto_table[] =
 	 0xffffffff,		/* src_mask */
 	 0xffffffff,		/* dst_mask */
 	 FALSE),		/* pcrel_offset */
-  
+
   HOWTO (R_MN10300_SYM_DIFF,	/* type */
 	 0,			/* rightshift */
 	 2,			/* size (0 = byte, 1 = short, 2 = long) */
@@ -1084,6 +1083,10 @@ mn10300_elf_check_relocs (bfd *abfd,
 	  while (h->root.type == bfd_link_hash_indirect
 		 || h->root.type == bfd_link_hash_warning)
 	    h = (struct elf_link_hash_entry *) h->root.u.i.link;
+
+	  /* PR15323, ref flags aren't set for references in the same
+	     object.  */
+	  h->root.non_ir_ref = 1;
 	}
 
       r_type = ELF32_R_TYPE (rel->r_info);
@@ -1147,7 +1150,7 @@ mn10300_elf_check_relocs (bfd *abfd,
 	  if (info->shared)
 	    info->flags |= DF_STATIC_TLS;
 	  /* Fall through */
-	  
+
 	case R_MN10300_TLS_GD:
 	case R_MN10300_GOT32:
 	case R_MN10300_GOT24:
@@ -2007,7 +2010,7 @@ mn10300_elf_relocate_section (bfd *output_bfd,
       bfd_reloc_status_type r;
       int tls_r_type;
       bfd_boolean unresolved_reloc = FALSE;
-      bfd_boolean warned;
+      bfd_boolean warned, ignored;
       struct elf_link_hash_entry * hh;
 
       relocation = 0;
@@ -2030,7 +2033,7 @@ mn10300_elf_relocate_section (bfd *output_bfd,
 	  RELOC_FOR_GLOBAL_SYMBOL (info, input_bfd, input_section, rel,
 				   r_symndx, symtab_hdr, sym_hashes,
 				   hh, sec, relocation,
-				   unresolved_reloc, warned);
+				   unresolved_reloc, warned, ignored);
 	}
       h = elf_mn10300_hash_entry (hh);
 
@@ -2425,7 +2428,7 @@ mn10300_elf_relax_delete_bytes (bfd *abfd,
 	 serve to keep the section artifically inflated.  */
       if (ELF32_R_TYPE ((irelend - 1)->r_info) == (int) R_MN10300_ALIGN)
 	--irelend;
-      
+
       /* The deletion must stop at the next ALIGN reloc for an aligment
 	 power larger than, or not a multiple of, the number of bytes we
 	 are deleting.  */
@@ -4603,7 +4606,7 @@ elf32_mn10300_link_hash_table_create (bfd *abfd)
   struct elf32_mn10300_link_hash_table *ret;
   bfd_size_type amt = sizeof (* ret);
 
-  ret = bfd_malloc (amt);
+  ret = bfd_zmalloc (amt);
   if (ret == NULL)
     return NULL;
 
@@ -4616,14 +4619,10 @@ elf32_mn10300_link_hash_table_create (bfd *abfd)
       return NULL;
     }
 
-  ret->flags = 0;
-  ret->tls_ldm_got.refcount = 0;
   ret->tls_ldm_got.offset = -1;
-  ret->tls_ldm_got.got_allocated = 0;
-  ret->tls_ldm_got.rel_emitted = 0;
 
   amt = sizeof (struct elf_link_hash_table);
-  ret->static_hash_table = bfd_malloc (amt);
+  ret->static_hash_table = bfd_zmalloc (amt);
   if (ret->static_hash_table == NULL)
     {
       free (ret);
@@ -4650,9 +4649,9 @@ elf32_mn10300_link_hash_table_free (struct bfd_link_hash_table *hash)
   struct elf32_mn10300_link_hash_table *ret
     = (struct elf32_mn10300_link_hash_table *) hash;
 
-  _bfd_generic_link_hash_table_free
+  _bfd_elf_link_hash_table_free
     ((struct bfd_link_hash_table *) ret->static_hash_table);
-  _bfd_generic_link_hash_table_free
+  _bfd_elf_link_hash_table_free
     ((struct bfd_link_hash_table *) ret);
 }
 
@@ -5395,7 +5394,7 @@ _bfd_mn10300_elf_finish_dynamic_symbol (bfd * output_bfd,
     }
 
   /* Mark _DYNAMIC and _GLOBAL_OFFSET_TABLE_ as absolute.  */
-  if (streq (h->root.root.string, "_DYNAMIC")
+  if (h == elf_hash_table (info)->hdynamic
       || h == elf_hash_table (info)->hgot)
     sym->st_shndx = SHN_ABS;
 
@@ -5536,7 +5535,9 @@ _bfd_mn10300_elf_finish_dynamic_sections (bfd * output_bfd,
    properly.  */
 
 static enum elf_reloc_type_class
-_bfd_mn10300_elf_reloc_type_class (const Elf_Internal_Rela *rela)
+_bfd_mn10300_elf_reloc_type_class (const struct bfd_link_info *info ATTRIBUTE_UNUSED,
+				   const asection *rel_sec ATTRIBUTE_UNUSED,
+				   const Elf_Internal_Rela *rela)
 {
   switch ((int) ELF32_R_TYPE (rela->r_info))
     {
@@ -5559,7 +5560,7 @@ mn10300_elf_mkobject (bfd *abfd)
 #define bfd_elf32_mkobject	mn10300_elf_mkobject
 
 #ifndef ELF_ARCH
-#define TARGET_LITTLE_SYM	bfd_elf32_mn10300_vec
+#define TARGET_LITTLE_SYM	mn10300_elf32_vec
 #define TARGET_LITTLE_NAME	"elf32-mn10300"
 #define ELF_ARCH		bfd_arch_mn10300
 #define ELF_TARGET_ID		MN10300_ELF_DATA

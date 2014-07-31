@@ -1,6 +1,6 @@
 /* Exception (throw catch) mechanism, for GDB, the GNU debugger.
 
-   Copyright (C) 1986, 1988-2012 Free Software Foundation, Inc.
+   Copyright (C) 1986-2014 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -25,7 +25,7 @@
 #include "annotate.h"
 #include "ui-out.h"
 #include "gdb_assert.h"
-#include "gdb_string.h"
+#include <string.h>
 #include "serial.h"
 #include "gdbthread.h"
 
@@ -86,7 +86,7 @@ EXCEPTIONS_SIGJMP_BUF *
 exceptions_state_mc_init (volatile struct gdb_exception *exception,
 			  return_mask mask)
 {
-  struct catcher *new_catcher = XZALLOC (struct catcher);
+  struct catcher *new_catcher = XCNEW (struct catcher);
 
   /* Start with no exception, save it's address.  */
   exception->reason = 0;
@@ -221,7 +221,7 @@ exceptions_state_mc_action_iter_1 (void)
 void
 throw_exception (struct gdb_exception exception)
 {
-  quit_flag = 0;
+  clear_quit_flag ();
   immediate_quit = 0;
 
   do_cleanups (all_cleanups ());
@@ -232,28 +232,6 @@ throw_exception (struct gdb_exception exception)
   exceptions_state_mc (CATCH_THROWING);
   *current_catcher->exception = exception;
   EXCEPTIONS_SIGLONGJMP (current_catcher->buf, exception.reason);
-}
-
-void
-deprecated_throw_reason (enum return_reason reason)
-{
-  struct gdb_exception exception;
-
-  memset (&exception, 0, sizeof exception);
-
-  exception.reason = reason;
-  switch (reason)
-    {
-    case RETURN_QUIT:
-      break;
-    case RETURN_ERROR:
-      exception.error = GENERIC_ERROR;
-      break;
-    default:
-      internal_error (__FILE__, __LINE__, _("bad switch"));
-    }
-  
-  throw_exception (exception);
 }
 
 static void
@@ -349,24 +327,6 @@ exception_fprintf (struct ui_file *file, struct gdb_exception e,
       vfprintf_filtered (file, prefix, args);
       va_end (args);
 
-      print_exception (file, e);
-    }
-}
-
-static void
-print_any_exception (struct ui_file *file, const char *prefix,
-		     struct gdb_exception e)
-{
-  if (e.reason < 0 && e.message != NULL)
-    {
-      target_terminal_ours ();
-      wrap_here ("");		/* Force out any buffered output.  */
-      gdb_flush (gdb_stdout);
-      annotate_error_begin ();
-
-      /* Print the prefix.  */
-      if (prefix != NULL && prefix[0] != '\0')
-	fputs_filtered (prefix, file);
       print_exception (file, e);
     }
 }
@@ -508,7 +468,7 @@ catch_exceptions_with_msg (struct ui_out *func_uiout,
       throw_exception (exception);
     }
 
-  print_any_exception (gdb_stderr, NULL, exception);
+  exception_print (gdb_stderr, exception);
   gdb_assert (val >= 0);
   gdb_assert (exception.reason <= 0);
   if (exception.reason < 0)
@@ -556,24 +516,8 @@ catch_errors (catch_errors_ftype *func, void *func_args, char *errstring,
       throw_exception (exception);
     }
 
-  print_any_exception (gdb_stderr, errstring, exception);
+  exception_fprintf (gdb_stderr, exception, "%s", errstring);
   if (exception.reason != 0)
     return 0;
   return val;
-}
-
-int
-catch_command_errors (catch_command_errors_ftype * command,
-		      char *arg, int from_tty, return_mask mask)
-{
-  volatile struct gdb_exception e;
-
-  TRY_CATCH (e, mask)
-    {
-      command (arg, from_tty);
-    }
-  print_any_exception (gdb_stderr, NULL, e);
-  if (e.reason < 0)
-    return 0;
-  return 1;
 }

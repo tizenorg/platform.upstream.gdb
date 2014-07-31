@@ -1,7 +1,6 @@
 /* Target-machine dependent code for Renesas H8/300, for GDB.
 
-   Copyright (C) 1988, 1990-1996, 1998-2003, 2005, 2007-2012 Free
-   Software Foundation, Inc.
+   Copyright (C) 1988-2014 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -666,13 +665,15 @@ h8300_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
 
   for (argument = 0; argument < nargs; argument++)
     {
+      struct cleanup *back_to;
       struct type *type = value_type (args[argument]);
       int len = TYPE_LENGTH (type);
       char *contents = (char *) value_contents (args[argument]);
 
       /* Pad the argument appropriately.  */
       int padded_len = align_up (len, wordsize);
-      gdb_byte *padded = alloca (padded_len);
+      gdb_byte *padded = xmalloc (padded_len);
+      back_to = make_cleanup (xfree, padded);
 
       memset (padded, 0, padded_len);
       memcpy (len < wordsize ? padded + padded_len - len : padded,
@@ -720,6 +721,8 @@ h8300_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
 	     subsequent arguments go on the stack.  */
 	  reg = E_ARGLAST_REGNUM + 1;
 	}
+
+      do_cleanups (back_to);
     }
 
   /* Store return address.  */
@@ -781,16 +784,15 @@ h8300h_extract_return_value (struct type *type, struct regcache *regcache,
 {
   struct gdbarch *gdbarch = get_regcache_arch (regcache);
   enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
-  int len = TYPE_LENGTH (type);
   ULONGEST c;
 
-  switch (len)
+  switch (TYPE_LENGTH (type))
     {
     case 1:
     case 2:
     case 4:
       regcache_cooked_read_unsigned (regcache, E_RET0_REGNUM, &c);
-      store_unsigned_integer (valbuf, len, byte_order, c);
+      store_unsigned_integer (valbuf, TYPE_LENGTH (type), byte_order, c);
       break;
     case 8:			/* long long is now 8 bytes.  */
       if (TYPE_CODE (type) == TYPE_CODE_INT)
@@ -848,18 +850,17 @@ h8300_store_return_value (struct type *type, struct regcache *regcache,
 {
   struct gdbarch *gdbarch = get_regcache_arch (regcache);
   enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
-  int len = TYPE_LENGTH (type);
   ULONGEST val;
 
-  switch (len)
+  switch (TYPE_LENGTH (type))
     {
     case 1:
     case 2:			/* short...  */
-      val = extract_unsigned_integer (valbuf, len, byte_order);
+      val = extract_unsigned_integer (valbuf, TYPE_LENGTH (type), byte_order);
       regcache_cooked_write_unsigned (regcache, E_RET0_REGNUM, val);
       break;
     case 4:			/* long, float */
-      val = extract_unsigned_integer (valbuf, len, byte_order);
+      val = extract_unsigned_integer (valbuf, TYPE_LENGTH (type), byte_order);
       regcache_cooked_write_unsigned (regcache, E_RET0_REGNUM,
 				      (val >> 16) & 0xffff);
       regcache_cooked_write_unsigned (regcache, E_RET1_REGNUM, val & 0xffff);
@@ -878,19 +879,18 @@ h8300h_store_return_value (struct type *type, struct regcache *regcache,
 {
   struct gdbarch *gdbarch = get_regcache_arch (regcache);
   enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
-  int len = TYPE_LENGTH (type);
   ULONGEST val;
 
-  switch (len)
+  switch (TYPE_LENGTH (type))
     {
     case 1:
     case 2:
     case 4:			/* long, float */
-      val = extract_unsigned_integer (valbuf, len, byte_order);
+      val = extract_unsigned_integer (valbuf, TYPE_LENGTH (type), byte_order);
       regcache_cooked_write_unsigned (regcache, E_RET0_REGNUM, val);
       break;
     case 8:
-      val = extract_unsigned_integer (valbuf, len, byte_order);
+      val = extract_unsigned_integer (valbuf, TYPE_LENGTH (type), byte_order);
       regcache_cooked_write_unsigned (regcache, E_RET0_REGNUM,
 				      (val >> 32) & 0xffffffff);
       regcache_cooked_write_unsigned (regcache, E_RET1_REGNUM,
@@ -937,7 +937,21 @@ h8300h_return_value (struct gdbarch *gdbarch, struct value *function,
   return RETURN_VALUE_REGISTER_CONVENTION;
 }
 
-static struct cmd_list_element *setmachinelist;
+/* Implementation of 'register_sim_regno' gdbarch method.  */
+
+static int
+h8300_register_sim_regno (struct gdbarch *gdbarch, int regnum)
+{
+  /* Only makes sense to supply raw registers.  */
+  gdb_assert (regnum >= 0 && regnum < gdbarch_num_regs (gdbarch));
+
+  /* We hide the raw ccr from the user by making it nameless.  Because
+     the default register_sim_regno hook returns
+     LEGACY_SIM_REGNO_IGNORE for unnamed registers, we need to
+     override it.  The sim register numbering is compatible with
+     gdb's.  */
+  return regnum;
+}
 
 static const char *
 h8300_register_name (struct gdbarch *gdbarch, int regno)
@@ -1148,15 +1162,55 @@ h8300_register_type (struct gdbarch *gdbarch, int regno)
     }
 }
 
+/* Helpers for h8300_pseudo_register_read.  We expose ccr/exr as
+   pseudo-registers to users with smaller sizes than the corresponding
+   raw registers.  These helpers extend/narrow the values.  */
+
+static enum register_status
+pseudo_from_raw_register (struct gdbarch *gdbarch, struct regcache *regcache,
+			  gdb_byte *buf, int pseudo_regno, int raw_regno)
+{
+  enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
+  enum register_status status;
+  ULONGEST val;
+
+  status = regcache_raw_read_unsigned (regcache, raw_regno, &val);
+  if (status == REG_VALID)
+    store_unsigned_integer (buf,
+			    register_size (gdbarch, pseudo_regno),
+			    byte_order, val);
+  return status;
+}
+
+/* See pseudo_from_raw_register.  */
+
+static void
+raw_from_pseudo_register (struct gdbarch *gdbarch, struct regcache *regcache,
+			  const gdb_byte *buf, int raw_regno, int pseudo_regno)
+{
+  enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
+  ULONGEST val;
+
+  val = extract_unsigned_integer (buf, register_size (gdbarch, pseudo_regno),
+				  byte_order);
+  regcache_raw_write_unsigned (regcache, raw_regno, val);
+}
+
 static enum register_status
 h8300_pseudo_register_read (struct gdbarch *gdbarch,
 			    struct regcache *regcache, int regno,
 			    gdb_byte *buf)
 {
   if (regno == E_PSEUDO_CCR_REGNUM (gdbarch))
-    return regcache_raw_read (regcache, E_CCR_REGNUM, buf);
+    {
+      return pseudo_from_raw_register (gdbarch, regcache, buf,
+				       regno, E_CCR_REGNUM);
+    }
   else if (regno == E_PSEUDO_EXR_REGNUM (gdbarch))
-    return regcache_raw_read (regcache, E_EXR_REGNUM, buf);
+    {
+      return pseudo_from_raw_register (gdbarch, regcache, buf,
+				       regno, E_EXR_REGNUM);
+    }
   else
     return regcache_raw_read (regcache, regno, buf);
 }
@@ -1167,9 +1221,9 @@ h8300_pseudo_register_write (struct gdbarch *gdbarch,
 			     const gdb_byte *buf)
 {
   if (regno == E_PSEUDO_CCR_REGNUM (gdbarch))
-    regcache_raw_write (regcache, E_CCR_REGNUM, buf);
+    raw_from_pseudo_register (gdbarch, regcache, buf, E_CCR_REGNUM, regno);
   else if (regno == E_PSEUDO_EXR_REGNUM (gdbarch))
-    regcache_raw_write (regcache, E_EXR_REGNUM, buf);
+    raw_from_pseudo_register (gdbarch, regcache, buf, E_EXR_REGNUM, regno);
   else
     regcache_raw_write (regcache, regno, buf);
 }
@@ -1192,7 +1246,7 @@ h8300s_dbg_reg_to_regnum (struct gdbarch *gdbarch, int regno)
   return regno;
 }
 
-const static unsigned char *
+static const unsigned char *
 h8300_breakpoint_from_pc (struct gdbarch *gdbarch, CORE_ADDR *pcptr,
 			  int *lenptr)
 {
@@ -1229,6 +1283,8 @@ h8300_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
     return NULL;
 
   gdbarch = gdbarch_alloc (&info, 0);
+
+  set_gdbarch_register_sim_regno (gdbarch, h8300_register_sim_regno);
 
   switch (info.bfd_arch_info->mach)
     {
@@ -1347,7 +1403,9 @@ h8300_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
   set_gdbarch_long_bit (gdbarch, 4 * TARGET_CHAR_BIT);
   set_gdbarch_long_long_bit (gdbarch, 8 * TARGET_CHAR_BIT);
   set_gdbarch_double_bit (gdbarch, 4 * TARGET_CHAR_BIT);
+  set_gdbarch_double_format (gdbarch, floatformats_ieee_single);
   set_gdbarch_long_double_bit (gdbarch, 4 * TARGET_CHAR_BIT);
+  set_gdbarch_long_double_format (gdbarch, floatformats_ieee_single);
 
   set_gdbarch_believe_pcc_promotion (gdbarch, 1);
 

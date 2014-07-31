@@ -1,6 +1,5 @@
 /* Common things used by the various darwin files
-   Copyright (C) 1995-1997, 1999-2000, 2007-2012 Free Software
-   Foundation, Inc.
+   Copyright (C) 1995-2014 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,14 +12,13 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #ifndef __DARWIN_NAT_H__
 #define __DARWIN_NAT_H__
 
 #include <mach/mach.h>
-#include "gdb_assert.h"
+#include "common-utils.h" /* For FUNCTION_NAME.  */
 
 /* Describe the mach exception handling state for a task.  This state is saved
    before being changed and restored when a process is detached.
@@ -138,10 +136,10 @@ extern mach_port_t darwin_port_set;
 /* A copy of mach_host_self ().  */
 extern mach_port_t darwin_host_self;
 
-/* ASSERT_FUNCTION is defined in gdb_assert.h (or not).  */
-#ifdef ASSERT_FUNCTION
+/* FUNCTION_NAME is defined in common-utils.h (or not).  */
+#ifdef FUNCTION_NAME
 #define MACH_CHECK_ERROR(ret) \
-  mach_check_error (ret, __FILE__, __LINE__, ASSERT_FUNCTION)
+  mach_check_error (ret, __FILE__, __LINE__, FUNCTION_NAME)
 #else
 #define MACH_CHECK_ERROR(ret) \
   mach_check_error (ret, __FILE__, __LINE__, "??")

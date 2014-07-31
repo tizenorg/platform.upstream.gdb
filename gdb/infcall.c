@@ -1,6 +1,6 @@
 /* Perform an inferior function call, for GDB, the GNU debugger.
 
-   Copyright (C) 1986-2012 Free Software Foundation, Inc.
+   Copyright (C) 1986-2014 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -23,6 +23,7 @@
 #include "target.h"
 #include "regcache.h"
 #include "inferior.h"
+#include "infrun.h"
 #include "gdb_assert.h"
 #include "block.h"
 #include "gdbcore.h"
@@ -30,12 +31,13 @@
 #include "objfiles.h"
 #include "gdbcmd.h"
 #include "command.h"
-#include "gdb_string.h"
+#include <string.h>
 #include "infcall.h"
 #include "dummy-frame.h"
 #include "ada-lang.h"
 #include "gdbthread.h"
 #include "exceptions.h"
+#include "event-top.h"
 
 /* If we can't find a function's name from its address,
    we print this instead.  */
@@ -213,7 +215,6 @@ value_arg_coerce (struct gdbarch *gdbarch, struct value *arg,
     case TYPE_CODE_SET:
     case TYPE_CODE_RANGE:
     case TYPE_CODE_STRING:
-    case TYPE_CODE_BITSTRING:
     case TYPE_CODE_ERROR:
     case TYPE_CODE_MEMBERPTR:
     case TYPE_CODE_METHODPTR:
@@ -356,10 +357,10 @@ get_function_name (CORE_ADDR funaddr, char *buf, int buf_size)
 
   {
     /* Try the minimal symbols.  */
-    struct minimal_symbol *msymbol = lookup_minimal_symbol_by_pc (funaddr);
+    struct bound_minimal_symbol msymbol = lookup_minimal_symbol_by_pc (funaddr);
 
-    if (msymbol)
-      return SYMBOL_PRINT_NAME (msymbol);
+    if (msymbol.minsym)
+      return MSYMBOL_PRINT_NAME (msymbol.minsym);
   }
 
   {
@@ -387,6 +388,11 @@ run_inferior_call (struct thread_info *call_thread, CORE_ADDR real_pc)
   volatile struct gdb_exception e;
   int saved_in_infcall = call_thread->control.in_infcall;
   ptid_t call_thread_ptid = call_thread->ptid;
+  int saved_sync_execution = sync_execution;
+
+  /* Infcalls run synchronously, in the foreground.  */
+  if (target_can_async_p ())
+    sync_execution = 1;
 
   call_thread->control.in_infcall = 1;
 
@@ -399,15 +405,24 @@ run_inferior_call (struct thread_info *call_thread, CORE_ADDR real_pc)
 
   TRY_CATCH (e, RETURN_MASK_ALL)
     {
+      int was_sync = sync_execution;
+
       proceed (real_pc, GDB_SIGNAL_0, 0);
 
       /* Inferior function calls are always synchronous, even if the
 	 target supports asynchronous execution.  Do here what
 	 `proceed' itself does in sync mode.  */
-      if (target_can_async_p () && is_running (inferior_ptid))
+      if (target_can_async_p ())
 	{
 	  wait_for_inferior ();
 	  normal_stop ();
+	  /* If GDB was previously in sync execution mode, then ensure
+	     that it remains so.  normal_stop calls
+	     async_enable_stdin, so reset it again here.  In other
+	     cases, stdin will be re-enabled by
+	     inferior_event_handler, when an exception is thrown.  */
+	  if (was_sync)
+	    async_disable_stdin ();
 	}
     }
 
@@ -430,6 +445,8 @@ run_inferior_call (struct thread_info *call_thread, CORE_ADDR real_pc)
 
   if (call_thread != NULL)
     call_thread->control.in_infcall = saved_in_infcall;
+
+  sync_execution = saved_sync_execution;
 
   return e;
 }
@@ -709,13 +726,11 @@ call_function_by_hand (struct value *function, int nargs, struct value **args)
 
   if (struct_return || hidden_first_param_p)
     {
-      int len = TYPE_LENGTH (values_type);
-
       if (gdbarch_inner_than (gdbarch, 1, 2))
 	{
 	  /* Stack grows downward.  Align STRUCT_ADDR and SP after
              making space for the return value.  */
-	  sp -= len;
+	  sp -= TYPE_LENGTH (values_type);
 	  if (gdbarch_frame_align_p (gdbarch))
 	    sp = gdbarch_frame_align (gdbarch, sp);
 	  struct_addr = sp;
@@ -727,7 +742,7 @@ call_function_by_hand (struct value *function, int nargs, struct value **args)
 	  if (gdbarch_frame_align_p (gdbarch))
 	    sp = gdbarch_frame_align (gdbarch, sp);
 	  struct_addr = sp;
-	  sp += len;
+	  sp += TYPE_LENGTH (values_type);
 	  if (gdbarch_frame_align_p (gdbarch))
 	    sp = gdbarch_frame_align (gdbarch, sp);
 	}

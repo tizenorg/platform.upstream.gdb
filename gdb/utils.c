@@ -1,6 +1,6 @@
 /* General utility routines for GDB, the GNU debugger.
 
-   Copyright (C) 1986, 1988-2012 Free Software Foundation, Inc.
+   Copyright (C) 1986-2014 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -21,12 +21,13 @@
 #include "dyn-string.h"
 #include "gdb_assert.h"
 #include <ctype.h>
-#include "gdb_string.h"
+#include <string.h>
 #include "gdb_wait.h"
 #include "event-top.h"
 #include "exceptions.h"
 #include "gdbthread.h"
 #include "fnmatch.h"
+#include "gdb_bfd.h"
 #ifdef HAVE_SYS_RESOURCE_H
 #include <sys/resource.h>
 #endif /* HAVE_SYS_RESOURCE_H */
@@ -37,11 +38,6 @@
 
 #ifdef __GO32__
 #include <pc.h>
-#endif
-
-/* SunOS's curses.h has a '#define reg register' in it.  Thank you Sun.  */
-#ifdef reg
-#undef reg
 #endif
 
 #include <signal.h>
@@ -65,8 +61,6 @@
 
 #include "inferior.h"		/* for signed_pointer_to_address */
 
-#include <sys/param.h>		/* For MAXPATHLEN */
-
 #include "gdb_curses.h"
 
 #include "readline/readline.h"
@@ -88,9 +82,6 @@ extern PTR realloc ();		/* ARI: PTR */
 extern void free ();
 #endif
 
-/* readline defines this.  */
-#undef savestring
-
 void (*deprecated_error_begin_hook) (void);
 
 /* Prototypes for local functions */
@@ -105,6 +96,14 @@ static void prompt_for_continue (void);
 static void set_screen_size (void);
 static void set_width (void);
 
+/* Time spent in prompt_for_continue in the currently executing command
+   waiting for user to respond.
+   Initialized in make_command_stats_cleanup.
+   Modified in prompt_for_continue and defaulted_query.
+   Used in report_command_stats.  */
+
+static struct timeval prompt_for_continue_wait_time;
+
 /* A flag indicating whether to timestamp debugging messages.  */
 
 static int debug_timestamp = 0;
@@ -112,10 +111,6 @@ static int debug_timestamp = 0;
 /* Nonzero if we have job control.  */
 
 int job_control;
-
-/* Nonzero means a quit has been requested.  */
-
-int quit_flag;
 
 /* Nonzero means quit immediately if Control-C is typed now, rather
    than waiting until QUIT is executed.  Be careful in setting this;
@@ -143,14 +138,6 @@ show_sevenbit_strings (struct ui_file *file, int from_tty,
 			    "in strings as \\nnn is %s.\n"),
 		    value);
 }
-
-/* String to be printed before error messages, if any.  */
-
-char *error_pre_print;
-
-/* String to be printed before quit messages, if any.  */
-
-char *quit_pre_print;
 
 /* String to be printed before warning messages, if any.  */
 
@@ -198,11 +185,11 @@ make_cleanup_dyn_string_delete (dyn_string_t arg)
 static void
 do_bfd_close_cleanup (void *arg)
 {
-  bfd_close (arg);
+  gdb_bfd_unref (arg);
 }
 
 struct cleanup *
-make_cleanup_bfd_close (bfd *abfd)
+make_cleanup_bfd_unref (bfd *abfd)
 {
   return make_cleanup (do_bfd_close_cleanup, abfd);
 }
@@ -457,6 +444,46 @@ make_cleanup_free_so (struct so_list *so)
   return make_cleanup (do_free_so, so);
 }
 
+/* Helper for make_cleanup_restore_current_language.  */
+
+static void
+do_restore_current_language (void *p)
+{
+  enum language saved_lang = (uintptr_t) p;
+
+  set_language (saved_lang);
+}
+
+/* Remember the current value of CURRENT_LANGUAGE and make it restored when
+   the cleanup is run.  */
+
+struct cleanup *
+make_cleanup_restore_current_language (void)
+{
+  enum language saved_lang = current_language->la_language;
+
+  return make_cleanup (do_restore_current_language,
+		       (void *) (uintptr_t) saved_lang);
+}
+
+/* Helper function for make_cleanup_clear_parser_state.  */
+
+static void
+do_clear_parser_state (void *ptr)
+{
+  struct parser_state **p = (struct parser_state **) ptr;
+
+  *p = NULL;
+}
+
+/* Clean (i.e., set to NULL) the parser state variable P.  */
+
+struct cleanup *
+make_cleanup_clear_parser_state (struct parser_state **p)
+{
+  return make_cleanup (do_clear_parser_state, (void *) p);
+}
+
 /* This function is useful for cleanups.
    Do
 
@@ -478,109 +505,6 @@ free_current_contents (void *ptr)
       xfree (*location);
       *location = NULL;
     }
-}
-
-/* If nonzero, display time usage both at startup and for each command.  */
-
-static int display_time;
-
-/* If nonzero, display space usage both at startup and for each command.  */
-
-static int display_space;
-
-/* Records a run time and space usage to be used as a base for
-   reporting elapsed time or change in space.  In addition,
-   the msg_type field indicates whether the saved time is from the
-   beginning of GDB execution (0) or the beginning of an individual 
-   command execution (1).  */
-struct cmd_stats 
-{
-  int msg_type;
-  long start_cpu_time;
-  struct timeval start_wall_time;
-  long start_space;
-};
-
-/* Set whether to display time statistics to NEW_VALUE (non-zero 
-   means true).  */
-void
-set_display_time (int new_value)
-{
-  display_time = new_value;
-}
-
-/* Set whether to display space statistics to NEW_VALUE (non-zero
-   means true).  */
-void
-set_display_space (int new_value)
-{
-  display_space = new_value;
-}
-
-/* As indicated by display_time and display_space, report GDB's elapsed time
-   and space usage from the base time and space provided in ARG, which
-   must be a pointer to a struct cmd_stat.  This function is intended
-   to be called as a cleanup.  */
-static void
-report_command_stats (void *arg)
-{
-  struct cmd_stats *start_stats = (struct cmd_stats *) arg;
-  int msg_type = start_stats->msg_type;
-
-  if (display_time)
-    {
-      long cmd_time = get_run_time () - start_stats->start_cpu_time;
-      struct timeval now_wall_time, delta_wall_time;
-
-      gettimeofday (&now_wall_time, NULL);
-      timeval_sub (&delta_wall_time,
-		   &now_wall_time, &start_stats->start_wall_time);
-
-      printf_unfiltered (msg_type == 0
-			 ? _("Startup time: %ld.%06ld (cpu), %ld.%06ld (wall)\n")
-			 : _("Command execution time: %ld.%06ld (cpu), %ld.%06ld (wall)\n"),
-			 cmd_time / 1000000, cmd_time % 1000000,
-			 (long) delta_wall_time.tv_sec,
-			 (long) delta_wall_time.tv_usec);
-    }
-
-  if (display_space)
-    {
-#ifdef HAVE_SBRK
-      char *lim = (char *) sbrk (0);
-
-      long space_now = lim - lim_at_start;
-      long space_diff = space_now - start_stats->start_space;
-
-      printf_unfiltered (msg_type == 0
-			 ? _("Space used: %ld (%s%ld during startup)\n")
-			 : _("Space used: %ld (%s%ld for this command)\n"),
-			 space_now,
-			 (space_diff >= 0 ? "+" : ""),
-			 space_diff);
-#endif
-    }
-}
-
-/* Create a cleanup that reports time and space used since its
-   creation.  Precise messages depend on MSG_TYPE:
-      0:  Initial time/space
-      1:  Individual command time/space.  */
-struct cleanup *
-make_command_stats_cleanup (int msg_type)
-{
-  struct cmd_stats *new_stat = XMALLOC (struct cmd_stats);
-  
-#ifdef HAVE_SBRK
-  char *lim = (char *) sbrk (0);
-  new_stat->start_space = lim - lim_at_start;
-#endif
-
-  new_stat->msg_type = msg_type;
-  new_stat->start_cpu_time = get_run_time ();
-  gettimeofday (&new_stat->start_wall_time, NULL);
-
-  return make_cleanup_dtor (report_command_stats, new_stat, xfree);
 }
 
 
@@ -751,6 +675,7 @@ internal_vproblem (struct internal_problem *problem,
   int quit_p;
   int dump_core_p;
   char *reason;
+  struct cleanup *cleanup = make_cleanup (null_cleanup, NULL);
 
   /* Don't allow infinite error/warning recursion.  */
   {
@@ -821,6 +746,12 @@ internal_vproblem (struct internal_problem *problem,
   else
     internal_error (__FILE__, __LINE__, _("bad switch"));
 
+  fputs_unfiltered (_("\nThis is a bug, please report it."), gdb_stderr);
+  if (REPORT_BUGS_TO[0])
+    fprintf_unfiltered (gdb_stderr, _("  For instructions, see:\n%s."),
+			REPORT_BUGS_TO);
+  fputs_unfiltered ("\n\n", gdb_stderr);
+
   if (problem->should_dump_core == internal_problem_ask)
     {
       if (!can_dump_core (reason))
@@ -859,6 +790,7 @@ internal_vproblem (struct internal_problem *problem,
     }
 
   dejavu = 0;
+  do_cleanups (cleanup);
 }
 
 static struct internal_problem internal_error_problem = {
@@ -869,7 +801,7 @@ void
 internal_verror (const char *file, int line, const char *fmt, va_list ap)
 {
   internal_vproblem (&internal_error_problem, file, line, fmt, ap);
-  deprecated_throw_reason (RETURN_ERROR);
+  fatal (_("Command aborted."));
 }
 
 void
@@ -1003,21 +935,37 @@ add_internal_problem_command (struct internal_problem *problem)
   xfree (show_doc);
 }
 
-/* Print the system error message for errno, and also mention STRING
-   as the file name for which the error was encountered.
-   Then return to command level.  */
+/* Return a newly allocated string, containing the PREFIX followed
+   by the system error message for errno (separated by a colon).
 
-void
-perror_with_name (const char *string)
+   The result must be deallocated after use.  */
+
+static char *
+perror_string (const char *prefix)
 {
   char *err;
   char *combined;
 
   err = safe_strerror (errno);
-  combined = (char *) alloca (strlen (err) + strlen (string) + 3);
-  strcpy (combined, string);
+  combined = (char *) xmalloc (strlen (err) + strlen (prefix) + 3);
+  strcpy (combined, prefix);
   strcat (combined, ": ");
   strcat (combined, err);
+
+  return combined;
+}
+
+/* Print the system error message for errno, and also mention STRING
+   as the file name for which the error was encountered.  Use ERRCODE
+   for the thrown exception.  Then return to command level.  */
+
+void
+throw_perror_with_name (enum errors errcode, const char *string)
+{
+  char *combined;
+
+  combined = perror_string (string);
+  make_cleanup (xfree, combined);
 
   /* I understand setting these is a matter of taste.  Still, some people
      may clear errno but not know about bfd_error.  Doing this here is not
@@ -1025,7 +973,28 @@ perror_with_name (const char *string)
   bfd_set_error (bfd_error_no_error);
   errno = 0;
 
-  error (_("%s."), combined);
+  throw_error (errcode, _("%s."), combined);
+}
+
+/* See throw_perror_with_name, ERRCODE defaults here to GENERIC_ERROR.  */
+
+void
+perror_with_name (const char *string)
+{
+  throw_perror_with_name (GENERIC_ERROR, string);
+}
+
+/* Same as perror_with_name except that it prints a warning instead
+   of throwing an error.  */
+
+void
+perror_warning_with_name (const char *string)
+{
+  char *combined;
+
+  combined = perror_string (string);
+  warning (_("%s"), combined);
+  xfree (combined);
 }
 
 /* Print the system error message for ERRCODE, and also mention STRING
@@ -1054,6 +1023,12 @@ print_sys_errmsg (const char *string, int errcode)
 void
 quit (void)
 {
+  if (sync_quit_force_run)
+    {
+      sync_quit_force_run = 0;
+      quit_force (NULL, stdin == instream);
+    }
+
 #ifdef __MSDOS__
   /* No steenking SIGINT will ever be coming our way when the
      program is resumed.  Don't lie.  */
@@ -1110,20 +1085,6 @@ myread (int desc, char *addr, int len)
   return orglen;
 }
 
-/* Make a copy of the string at PTR with SIZE characters
-   (and add a null character at the end in the copy).
-   Uses malloc to get the space.  Returns the address of the copy.  */
-
-char *
-savestring (const char *ptr, size_t size)
-{
-  char *p = (char *) xmalloc (size + 1);
-
-  memcpy (p, ptr, size);
-  p[size] = 0;
-  return p;
-}
-
 void
 print_spaces (int n, struct ui_file *file)
 {
@@ -1168,6 +1129,29 @@ get_regcomp_error (int code, regex_t *rx)
   return result;
 }
 
+/* Compile a regexp and throw an exception on error.  This returns a
+   cleanup to free the resulting pattern on success.  RX must not be
+   NULL.  */
+
+struct cleanup *
+compile_rx_or_error (regex_t *pattern, const char *rx, const char *message)
+{
+  int code;
+
+  gdb_assert (rx != NULL);
+
+  code = regcomp (pattern, rx, REG_NOSUB);
+  if (code != 0)
+    {
+      char *err = get_regcomp_error (code, pattern);
+
+      make_cleanup (xfree, err);
+      error (("%s: %s"), message, err);
+    }
+
+  return make_regfree_cleanup (pattern);
+}
+
 
 
 /* This function supports the query, nquery, and yquery functions.
@@ -1189,6 +1173,9 @@ defaulted_query (const char *ctlstr, const char defchar, va_list args)
   int def_value;
   char def_answer, not_def_answer;
   char *y_string, *n_string, *question;
+  /* Used to add duration we waited for user to respond to
+     prompt_for_continue_wait_time.  */
+  struct timeval prompt_started, prompt_ended, prompt_delta;
 
   /* Set up according to which answer is the default.  */
   if (defchar == '\0')
@@ -1245,6 +1232,9 @@ defaulted_query (const char *ctlstr, const char defchar, va_list args)
 
   /* Format the question outside of the loop, to avoid reusing args.  */
   question = xstrvprintf (ctlstr, args);
+
+  /* Used for calculating time spend waiting for user.  */
+  gettimeofday (&prompt_started, NULL);
 
   while (1)
     {
@@ -1323,6 +1313,12 @@ defaulted_query (const char *ctlstr, const char defchar, va_list args)
 		       y_string, n_string);
     }
 
+  /* Add time spend in this routine to prompt_for_continue_wait_time.  */
+  gettimeofday (&prompt_ended, NULL);
+  timeval_sub (&prompt_delta, &prompt_ended, &prompt_started);
+  timeval_add (&prompt_for_continue_wait_time,
+               &prompt_for_continue_wait_time, &prompt_delta);
+
   xfree (question);
   if (annotation_level > 1)
     printf_filtered (("\n\032\032post-query\n"));
@@ -1400,7 +1396,8 @@ host_char_to_target (struct gdbarch *gdbarch, int c, int *target_c)
   cleanups = make_cleanup_obstack_free (&host_data);
 
   convert_between_encodings (target_charset (gdbarch), host_charset (),
-			     &the_char, 1, 1, &host_data, translit_none);
+			     (gdb_byte *) &the_char, 1, 1,
+			     &host_data, translit_none);
 
   if (obstack_object_size (&host_data) == 1)
     {
@@ -1428,7 +1425,7 @@ host_char_to_target (struct gdbarch *gdbarch, int c, int *target_c)
    after the zeros.  A value of 0 does not mean end of string.  */
 
 int
-parse_escape (struct gdbarch *gdbarch, char **string_ptr)
+parse_escape (struct gdbarch *gdbarch, const char **string_ptr)
 {
   int target_char = -2;	/* Initialize to avoid GCC warnings.  */
   int c = *(*string_ptr)++;
@@ -1505,7 +1502,13 @@ parse_escape (struct gdbarch *gdbarch, char **string_ptr)
 /* Print the character C on STREAM as part of the contents of a literal
    string whose delimiter is QUOTER.  Note that this routine should only
    be call for printing things which are independent of the language
-   of the program being debugged.  */
+   of the program being debugged.
+
+   printchar will normally escape backslashes and instances of QUOTER. If
+   QUOTER is 0, printchar won't escape backslashes or any quoting character.
+   As a side effect, if you pass the backslash character as the QUOTER,
+   printchar will escape backslashes as usual, but not any other quoting
+   character. */
 
 static void
 printchar (int c, void (*do_fputs) (const char *, struct ui_file *),
@@ -1548,7 +1551,7 @@ printchar (int c, void (*do_fputs) (const char *, struct ui_file *),
     }
   else
     {
-      if (c == '\\' || c == quoter)
+      if (quoter != 0 && (c == '\\' || c == quoter))
 	do_fputs ("\\", stream);
       do_fprintf (stream, "%c", c);
     }
@@ -1676,19 +1679,18 @@ init_page_info (void)
       lines_per_page = rows;
       chars_per_line = cols;
 
-      /* Readline should have fetched the termcap entry for us.  */
-      if (tgetnum ("li") < 0 || getenv ("EMACS"))
+      /* Readline should have fetched the termcap entry for us.
+         Only try to use tgetnum function if rl_get_screen_size
+         did not return a useful value. */
+      if (((rows <= 0) && (tgetnum ("li") < 0))
+	/* Also disable paging if inside EMACS.  */
+	  || getenv ("EMACS"))
 	{
-	  /* The number of lines per page is not mentioned in the
-	     terminal description.  This probably means that paging is
-	     not useful (e.g. emacs shell window), so disable paging.  */
+	  /* The number of lines per page is not mentioned in the terminal
+	     description or EMACS evironment variable is set.  This probably
+	     means that paging is not useful, so disable paging.  */
 	  lines_per_page = UINT_MAX;
 	}
-
-      /* FIXME: Get rid of this junk.  */
-#if defined(SIGWINCH) && defined(SIGWINCH_HANDLER)
-      SIGWINCH_HANDLER (SIGWINCH);
-#endif
 
       /* If the output is not a terminal, don't paginate it.  */
       if (!ui_file_isatty (gdb_stdout))
@@ -1796,6 +1798,11 @@ prompt_for_continue (void)
 {
   char *ignore;
   char cont_prompt[120];
+  /* Used to add duration we waited for user to respond to
+     prompt_for_continue_wait_time.  */
+  struct timeval prompt_started, prompt_ended, prompt_delta;
+
+  gettimeofday (&prompt_started, NULL);
 
   if (annotation_level > 1)
     printf_unfiltered (("\n\032\032pre-prompt-for-continue\n"));
@@ -1811,6 +1818,11 @@ prompt_for_continue (void)
   reinitialize_more_filter ();
 
   immediate_quit++;
+  QUIT;
+
+  /* We'll need to handle input.  */
+  target_terminal_ours ();
+
   /* On a real operating system, the user can quit with SIGINT.
      But not on GO32.
 
@@ -1823,6 +1835,12 @@ prompt_for_continue (void)
      out to DOS.  */
   ignore = gdb_readline_wrapper (cont_prompt);
 
+  /* Add time spend in this routine to prompt_for_continue_wait_time.  */
+  gettimeofday (&prompt_ended, NULL);
+  timeval_sub (&prompt_delta, &prompt_ended, &prompt_started);
+  timeval_add (&prompt_for_continue_wait_time,
+               &prompt_for_continue_wait_time, &prompt_delta);
+
   if (annotation_level > 1)
     printf_unfiltered (("\n\032\032post-prompt-for-continue\n"));
 
@@ -1833,7 +1851,7 @@ prompt_for_continue (void)
       while (*p == ' ' || *p == '\t')
 	++p;
       if (p[0] == 'q')
-	async_request_quit (0);
+	quit ();
       xfree (ignore);
     }
   immediate_quit--;
@@ -1843,6 +1861,24 @@ prompt_for_continue (void)
   reinitialize_more_filter ();
 
   dont_repeat ();		/* Forget prev cmd -- CR won't repeat it.  */
+}
+
+/* Initalize timer to keep track of how long we waited for the user.  */
+
+void
+reset_prompt_for_continue_wait_time (void)
+{
+  static const struct timeval zero_timeval = { 0 };
+
+  prompt_for_continue_wait_time = zero_timeval;
+}
+
+/* Fetch the cumulative time spent in prompt_for_continue.  */
+
+struct timeval
+get_prompt_for_continue_wait_time (void)
+{
+  return prompt_for_continue_wait_time;
 }
 
 /* Reinitialize filter; ie. tell it to reset to original values.  */
@@ -2654,15 +2690,20 @@ void
 initialize_utils (void)
 {
   add_setshow_uinteger_cmd ("width", class_support, &chars_per_line, _("\
-Set number of characters gdb thinks are in a line."), _("\
-Show number of characters gdb thinks are in a line."), NULL,
+Set number of characters where GDB should wrap lines of its output."), _("\
+Show number of characters where GDB should wrap lines of its output."), _("\
+This affects where GDB wraps its output to fit the screen width.\n\
+Setting this to \"unlimited\" or zero prevents GDB from wrapping its output."),
 			    set_width_command,
 			    show_chars_per_line,
 			    &setlist, &showlist);
 
   add_setshow_uinteger_cmd ("height", class_support, &lines_per_page, _("\
-Set number of lines gdb thinks are in a page."), _("\
-Show number of lines gdb thinks are in a page."), NULL,
+Set number of lines in a page for GDB output pagination."), _("\
+Show number of lines in a page for GDB output pagination."), _("\
+This affects the number of lines after which GDB will pause\n\
+its output and ask you whether to continue.\n\
+Setting this to \"unlimited\" or zero causes GDB never pause during output."),
 			    set_height_command,
 			    show_lines_per_page,
 			    &setlist, &showlist);
@@ -2671,8 +2712,11 @@ Show number of lines gdb thinks are in a page."), NULL,
 
   add_setshow_boolean_cmd ("pagination", class_support,
 			   &pagination_enabled, _("\
-Set state of pagination."), _("\
-Show state of pagination."), NULL,
+Set state of GDB output pagination."), _("\
+Show state of GDB output pagination."), _("\
+When pagination is ON, GDB pauses at end of each screenful of\n\
+its output and asks you whether to continue.\n\
+Turning pagination off is an alternative to \"set height unlimited\"."),
 			   NULL,
 			   show_pagination_enabled,
 			   &setlist, &showlist);
@@ -2701,26 +2745,6 @@ When set, debugging messages will be marked with seconds and microseconds."),
 			   NULL,
 			   show_debug_timestamp,
 			   &setdebuglist, &showdebuglist);
-}
-
-/* Machine specific function to handle SIGWINCH signal.  */
-
-#ifdef  SIGWINCH_HANDLER_BODY
-SIGWINCH_HANDLER_BODY
-#endif
-/* Print routines to handle variable size regs, etc.  */
-/* Temporary storage using circular buffer.  */
-#define NUMCELLS 16
-#define CELLSIZE 50
-static char *
-get_cell (void)
-{
-  static char buf[NUMCELLS][CELLSIZE];
-  static int cell = 0;
-
-  if (++cell >= NUMCELLS)
-    cell = 0;
-  return buf[cell];
 }
 
 const char *
@@ -2782,278 +2806,6 @@ core_addr_eq (const void *ap, const void *bp)
   return *addr_ap == *addr_bp;
 }
 
-static char *
-decimal2str (char *sign, ULONGEST addr, int width)
-{
-  /* Steal code from valprint.c:print_decimal().  Should this worry
-     about the real size of addr as the above does?  */
-  unsigned long temp[3];
-  char *str = get_cell ();
-  int i = 0;
-
-  do
-    {
-      temp[i] = addr % (1000 * 1000 * 1000);
-      addr /= (1000 * 1000 * 1000);
-      i++;
-      width -= 9;
-    }
-  while (addr != 0 && i < (sizeof (temp) / sizeof (temp[0])));
-
-  width += 9;
-  if (width < 0)
-    width = 0;
-
-  switch (i)
-    {
-    case 1:
-      xsnprintf (str, CELLSIZE, "%s%0*lu", sign, width, temp[0]);
-      break;
-    case 2:
-      xsnprintf (str, CELLSIZE, "%s%0*lu%09lu", sign, width,
-		 temp[1], temp[0]);
-      break;
-    case 3:
-      xsnprintf (str, CELLSIZE, "%s%0*lu%09lu%09lu", sign, width,
-		 temp[2], temp[1], temp[0]);
-      break;
-    default:
-      internal_error (__FILE__, __LINE__,
-		      _("failed internal consistency check"));
-    }
-
-  return str;
-}
-
-static char *
-octal2str (ULONGEST addr, int width)
-{
-  unsigned long temp[3];
-  char *str = get_cell ();
-  int i = 0;
-
-  do
-    {
-      temp[i] = addr % (0100000 * 0100000);
-      addr /= (0100000 * 0100000);
-      i++;
-      width -= 10;
-    }
-  while (addr != 0 && i < (sizeof (temp) / sizeof (temp[0])));
-
-  width += 10;
-  if (width < 0)
-    width = 0;
-
-  switch (i)
-    {
-    case 1:
-      if (temp[0] == 0)
-	xsnprintf (str, CELLSIZE, "%*o", width, 0);
-      else
-	xsnprintf (str, CELLSIZE, "0%0*lo", width, temp[0]);
-      break;
-    case 2:
-      xsnprintf (str, CELLSIZE, "0%0*lo%010lo", width, temp[1], temp[0]);
-      break;
-    case 3:
-      xsnprintf (str, CELLSIZE, "0%0*lo%010lo%010lo", width,
-		 temp[2], temp[1], temp[0]);
-      break;
-    default:
-      internal_error (__FILE__, __LINE__,
-		      _("failed internal consistency check"));
-    }
-
-  return str;
-}
-
-char *
-pulongest (ULONGEST u)
-{
-  return decimal2str ("", u, 0);
-}
-
-char *
-plongest (LONGEST l)
-{
-  if (l < 0)
-    return decimal2str ("-", -l, 0);
-  else
-    return decimal2str ("", l, 0);
-}
-
-/* Eliminate warning from compiler on 32-bit systems.  */
-static int thirty_two = 32;
-
-char *
-phex (ULONGEST l, int sizeof_l)
-{
-  char *str;
-
-  switch (sizeof_l)
-    {
-    case 8:
-      str = get_cell ();
-      xsnprintf (str, CELLSIZE, "%08lx%08lx",
-		 (unsigned long) (l >> thirty_two),
-		 (unsigned long) (l & 0xffffffff));
-      break;
-    case 4:
-      str = get_cell ();
-      xsnprintf (str, CELLSIZE, "%08lx", (unsigned long) l);
-      break;
-    case 2:
-      str = get_cell ();
-      xsnprintf (str, CELLSIZE, "%04x", (unsigned short) (l & 0xffff));
-      break;
-    default:
-      str = phex (l, sizeof (l));
-      break;
-    }
-
-  return str;
-}
-
-char *
-phex_nz (ULONGEST l, int sizeof_l)
-{
-  char *str;
-
-  switch (sizeof_l)
-    {
-    case 8:
-      {
-	unsigned long high = (unsigned long) (l >> thirty_two);
-
-	str = get_cell ();
-	if (high == 0)
-	  xsnprintf (str, CELLSIZE, "%lx",
-		     (unsigned long) (l & 0xffffffff));
-	else
-	  xsnprintf (str, CELLSIZE, "%lx%08lx", high,
-		     (unsigned long) (l & 0xffffffff));
-	break;
-      }
-    case 4:
-      str = get_cell ();
-      xsnprintf (str, CELLSIZE, "%lx", (unsigned long) l);
-      break;
-    case 2:
-      str = get_cell ();
-      xsnprintf (str, CELLSIZE, "%x", (unsigned short) (l & 0xffff));
-      break;
-    default:
-      str = phex_nz (l, sizeof (l));
-      break;
-    }
-
-  return str;
-}
-
-/* Converts a LONGEST to a C-format hexadecimal literal and stores it
-   in a static string.  Returns a pointer to this string.  */
-char *
-hex_string (LONGEST num)
-{
-  char *result = get_cell ();
-
-  xsnprintf (result, CELLSIZE, "0x%s", phex_nz (num, sizeof (num)));
-  return result;
-}
-
-/* Converts a LONGEST number to a C-format hexadecimal literal and
-   stores it in a static string.  Returns a pointer to this string
-   that is valid until the next call.  The number is padded on the
-   left with 0s to at least WIDTH characters.  */
-char *
-hex_string_custom (LONGEST num, int width)
-{
-  char *result = get_cell ();
-  char *result_end = result + CELLSIZE - 1;
-  const char *hex = phex_nz (num, sizeof (num));
-  int hex_len = strlen (hex);
-
-  if (hex_len > width)
-    width = hex_len;
-  if (width + 2 >= CELLSIZE)
-    internal_error (__FILE__, __LINE__, _("\
-hex_string_custom: insufficient space to store result"));
-
-  strcpy (result_end - width - 2, "0x");
-  memset (result_end - width, '0', width);
-  strcpy (result_end - hex_len, hex);
-  return result_end - width - 2;
-}
-
-/* Convert VAL to a numeral in the given radix.  For
- * radix 10, IS_SIGNED may be true, indicating a signed quantity;
- * otherwise VAL is interpreted as unsigned.  If WIDTH is supplied, 
- * it is the minimum width (0-padded if needed).  USE_C_FORMAT means
- * to use C format in all cases.  If it is false, then 'x' 
- * and 'o' formats do not include a prefix (0x or leading 0).  */
-
-char *
-int_string (LONGEST val, int radix, int is_signed, int width, 
-	    int use_c_format)
-{
-  switch (radix) 
-    {
-    case 16:
-      {
-	char *result;
-
-	if (width == 0)
-	  result = hex_string (val);
-	else
-	  result = hex_string_custom (val, width);
-	if (! use_c_format)
-	  result += 2;
-	return result;
-      }
-    case 10:
-      {
-	if (is_signed && val < 0)
-	  return decimal2str ("-", -val, width);
-	else
-	  return decimal2str ("", val, width);
-      }
-    case 8:
-      {
-	char *result = octal2str (val, width);
-
-	if (use_c_format || val == 0)
-	  return result;
-	else
-	  return result + 1;
-      }
-    default:
-      internal_error (__FILE__, __LINE__,
-		      _("failed internal consistency check"));
-    }
-}	
-
-/* Convert a CORE_ADDR into a string.  */
-const char *
-core_addr_to_string (const CORE_ADDR addr)
-{
-  char *str = get_cell ();
-
-  strcpy (str, "0x");
-  strcat (str, phex (addr, sizeof (addr)));
-  return str;
-}
-
-const char *
-core_addr_to_string_nz (const CORE_ADDR addr)
-{
-  char *str = get_cell ();
-
-  strcpy (str, "0x");
-  strcat (str, phex_nz (addr, sizeof (addr)));
-  return str;
-}
-
 /* Convert a string back into a CORE_ADDR.  */
 CORE_ADDR
 string_to_core_addr (const char *my_string)
@@ -3092,15 +2844,6 @@ string_to_core_addr (const char *my_string)
   return addr;
 }
 
-const char *
-host_address_to_string (const void *addr)
-{
-  char *str = get_cell ();
-
-  xsnprintf (str, CELLSIZE, "0x%s", phex_nz ((uintptr_t) addr, sizeof (addr)));
-  return str;
-}
-
 char *
 gdb_realpath (const char *filename)
 {
@@ -3108,22 +2851,14 @@ gdb_realpath (const char *filename)
      path.  Use that and realpath() to canonicalize the name.  This is
      the most common case.  Note that, if there isn't a compile time
      upper bound, you want to avoid realpath() at all costs.  */
-#if defined(HAVE_REALPATH)
+#if defined (HAVE_REALPATH) && defined (PATH_MAX)
   {
-# if defined (PATH_MAX)
     char buf[PATH_MAX];
-#  define USE_REALPATH
-# elif defined (MAXPATHLEN)
-    char buf[MAXPATHLEN];
-#  define USE_REALPATH
-# endif
-# if defined (USE_REALPATH)
     const char *rp = realpath (filename, buf);
 
     if (rp == NULL)
       rp = filename;
     return xstrdup (rp);
-# endif
   }
 #endif /* HAVE_REALPATH */
 
@@ -3157,7 +2892,7 @@ gdb_realpath (const char *filename)
      pathconf()) making it impossible to pass a correctly sized buffer
      to realpath() (it could always overflow).  On those systems, we
      skip this.  */
-#if defined (HAVE_REALPATH) && defined (HAVE_UNISTD_H) && defined(HAVE_ALLOCA)
+#if defined (HAVE_REALPATH) && defined (_PC_PATH_MAX) && defined(HAVE_ALLOCA)
   {
     /* Find out the max path size.  */
     long path_max = pathconf ("/", _PC_PATH_MAX);
@@ -3200,7 +2935,7 @@ gdb_realpath (const char *filename)
    by gdb_realpath.  */
 
 char *
-xfullpath (const char *filename)
+gdb_realpath_keepfile (const char *filename)
 {
   const char *base_name = lbasename (filename);
   char *dir_name;
@@ -3242,75 +2977,30 @@ xfullpath (const char *filename)
   return result;
 }
 
+/* Return PATH in absolute form, performing tilde-expansion if necessary.
+   PATH cannot be NULL or the empty string.
+   This does not resolve symlinks however, use gdb_realpath for that.
+   Space for the result is allocated with malloc.
+   If the path is already absolute, it is strdup'd.
+   If there is a problem computing the absolute path, the path is returned
+   unchanged (still strdup'd).  */
 
-/* This is the 32-bit CRC function used by the GNU separate debug
-   facility.  An executable may contain a section named
-   .gnu_debuglink, which holds the name of a separate executable file
-   containing its debug info, and a checksum of that file's contents,
-   computed using this function.  */
-unsigned long
-gnu_debuglink_crc32 (unsigned long crc, unsigned char *buf, size_t len)
+char *
+gdb_abspath (const char *path)
 {
-  static const unsigned int crc32_table[256] = {
-    0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419,
-    0x706af48f, 0xe963a535, 0x9e6495a3, 0x0edb8832, 0x79dcb8a4,
-    0xe0d5e91e, 0x97d2d988, 0x09b64c2b, 0x7eb17cbd, 0xe7b82d07,
-    0x90bf1d91, 0x1db71064, 0x6ab020f2, 0xf3b97148, 0x84be41de,
-    0x1adad47d, 0x6ddde4eb, 0xf4d4b551, 0x83d385c7, 0x136c9856,
-    0x646ba8c0, 0xfd62f97a, 0x8a65c9ec, 0x14015c4f, 0x63066cd9,
-    0xfa0f3d63, 0x8d080df5, 0x3b6e20c8, 0x4c69105e, 0xd56041e4,
-    0xa2677172, 0x3c03e4d1, 0x4b04d447, 0xd20d85fd, 0xa50ab56b,
-    0x35b5a8fa, 0x42b2986c, 0xdbbbc9d6, 0xacbcf940, 0x32d86ce3,
-    0x45df5c75, 0xdcd60dcf, 0xabd13d59, 0x26d930ac, 0x51de003a,
-    0xc8d75180, 0xbfd06116, 0x21b4f4b5, 0x56b3c423, 0xcfba9599,
-    0xb8bda50f, 0x2802b89e, 0x5f058808, 0xc60cd9b2, 0xb10be924,
-    0x2f6f7c87, 0x58684c11, 0xc1611dab, 0xb6662d3d, 0x76dc4190,
-    0x01db7106, 0x98d220bc, 0xefd5102a, 0x71b18589, 0x06b6b51f,
-    0x9fbfe4a5, 0xe8b8d433, 0x7807c9a2, 0x0f00f934, 0x9609a88e,
-    0xe10e9818, 0x7f6a0dbb, 0x086d3d2d, 0x91646c97, 0xe6635c01,
-    0x6b6b51f4, 0x1c6c6162, 0x856530d8, 0xf262004e, 0x6c0695ed,
-    0x1b01a57b, 0x8208f4c1, 0xf50fc457, 0x65b0d9c6, 0x12b7e950,
-    0x8bbeb8ea, 0xfcb9887c, 0x62dd1ddf, 0x15da2d49, 0x8cd37cf3,
-    0xfbd44c65, 0x4db26158, 0x3ab551ce, 0xa3bc0074, 0xd4bb30e2,
-    0x4adfa541, 0x3dd895d7, 0xa4d1c46d, 0xd3d6f4fb, 0x4369e96a,
-    0x346ed9fc, 0xad678846, 0xda60b8d0, 0x44042d73, 0x33031de5,
-    0xaa0a4c5f, 0xdd0d7cc9, 0x5005713c, 0x270241aa, 0xbe0b1010,
-    0xc90c2086, 0x5768b525, 0x206f85b3, 0xb966d409, 0xce61e49f,
-    0x5edef90e, 0x29d9c998, 0xb0d09822, 0xc7d7a8b4, 0x59b33d17,
-    0x2eb40d81, 0xb7bd5c3b, 0xc0ba6cad, 0xedb88320, 0x9abfb3b6,
-    0x03b6e20c, 0x74b1d29a, 0xead54739, 0x9dd277af, 0x04db2615,
-    0x73dc1683, 0xe3630b12, 0x94643b84, 0x0d6d6a3e, 0x7a6a5aa8,
-    0xe40ecf0b, 0x9309ff9d, 0x0a00ae27, 0x7d079eb1, 0xf00f9344,
-    0x8708a3d2, 0x1e01f268, 0x6906c2fe, 0xf762575d, 0x806567cb,
-    0x196c3671, 0x6e6b06e7, 0xfed41b76, 0x89d32be0, 0x10da7a5a,
-    0x67dd4acc, 0xf9b9df6f, 0x8ebeeff9, 0x17b7be43, 0x60b08ed5,
-    0xd6d6a3e8, 0xa1d1937e, 0x38d8c2c4, 0x4fdff252, 0xd1bb67f1,
-    0xa6bc5767, 0x3fb506dd, 0x48b2364b, 0xd80d2bda, 0xaf0a1b4c,
-    0x36034af6, 0x41047a60, 0xdf60efc3, 0xa867df55, 0x316e8eef,
-    0x4669be79, 0xcb61b38c, 0xbc66831a, 0x256fd2a0, 0x5268e236,
-    0xcc0c7795, 0xbb0b4703, 0x220216b9, 0x5505262f, 0xc5ba3bbe,
-    0xb2bd0b28, 0x2bb45a92, 0x5cb36a04, 0xc2d7ffa7, 0xb5d0cf31,
-    0x2cd99e8b, 0x5bdeae1d, 0x9b64c2b0, 0xec63f226, 0x756aa39c,
-    0x026d930a, 0x9c0906a9, 0xeb0e363f, 0x72076785, 0x05005713,
-    0x95bf4a82, 0xe2b87a14, 0x7bb12bae, 0x0cb61b38, 0x92d28e9b,
-    0xe5d5be0d, 0x7cdcefb7, 0x0bdbdf21, 0x86d3d2d4, 0xf1d4e242,
-    0x68ddb3f8, 0x1fda836e, 0x81be16cd, 0xf6b9265b, 0x6fb077e1,
-    0x18b74777, 0x88085ae6, 0xff0f6a70, 0x66063bca, 0x11010b5c,
-    0x8f659eff, 0xf862ae69, 0x616bffd3, 0x166ccf45, 0xa00ae278,
-    0xd70dd2ee, 0x4e048354, 0x3903b3c2, 0xa7672661, 0xd06016f7,
-    0x4969474d, 0x3e6e77db, 0xaed16a4a, 0xd9d65adc, 0x40df0b66,
-    0x37d83bf0, 0xa9bcae53, 0xdebb9ec5, 0x47b2cf7f, 0x30b5ffe9,
-    0xbdbdf21c, 0xcabac28a, 0x53b39330, 0x24b4a3a6, 0xbad03605,
-    0xcdd70693, 0x54de5729, 0x23d967bf, 0xb3667a2e, 0xc4614ab8,
-    0x5d681b02, 0x2a6f2b94, 0xb40bbe37, 0xc30c8ea1, 0x5a05df1b,
-    0x2d02ef8d
-  };
-  unsigned char *end;
+  gdb_assert (path != NULL && path[0] != '\0');
 
-  crc = ~crc & 0xffffffff;
-  for (end = buf + len; buf < end; ++buf)
-    crc = crc32_table[(crc ^ *buf) & 0xff] ^ (crc >> 8);
-  return ~crc & 0xffffffff;
+  if (path[0] == '~')
+    return tilde_expand (path);
+
+  if (IS_ABSOLUTE_PATH (path))
+    return xstrdup (path);
+
+  /* Beware the // my son, the Emacs barfs, the botch that catch...  */
+  return concat (current_directory,
+	    IS_DIR_SEPARATOR (current_directory[strlen (current_directory) - 1])
+		 ? "" : SLASH_STRING,
+		 path, (char *) NULL);
 }
 
 ULONGEST
@@ -3327,6 +3017,23 @@ align_down (ULONGEST v, int n)
   /* Check that N is really a power of two.  */
   gdb_assert (n && (n & (n-1)) == 0);
   return (v & -n);
+}
+
+/* See utils.h.  */
+
+LONGEST
+gdb_sign_extend (LONGEST value, int bit)
+{
+  gdb_assert (bit >= 1 && bit <= 8 * sizeof (LONGEST));
+
+  if (((value >> (bit - 1)) & 1) != 0)
+    {
+      LONGEST signbit = ((LONGEST) 1) << (bit - 1);
+
+      value = (value ^ signbit) - signbit;
+    }
+
+  return value;
 }
 
 /* Allocation function for the libiberty hash table which uses an
@@ -3558,7 +3265,7 @@ gdb_bfd_errmsg (bfd_error_type error_tag, char **matching)
 /* Return ARGS parsed as a valid pid, or throw an error.  */
 
 int
-parse_pid_to_attach (char *args)
+parse_pid_to_attach (const char *args)
 {
   unsigned long pid;
   char *dummy;
@@ -3566,7 +3273,7 @@ parse_pid_to_attach (char *args)
   if (!args)
     error_no_arg (_("process-id to attach"));
 
-  dummy = args;
+  dummy = (char *) args;
   pid = strtoul (args, &dummy, 0);
   /* Some targets don't set errno on errors, grrr!  */
   if ((pid == 0 && dummy == args) || dummy != &args[strlen (args)])
@@ -3636,24 +3343,6 @@ producer_is_gcc_ge_4 (const char *producer)
   return minor;
 }
 
-/* Call xfree for each element of CHAR_PTR_VEC and final VEC_free for
-   CHAR_PTR_VEC itself.
-
-   You must not modify CHAR_PTR_VEC after it got registered with this function
-   by make_cleanup as the CHAR_PTR_VEC base address may change on its updates.
-   Contrary to VEC_free this function does not (cannot) clear the pointer.  */
-
-void
-free_char_ptr_vec (VEC (char_ptr) *char_ptr_vec)
-{
-  int ix;
-  char *name;
-
-  for (ix = 0; VEC_iterate (char_ptr, char_ptr_vec, ix, name); ++ix)
-    xfree (name);
-  VEC_free (char_ptr, char_ptr_vec);
-}
-
 /* Helper for make_cleanup_free_char_ptr_vec.  */
 
 static void
@@ -3675,54 +3364,6 @@ struct cleanup *
 make_cleanup_free_char_ptr_vec (VEC (char_ptr) *char_ptr_vec)
 {
   return make_cleanup (do_free_char_ptr_vec, char_ptr_vec);
-}
-
-/* Extended version of dirnames_to_char_ptr_vec - additionally if *VECP is
-   non-NULL the new list elements from DIRNAMES are appended to the existing
-   *VECP list of entries.  *VECP address will be updated by this call.  */
-
-void
-dirnames_to_char_ptr_vec_append (VEC (char_ptr) **vecp, const char *dirnames)
-{
-  do
-    {
-      size_t this_len;
-      char *next_dir, *this_dir;
-
-      next_dir = strchr (dirnames, DIRNAME_SEPARATOR);
-      if (next_dir == NULL)
-	this_len = strlen (dirnames);
-      else
-	{
-	  this_len = next_dir - dirnames;
-	  next_dir++;
-	}
-
-      this_dir = xmalloc (this_len + 1);
-      memcpy (this_dir, dirnames, this_len);
-      this_dir[this_len] = '\0';
-      VEC_safe_push (char_ptr, *vecp, this_dir);
-
-      dirnames = next_dir;
-    }
-  while (dirnames != NULL);
-}
-
-/* Split DIRNAMES by DIRNAME_SEPARATOR delimiter and return a list of all the
-   elements in their original order.  For empty string ("") DIRNAMES return
-   list of one empty string ("") element.
-   
-   You may modify the returned strings.
-   Read free_char_ptr_vec for its cleanup.  */
-
-VEC (char_ptr) *
-dirnames_to_char_ptr_vec (const char *dirnames)
-{
-  VEC (char_ptr) *retval = NULL;
-  
-  dirnames_to_char_ptr_vec_append (&retval, dirnames);
-
-  return retval;
 }
 
 /* Substitute all occurences of string FROM by string TO in *STRINGP.  *STRINGP

@@ -41,7 +41,7 @@ $shell ${srccom}/gentvals.sh $target sys ${srcroot}/$dir \
 # OBSOLETE $shell ${srccom}/gentvals.sh $target sys ${srcroot}/$dir \
 # OBSOLETE 	"syscall.h" 'SYS_[_[:alnum:]]*' "${cpp}"
 
-dir=libgloss target=cr16
+dir=libgloss/cr16/sys target=cr16
 $shell ${srccom}/gentvals.sh $target sys ${srcroot}/$dir \
 	"syscall.h" 'SYS_[_[:alnum:]]*' "${cpp}"
 
@@ -66,6 +66,10 @@ $shell ${srccom}/gentvals.sh $target sys ${srcroot}/$dir \
 	"syscall.h" 'SYS_[_[:alnum:]]*' "${cpp}"
 
 dir=libgloss target=mn10300
+$shell ${srccom}/gentvals.sh $target sys ${srcroot}/$dir \
+	"syscall.h" 'SYS_[_[:alnum:]]*' "${cpp}"
+
+dir=libgloss target=msp430
 $shell ${srccom}/gentvals.sh $target sys ${srcroot}/$dir \
 	"syscall.h" 'SYS_[_[:alnum:]]*' "${cpp}"
 

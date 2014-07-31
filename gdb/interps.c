@@ -1,7 +1,6 @@
 /* Manages interpreters for GDB, the GNU debugger.
 
-   Copyright (C) 2000, 2002-2003, 2007-2012 Free Software Foundation,
-   Inc.
+   Copyright (C) 2000-2014 Free Software Foundation, Inc.
 
    Written by Jim Ingham <jingham@apple.com> of Apple Computer, Inc.
 
@@ -37,7 +36,7 @@
 #include "event-top.h"
 #include "interps.h"
 #include "completer.h"
-#include "gdb_string.h"
+#include <string.h>
 #include "gdb_assert.h"
 #include "top.h"		/* For command_loop.  */
 #include "exceptions.h"
@@ -94,13 +93,16 @@ interp_new (const char *name, const struct interp_procs *procs)
 {
   struct interp *new_interp;
 
-  new_interp = XMALLOC (struct interp);
+  new_interp = XNEW (struct interp);
 
   new_interp->name = xstrdup (name);
   new_interp->data = NULL;
   new_interp->quiet_p = 0;
   new_interp->procs = procs;
   new_interp->inited = 0;
+
+  /* Check for required procs.  */
+  gdb_assert (procs->command_loop_proc != NULL);
 
   return new_interp;
 }
@@ -202,19 +204,11 @@ interp_set (struct interp *interp, int top_level)
       return 0;
     }
 
-  /* Finally, put up the new prompt to show that we are indeed here. 
-     Also, display_gdb_prompt for the console does some readline magic
-     which is needed for the console interpreter, at least...  */
-
-  if (!first_time)
+  if (!first_time && !interp_quiet_p (interp))
     {
-      if (!interp_quiet_p (interp))
-	{
-	  sprintf (buffer, "Switching to interpreter \"%.24s\".\n",
-		   interp->name);
-	  ui_out_text (current_uiout, buffer);
-	}
-      display_gdb_prompt (NULL);
+      xsnprintf (buffer, sizeof (buffer),
+		 "Switching to interpreter \"%.24s\".\n", interp->name);
+      ui_out_text (current_uiout, buffer);
     }
 
   return 1;
@@ -302,34 +296,36 @@ current_interp_named_p (const char *interp_name)
   return 0;
 }
 
-/* This is called in display_gdb_prompt.  If the proc returns a zero
-   value, display_gdb_prompt will return without displaying the
-   prompt.  */
-int
-current_interp_display_prompt_p (void)
+/* The interpreter that is active while `interp_exec' is active, NULL
+   at all other times.  */
+static struct interp *command_interpreter;
+
+/* The interpreter that was active when a command was executed.
+   Normally that'd always be CURRENT_INTERPRETER, except that MI's
+   -interpreter-exec command doesn't actually flip the current
+   interpreter when running its sub-command.  The
+   `command_interpreter' global tracks when interp_exec is called
+   (IOW, when -interpreter-exec is called).  If that is set, it is
+   INTERP in '-interpreter-exec INTERP "CMD"' or in 'interpreter-exec
+   INTERP "CMD".  Otherwise, interp_exec isn't active, and so the
+   interpreter running the command is the current interpreter.  */
+
+struct interp *
+command_interp (void)
 {
-  if (current_interpreter == NULL
-      || current_interpreter->procs->prompt_proc_p == NULL)
-    return 0;
+  if (command_interpreter != NULL)
+    return command_interpreter;
   else
-    return current_interpreter->procs->prompt_proc_p (current_interpreter->
-						      data);
+    return current_interpreter;
 }
 
 /* Run the current command interpreter's main loop.  */
 void
 current_interp_command_loop (void)
 {
-  /* Somewhat messy.  For the moment prop up all the old ways of
-     selecting the command loop.  `deprecated_command_loop_hook'
-     should be deprecated.  */
-  if (deprecated_command_loop_hook != NULL)
-    deprecated_command_loop_hook ();
-  else if (current_interpreter != NULL
-	   && current_interpreter->procs->command_loop_proc != NULL)
-    current_interpreter->procs->command_loop_proc (current_interpreter->data);
-  else
-    cli_command_loop ();
+  gdb_assert (current_interpreter != NULL);
+
+  current_interpreter->procs->command_loop_proc (current_interpreter->data);
 }
 
 int
@@ -352,20 +348,24 @@ interp_set_quiet (struct interp *interp, int quiet)
 
 /* interp_exec - This executes COMMAND_STR in the current 
    interpreter.  */
-int
-interp_exec_p (struct interp *interp)
-{
-  return interp->procs->exec_proc != NULL;
-}
 
 struct gdb_exception
 interp_exec (struct interp *interp, const char *command_str)
 {
-  if (interp->procs->exec_proc != NULL)
-    {
-      return interp->procs->exec_proc (interp->data, command_str);
-    }
-  return exception_none;
+  struct gdb_exception ex;
+  struct interp *save_command_interp;
+
+  gdb_assert (interp->procs->exec_proc != NULL);
+
+  /* See `command_interp' for why we do this.  */
+  save_command_interp = command_interpreter;
+  command_interpreter = interp;
+
+  ex = interp->procs->exec_proc (interp->data, command_str);
+
+  command_interpreter = save_command_interp;
+
+  return ex;
 }
 
 /* A convenience routine that nulls out all the common command hooks.
@@ -387,7 +387,6 @@ clear_interpreter_hooks (void)
   deprecated_target_wait_hook = 0;
   deprecated_call_command_hook = 0;
   deprecated_error_begin_hook = 0;
-  deprecated_command_loop_hook = 0;
 }
 
 /* This is a lazy init routine, called the first time the interpreter
@@ -410,12 +409,13 @@ interpreter_exec_cmd (char *args, int from_tty)
   unsigned int nrules;
   unsigned int i;
   int old_quiet, use_quiet;
+  struct cleanup *cleanup;
 
   if (args == NULL)
     error_no_arg (_("interpreter-exec command"));
 
   prules = gdb_buildargv (args);
-  make_cleanup_freeargv (prules);
+  cleanup = make_cleanup_freeargv (prules);
 
   nrules = 0;
   for (trule = prules; *trule != NULL; trule++)
@@ -453,11 +453,14 @@ interpreter_exec_cmd (char *args, int from_tty)
   interp_set (old_interp, 0);
   interp_set_quiet (interp_to_use, use_quiet);
   interp_set_quiet (old_interp, old_quiet);
+
+  do_cleanups (cleanup);
 }
 
 /* List the possible interpreters which could complete the given text.  */
 static VEC (char_ptr) *
-interpreter_completer (struct cmd_list_element *ignore, char *text, char *word)
+interpreter_completer (struct cmd_list_element *ignore,
+		       const char *text, const char *word)
 {
   int textlen;
   VEC (char_ptr) *matches = NULL;

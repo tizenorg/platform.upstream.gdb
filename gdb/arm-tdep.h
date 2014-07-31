@@ -1,5 +1,5 @@
 /* Common target dependent code for GDB on ARM systems.
-   Copyright (C) 2002-2003, 2007-2012 Free Software Foundation, Inc.
+   Copyright (C) 2002-2014 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -173,16 +173,16 @@ struct gdbarch_tdep
   CORE_ADDR lowest_pc;		/* Lowest address at which instructions 
 				   will appear.  */
 
-  const char *arm_breakpoint;	/* Breakpoint pattern for an ARM insn.  */
+  const gdb_byte *arm_breakpoint;	/* Breakpoint pattern for an ARM insn.  */
   int arm_breakpoint_size;	/* And its size.  */
-  const char *thumb_breakpoint;	/* Breakpoint pattern for a Thumb insn.  */
+  const gdb_byte *thumb_breakpoint;	/* Breakpoint pattern for a Thumb insn.  */
   int thumb_breakpoint_size;	/* And its size.  */
 
   /* If the Thumb breakpoint is an undefined instruction (which is
      affected by IT blocks) rather than a BKPT instruction (which is
      not), then we need a 32-bit Thumb breakpoint to preserve the
      instruction count in IT blocks.  */
-  const char *thumb2_breakpoint;
+  const gdb_byte *thumb2_breakpoint;
   int thumb2_breakpoint_size;
 
   int jb_pc;			/* Offset to PC value in jump buffer.
@@ -193,9 +193,6 @@ struct gdbarch_tdep
   /* Convention for returning structures.  */
   enum struct_return struct_return;
 
-  /* Cached core file helpers.  */
-  struct regset *gregset, *fpregset, *vfpregset;
-
   /* ISA-specific data types.  */
   struct type *arm_ext_type;
   struct type *neon_double_type;
@@ -205,8 +202,8 @@ struct gdbarch_tdep
      instruction.  */
   CORE_ADDR (*syscall_next_pc) (struct frame_info *frame);
 
-   /* Parse swi insn args, sycall record.  */
-  int (*arm_swi_record) (struct regcache *regcache);
+   /* syscall record.  */
+  int (*arm_syscall_record) (struct regcache *regcache, unsigned long svc_number);
 };
 
 /* Structures used for displaced stepping.  */

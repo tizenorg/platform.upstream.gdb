@@ -1,6 +1,5 @@
 /* IA-64 support for 64-bit ELF
-   Copyright 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007,
-   2008, 2009, 2010, 2011, 2012  Free Software Foundation, Inc.
+   Copyright (C) 1998-2014 Free Software Foundation, Inc.
    Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
    This file is part of BFD, the Binary File Descriptor library.
@@ -570,7 +569,7 @@ elfNN_ia64_relax_section (bfd *abfd, asection *sec,
 	     .plt section.  After the first relaxation pass, linker may
 	     increase the gap between the .plt and .text sections up
 	     to 32byte.  We assume linker will always insert 32byte
-	     between the .plt and .text sections after the the first
+	     between the .plt and .text sections after the first
 	     relaxation pass.  */
 	  if (tsec == ia64_info->root.splt)
 	    offset = -0x1000000 + 32;
@@ -1094,7 +1093,7 @@ elfNN_ia64_modify_segment_map (bfd *abfd,
   s = bfd_get_section_by_name (abfd, ELF_STRING_ia64_archext);
   if (s && (s->flags & SEC_LOAD))
     {
-      for (m = elf_tdata (abfd)->segment_map; m != NULL; m = m->next)
+      for (m = elf_seg_map (abfd); m != NULL; m = m->next)
 	if (m->p_type == PT_IA_64_ARCHEXT)
 	  break;
       if (m == NULL)
@@ -1109,7 +1108,7 @@ elfNN_ia64_modify_segment_map (bfd *abfd,
 	  m->sections[0] = s;
 
 	  /* We want to put it after the PHDR and INTERP segments.  */
-	  pm = &elf_tdata (abfd)->segment_map;
+	  pm = &elf_seg_map (abfd);
 	  while (*pm != NULL
 		 && ((*pm)->p_type == PT_PHDR
 		     || (*pm)->p_type == PT_INTERP))
@@ -1129,7 +1128,7 @@ elfNN_ia64_modify_segment_map (bfd *abfd,
 
       if (s && (s->flags & SEC_LOAD))
 	{
-	  for (m = elf_tdata (abfd)->segment_map; m != NULL; m = m->next)
+	  for (m = elf_seg_map (abfd); m != NULL; m = m->next)
 	    if (m->p_type == PT_IA_64_UNWIND)
 	      {
 		int i;
@@ -1158,7 +1157,7 @@ elfNN_ia64_modify_segment_map (bfd *abfd,
 	      m->next = NULL;
 
 	      /* We want to put it last.  */
-	      pm = &elf_tdata (abfd)->segment_map;
+	      pm = &elf_seg_map (abfd);
 	      while (*pm != NULL)
 		pm = &(*pm)->next;
 	      *pm = m;
@@ -1181,7 +1180,7 @@ elfNN_ia64_modify_program_headers (bfd *abfd,
   struct elf_segment_map *m;
   Elf_Internal_Phdr *p;
 
-  for (p = tdata->phdr, m = tdata->segment_map; m != NULL; m = m->next, p++)
+  for (p = tdata->phdr, m = elf_seg_map (abfd); m != NULL; m = m->next, p++)
     if (m->p_type == PT_LOAD)
       {
 	int i;
@@ -1463,7 +1462,7 @@ elfNN_ia64_hash_table_free (struct bfd_link_hash_table *hash)
     objalloc_free ((struct objalloc *) ia64_info->loc_hash_memory);
   elf_link_hash_traverse (&ia64_info->root,
 			  elfNN_ia64_global_dyn_info_free, NULL);
-  _bfd_generic_link_hash_table_free (hash);
+  _bfd_elf_link_hash_table_free (hash);
 }
 
 /* Traverse both local and global hash tables.  */
@@ -1546,7 +1545,8 @@ elfNN_ia64_create_dynamic_sections (bfd *abfd,
     bfd_set_section_flags (abfd, ia64_info->root.sgot,
 			   SEC_SMALL_DATA | flags);
     /* The .got section is always aligned at 8 bytes.  */
-    bfd_set_section_alignment (abfd, ia64_info->root.sgot, 3);
+    if (! bfd_set_section_alignment (abfd, ia64_info->root.sgot, 3))
+      return FALSE;
   }
 
   if (!get_pltoff (abfd, info, ia64_info))
@@ -1952,16 +1952,17 @@ get_got (bfd *abfd, struct bfd_link_info *info,
       if (!dynobj)
 	ia64_info->root.dynobj = dynobj = abfd;
       if (!_bfd_elf_create_got_section (dynobj, info))
-	return 0;
+	return NULL;
 
       got = ia64_info->root.sgot;
 
       /* The .got section is always aligned at 8 bytes.  */
       if (!bfd_set_section_alignment (abfd, got, 3))
-	return 0;
+	return NULL;
 
       flags = bfd_get_section_flags (abfd, got);
-      bfd_set_section_flags (abfd, got, SEC_SMALL_DATA | flags);
+      if (! bfd_set_section_flags (abfd, got, SEC_SMALL_DATA | flags))
+	return NULL;
     }
 
   return got;
@@ -2352,6 +2353,9 @@ elfNN_ia64_check_relocs (bfd *abfd, struct bfd_link_info *info,
 		 || h->root.type == bfd_link_hash_warning)
 	    h = (struct elf_link_hash_entry *) h->root.u.i.link;
 
+	  /* PR15323, ref flags aren't set for references in the same
+	     object.  */
+	  h->root.non_ir_ref = 1;
 	  h->ref_regular = 1;
 	}
       else
@@ -3898,17 +3902,17 @@ elfNN_ia64_relocate_section (bfd *output_bfd,
       else
 	{
 	  bfd_boolean unresolved_reloc;
-	  bfd_boolean warned;
+	  bfd_boolean warned, ignored;
 	  struct elf_link_hash_entry **sym_hashes = elf_sym_hashes (input_bfd);
 
 	  RELOC_FOR_GLOBAL_SYMBOL (info, input_bfd, input_section, rel,
 				   r_symndx, symtab_hdr, sym_hashes,
 				   h, sym_sec, value,
-				   unresolved_reloc, warned);
+				   unresolved_reloc, warned, ignored);
 
 	  if (h->root.type == bfd_link_hash_undefweak)
 	    undef_weak_ref = TRUE;
-	  else if (warned)
+	  else if (warned || (ignored && info->executable))
 	    continue;
 	}
 
@@ -4586,7 +4590,7 @@ elfNN_ia64_finish_dynamic_symbol (bfd *output_bfd,
     }
 
   /* Mark some specially defined symbols as absolute.  */
-  if (strcmp (h->root.root.string, "_DYNAMIC") == 0
+  if (h == ia64_info->root.hdynamic
       || h == ia64_info->root.hgot
       || h == ia64_info->root.hplt)
     sym->st_shndx = SHN_ABS;
@@ -4808,7 +4812,9 @@ elfNN_ia64_print_private_bfd_data (bfd *abfd, void * ptr)
 }
 
 static enum elf_reloc_type_class
-elfNN_ia64_reloc_type_class (const Elf_Internal_Rela *rela)
+elfNN_ia64_reloc_type_class (const struct bfd_link_info *info ATTRIBUTE_UNUSED,
+			     const asection *rel_sec ATTRIBUTE_UNUSED,
+			     const Elf_Internal_Rela *rela)
 {
   switch ((int) ELFNN_R_TYPE (rela->r_info))
     {
@@ -4930,8 +4936,8 @@ elfNN_ia64_object_p (bfd *abfd)
 static bfd_boolean
 elfNN_ia64_hpux_vec (const bfd_target *vec)
 {
-  extern const bfd_target bfd_elfNN_ia64_hpux_big_vec;
-  return (vec == & bfd_elfNN_ia64_hpux_big_vec);
+  extern const bfd_target ia64_elfNN_hpux_be_vec;
+  return (vec == &ia64_elfNN_hpux_be_vec);
 }
 
 static void
@@ -4972,9 +4978,9 @@ elfNN_hpux_backend_symbol_processing (bfd *abfd ATTRIBUTE_UNUSED,
     }
 }
 
-#define TARGET_LITTLE_SYM		bfd_elfNN_ia64_little_vec
+#define TARGET_LITTLE_SYM		ia64_elfNN_le_vec
 #define TARGET_LITTLE_NAME		"elfNN-ia64-little"
-#define TARGET_BIG_SYM			bfd_elfNN_ia64_big_vec
+#define TARGET_BIG_SYM			ia64_elfNN_be_vec
 #define TARGET_BIG_NAME			"elfNN-ia64-big"
 #define ELF_ARCH			bfd_arch_ia64
 #define ELF_TARGET_ID			IA64_ELF_DATA
@@ -5077,7 +5083,7 @@ elfNN_hpux_backend_symbol_processing (bfd *abfd ATTRIBUTE_UNUSED,
 #undef  TARGET_LITTLE_SYM
 #undef  TARGET_LITTLE_NAME
 #undef  TARGET_BIG_SYM
-#define TARGET_BIG_SYM                  bfd_elfNN_ia64_hpux_big_vec
+#define TARGET_BIG_SYM                  ia64_elfNN_hpux_be_vec
 #undef  TARGET_BIG_NAME
 #define TARGET_BIG_NAME                 "elfNN-ia64-hpux-big"
 

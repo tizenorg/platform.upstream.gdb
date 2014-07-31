@@ -1,5 +1,5 @@
 /* m68hc11 & m68hc12 ELF support for BFD.
-   Copyright 1999, 2000, 2001, 2002, 2010, 2012 Free Software Foundation, Inc.
+   Copyright (C) 1999-2014 Free Software Foundation, Inc.
 
    This file is part of BFD, the Binary File Descriptor library.
 
@@ -72,6 +72,9 @@ END_RELOC_NUMBERS (R_M68HC11_max)
 
 /* XGATE ram offsetting.  */
 #define E_M68HC11_XGATE_RAMOFFSET     0x000000100
+
+/* Suppress warnings */
+#define E_M68HC11_NO_BANK_WARNING     0x000000200
 
 #define EF_M68HC11_MACH_MASK 0xF0
 #define EF_M68HC11_GENERIC   0x00 /* Generic 68HC12/backward compatibility.  */

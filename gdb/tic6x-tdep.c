@@ -1,6 +1,6 @@
 /* Target dependent code for GDB on TI C6x systems.
 
-   Copyright (C) 2010-2012 Free Software Foundation, Inc.
+   Copyright (C) 2010-2014 Free Software Foundation, Inc.
    Contributed by Andrew Jenner <andrew@codesourcery.com>
    Contributed by Yao Qi <yao@codesourcery.com>
 
@@ -323,7 +323,7 @@ tic6x_skip_prologue (struct gdbarch *gdbarch, CORE_ADDR start_pc)
 
 /* This is the implementation of gdbarch method breakpiont_from_pc.  */
 
-static const unsigned char*
+static const gdb_byte *
 tic6x_breakpoint_from_pc (struct gdbarch *gdbarch, CORE_ADDR *bp_addr,
 			  int *bp_size)
 {
@@ -530,7 +530,7 @@ tic6x_stub_unwind_sniffer (const struct frame_unwind *self,
   CORE_ADDR addr_in_block;
 
   addr_in_block = get_frame_address_in_block (this_frame);
-  if (in_plt_section (addr_in_block, NULL))
+  if (in_plt_section (addr_in_block))
     return 1;
 
   return 0;
@@ -715,27 +715,6 @@ tic6x_frame_align (struct gdbarch *gdbarch, CORE_ADDR addr)
   return align_down (addr, 8);
 }
 
-/* This is the implementation of gdbarch method register_to_value.  */
-
-static int
-tic6x_register_to_value (struct frame_info *frame, int regnum,
-			 struct type *type, gdb_byte * to,
-			 int *optimizedp, int *unavailablep)
-{
-  get_frame_register (frame, regnum, (char *) to);
-  *optimizedp = *unavailablep = 0;
-  return 1;
-}
-
-/* This is the implementation of gdbarch method value_to_register.  */
-
-static void
-tic6x_value_to_register (struct frame_info *frame, int regnum,
-			 struct type *type, const gdb_byte *from)
-{
-  put_frame_register (frame, regnum, from);
-}
-
 /* Given a return value in REGCACHE with a type VALTYPE, extract and copy its
    value into VALBUF.  */
 
@@ -916,7 +895,6 @@ tic6x_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
 {
   int argreg = 0;
   int argnum;
-  int len = 0;
   int stack_offset = 4;
   int references_offset = 4;
   CORE_ADDR func_addr = find_function_addr (function, NULL);
@@ -1172,7 +1150,7 @@ tic6x_get_longjmp_target (struct frame_info *frame, CORE_ADDR *pc)
   struct gdbarch *gdbarch = get_frame_arch (frame);
   enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
   CORE_ADDR jb_addr;
-  char buf[4];
+  gdb_byte buf[4];
 
   /* JMP_BUF is passed by reference in A4.  */
   jb_addr = get_frame_register_unsigned (frame, 4);
@@ -1330,6 +1308,7 @@ tic6x_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
 
   frame_unwind_append_unwinder (gdbarch, &tic6x_stub_unwind);
   frame_unwind_append_unwinder (gdbarch, &tic6x_frame_unwind);
+  frame_base_set_default (gdbarch, &tic6x_frame_base);
 
   dwarf2_frame_set_init_reg (gdbarch, tic6x_dwarf2_frame_init_reg);
 
@@ -1340,9 +1319,6 @@ tic6x_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
 
   /* Call dummy code.  */
   set_gdbarch_frame_align (gdbarch, tic6x_frame_align);
-
-  set_gdbarch_register_to_value (gdbarch, tic6x_register_to_value);
-  set_gdbarch_value_to_register (gdbarch, tic6x_value_to_register);
 
   set_gdbarch_return_value (gdbarch, tic6x_return_value);
 

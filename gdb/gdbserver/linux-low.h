@@ -1,6 +1,5 @@
 /* Internal interfaces for the GNU/Linux specific target code for gdbserver.
-   Copyright (C) 2002, 2004-2005, 2007-2012 Free Software Foundation,
-   Inc.
+   Copyright (C) 2002-2014 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -17,16 +16,15 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_THREAD_DB_H
-#include <thread_db.h>
-#endif
+#include "gdb_thread_db.h"
 #include <signal.h>
 
 #include "gdbthread.h"
 #include "gdb_proc_service.h"
 
-#define PTRACE_ARG3_TYPE void *
-#define PTRACE_ARG4_TYPE void *
+/* Included for ptrace type definitions.  */
+#include "linux-ptrace.h"
+
 #define PTRACE_XFER_TYPE long
 
 #ifdef HAVE_LINUX_REGSETS
@@ -49,8 +47,60 @@ struct regset_info
   regset_fill_func fill_function;
   regset_store_func store_function;
 };
-extern struct regset_info target_regsets[];
+
+/* Aggregation of all the supported regsets of a given
+   architecture/mode.  */
+
+struct regsets_info
+{
+  /* The regsets array.  */
+  struct regset_info *regsets;
+
+  /* The number of regsets in the REGSETS array.  */
+  int num_regsets;
+
+  /* If we get EIO on a regset, do not try it again.  Note the set of
+     supported regsets may depend on processor mode on biarch
+     machines.  This is a (lazily allocated) array holding one boolean
+     byte (0/1) per regset, with each element corresponding to the
+     regset in the REGSETS array above at the same offset.  */
+  char *disabled_regsets;
+};
+
 #endif
+
+/* Mapping between the general-purpose registers in `struct user'
+   format and GDB's register array layout.  */
+
+struct usrregs_info
+{
+  /* The number of registers accessible.  */
+  int num_regs;
+
+  /* The registers map.  */
+  int *regmap;
+};
+
+/* All info needed to access an architecture/mode's registers.  */
+
+struct regs_info
+{
+  /* Regset support bitmap: 1 for registers that are transferred as a part
+     of a regset, 0 for ones that need to be handled individually.  This
+     can be NULL if all registers are transferred with regsets or regsets
+     are not supported.  */
+  unsigned char *regset_bitmap;
+
+  /* Info used when accessing registers with PTRACE_PEEKUSER /
+     PTRACE_POKEUSER.  This can be NULL if all registers are
+     transferred with regsets  .*/
+  struct usrregs_info *usrregs;
+
+#ifdef HAVE_LINUX_REGSETS
+  /* Info used when accessing registers with regsets.  */
+  struct regsets_info *regsets_info;
+#endif
+};
 
 struct process_info_private
 {
@@ -63,6 +113,11 @@ struct process_info_private
 
   /* &_r_debug.  0 if not yet determined.  -1 if no PT_DYNAMIC in Phdrs.  */
   CORE_ADDR r_debug;
+
+  /* This flag is true iff we've just created or attached to the first
+     LWP of this process but it has not stopped yet.  As soon as it
+     does, we need to call the low target's arch_setup callback.  */
+  int new_inferior;
 };
 
 struct lwp_info;
@@ -72,14 +127,7 @@ struct linux_target_ops
   /* Architecture-specific setup.  */
   void (*arch_setup) (void);
 
-  int num_regs;
-  int *regmap;
-
-  /* Regset support bitmap: 1 for registers that are transferred as a part
-     of a regset, 0 for ones that need to be handled individually.  This
-     can be NULL if all registers are transferred with regsets or regsets
-     are not supported.  */
-  unsigned char *regset_bitmap;
+  const struct regs_info *(*regs_info) (void);
   int (*cannot_fetch_register) (int);
 
   /* Returns 0 if we can store the register, 1 if we can not
@@ -105,8 +153,12 @@ struct linux_target_ops
 
   /* Breakpoint and watchpoint related functions.  See target.h for
      comments.  */
-  int (*insert_point) (char type, CORE_ADDR addr, int len);
-  int (*remove_point) (char type, CORE_ADDR addr, int len);
+  int (*supports_z_point_type) (char z_type);
+  int (*insert_point) (enum raw_bkpt_type type, CORE_ADDR addr,
+		       int size, struct raw_breakpoint *bp);
+  int (*remove_point) (enum raw_bkpt_type type, CORE_ADDR addr,
+		       int size, struct raw_breakpoint *bp);
+
   int (*stopped_by_watchpoint) (void);
   CORE_ADDR (*stopped_data_address) (void);
 
@@ -169,23 +221,29 @@ struct linux_target_ops
      for use as a fast tracepoint.  */
   int (*get_min_fast_tracepoint_insn_len) (void);
 
+  /* Returns true if the low target supports range stepping.  */
+  int (*supports_range_stepping) (void);
 };
 
 extern struct linux_target_ops the_low_target;
 
-#define ptid_of(proc) ((proc)->head.id)
-#define pid_of(proc) ptid_get_pid ((proc)->head.id)
-#define lwpid_of(proc) ptid_get_lwp ((proc)->head.id)
+#define get_thread_lwp(thr) ((struct lwp_info *) (inferior_target_data (thr)))
+#define get_lwp_thread(lwp) ((lwp)->thread)
 
-#define get_lwp(inf) ((struct lwp_info *)(inf))
-#define get_thread_lwp(thr) (get_lwp (inferior_target_data (thr)))
-#define get_lwp_thread(proc) ((struct thread_info *)			\
-			      find_inferior_id (&all_threads,		\
-						get_lwp (proc)->head.id))
+/* This struct is recorded in the target_data field of struct thread_info.
+
+   On linux ``all_threads'' is keyed by the LWP ID, which we use as the
+   GDB protocol representation of the thread ID.  Threads also have
+   a "process ID" (poorly named) which is (presently) the same as the
+   LWP ID.
+
+   There is also ``all_processes'' is keyed by the "overall process ID",
+   which GNU/Linux calls tgid, "thread group ID".  */
 
 struct lwp_info
 {
-  struct inferior_list_entry head;
+  /* Backlink to the parent object.  */
+  struct thread_info *thread;
 
   /* If this flag is set, the next SIGSTOP will be ignored (the
      process will be immediately resumed).  This means that either we
@@ -238,6 +296,12 @@ struct lwp_info
      level on this process was a single-step.  */
   int stepping;
 
+  /* Range to single step within.  This is a copy of the step range
+     passed along the last resume request.  See 'struct
+     thread_resume'.  */
+  CORE_ADDR step_range_start;	/* Inclusive */
+  CORE_ADDR step_range_end;	/* Exclusive */
+
   /* If this flag is set, we need to set the event request flags the
      next time we see this LWP stop.  */
   int must_set_ptrace_flags;
@@ -270,8 +334,8 @@ struct lwp_info
      stepping over later when it is resumed.  */
   int need_step_over;
 
+#ifdef USE_THREAD_DB
   int thread_known;
-#ifdef HAVE_THREAD_DB_H
   /* The thread handle, used for e.g. TLS access.  Only valid if
      THREAD_KNOWN is set.  */
   td_thrhandle_t th;
@@ -281,13 +345,26 @@ struct lwp_info
   struct arch_lwp_info *arch_private;
 };
 
-extern struct inferior_list all_lwps;
-
 int linux_pid_exe_is_elf_64_file (int pid, unsigned int *machine);
 
-void linux_attach_lwp (unsigned long pid);
+/* Attach to PTID.  Returns 0 on success, non-zero otherwise (an
+   errno).  */
+int linux_attach_lwp (ptid_t ptid);
+
+/* Return the reason an attach failed, in string form.  ERR is the
+   error returned by linux_attach_lwp (an errno).  This string should
+   be copied into a buffer by the client if the string will not be
+   immediately used, or if it must persist.  */
+char *linux_attach_fail_reason_string (ptid_t ptid, int err);
+
 struct lwp_info *find_lwp_pid (ptid_t ptid);
 void linux_stop_lwp (struct lwp_info *lwp);
+
+#ifdef HAVE_LINUX_REGSETS
+void initialize_regsets_info (struct regsets_info *regsets_info);
+#endif
+
+void initialize_low_arch (void);
 
 /* From thread-db.c  */
 int thread_db_init (int use_events);

@@ -1,5 +1,4 @@
-# Copyright 1997, 1999, 2002-2004, 2007-2012 Free Software Foundation,
-# Inc.
+# Copyright 1997-2014 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,12 +30,9 @@ if [is_remote target] then {
     return 0
 }
 
-set testfile "attach"
-set srcfile  ${testfile}.c
-set srcfile2 ${testfile}2.c
-set binfile  ${objdir}/${subdir}/${testfile}
-set binfile2 ${objdir}/${subdir}/${testfile}2
-set escapedbinfile  [string_to_regexp ${objdir}/${subdir}/${testfile}]
+standard_testfile attach.c attach2.c
+set binfile2 ${binfile}2
+set escapedbinfile  [string_to_regexp $binfile]
 
 #execute_anywhere "rm -f ${binfile} ${binfile2}"
 remote_exec build "rm -f ${binfile} ${binfile2}"
@@ -68,7 +64,6 @@ proc do_attach_tests {} {
     global escapedbinfile
     global srcfile
     global testfile
-    global objdir
     global subdir
     global timeout
     
@@ -299,7 +294,7 @@ proc do_attach_tests {} {
     # when we're cd'd to some directory that doesn't contain the
     # a.out.  (We use the source path set by the "dir" command.)
     
-    gdb_test "dir ${objdir}/${subdir}" "Source directories searched: .*" \
+    gdb_test "dir [standard_output_file {}]" "Source directories searched: .*" \
 	"set source path"
 
     gdb_test "cd /tmp" "Working directory /tmp." \
@@ -389,6 +384,51 @@ proc do_call_attach_tests {} {
     remote_exec build "kill -9 ${testpid}"
 }
 
+proc do_command_attach_tests {} {
+    global gdb_prompt
+    global binfile
+    global verbose
+    global GDB
+    global INTERNAL_GDBFLAGS
+    global GDBFLAGS
+
+    if ![isnative] then {
+	unsupported "command attach test"
+	return 0
+    }
+
+    # Start the program running and then wait for a bit, to be sure
+    # that it can be attached to.
+
+    set testpid [eval exec $binfile &]
+    exec sleep 2
+    if { [istarget "*-*-cygwin*"] } {
+	# testpid is the Cygwin PID, GDB uses the Windows PID, which might be
+	# different due to the way fork/exec works.
+	set testpid [ exec ps -e | gawk "{ if (\$1 == $testpid) print \$4; }" ]
+    }
+
+    gdb_exit
+    if $verbose>1 then {
+        send_user "Spawning $GDB $INTERNAL_GDBFLAGS $GDBFLAGS --pid=$testpid\n"
+    }
+
+    eval "spawn $GDB $INTERNAL_GDBFLAGS $GDBFLAGS --pid=$testpid"
+    set test "starting with --pid"
+    expect {
+	-re "Reading symbols from.*$gdb_prompt $" {
+	    pass "$test"
+	}
+	timeout {
+	    fail "$test (timeout)"
+	}
+    }
+
+    # Get rid of the process
+
+    remote_exec build "kill -9 ${testpid}"
+}
+
 
 # Start with a fresh gdb
 
@@ -408,5 +448,9 @@ gdb_start
 
 gdb_reinitialize_dir $srcdir/$subdir
 do_call_attach_tests
+
+# Test "gdb --pid"
+
+do_command_attach_tests
 
 return 0

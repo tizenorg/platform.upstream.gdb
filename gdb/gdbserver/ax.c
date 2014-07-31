@@ -1,5 +1,5 @@
 /* Agent expression code for remote server.
-   Copyright (C) 2009-2012 Free Software Foundation, Inc.
+   Copyright (C) 2009-2014 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -19,8 +19,10 @@
 #include "server.h"
 #include "ax.h"
 #include "format.h"
+#include "tracepoint.h"
+#include "rsp-low.h"
 
-static void ax_vdebug (const char *, ...) ATTR_FORMAT (printf, 1, 2);
+static void ax_vdebug (const char *, ...) ATTRIBUTE_PRINTF (1, 2);
 
 #ifdef IN_PROCESS_AGENT
 int debug_agent = 0;
@@ -103,9 +105,19 @@ gdb_parse_agent_expr (char **actparm)
   aexpr = xmalloc (sizeof (struct agent_expr));
   aexpr->length = xlen;
   aexpr->bytes = xmalloc (xlen);
-  convert_ascii_to_int (act, aexpr->bytes, xlen);
+  hex2bin (act, aexpr->bytes, xlen);
   *actparm = act + (xlen * 2);
   return aexpr;
+}
+
+void
+gdb_free_agent_expr (struct agent_expr *aexpr)
+{
+  if (aexpr != NULL)
+    {
+      free (aexpr->bytes);
+      free (aexpr);
+    }
 }
 
 /* Convert the bytes of an agent expression back into hex digits, so
@@ -118,7 +130,7 @@ gdb_unparse_agent_expr (struct agent_expr *aexpr)
   char *rslt;
 
   rslt = xmalloc (2 * aexpr->length + 1);
-  convert_int_to_ascii (aexpr->bytes, rslt, aexpr->length);
+  bin2hex (aexpr->bytes, rslt, aexpr->length);
   return rslt;
 }
 
@@ -798,10 +810,10 @@ compile_bytecodes (struct agent_expr *aexpr)
    in.  */
 
 static void
-ax_printf (CORE_ADDR fn, CORE_ADDR chan, char *format,
+ax_printf (CORE_ADDR fn, CORE_ADDR chan, const char *format,
 	   int nargs, ULONGEST *args)
 {
-  char *f = format;
+  const char *f = format;
   struct format_piece *fpieces;
   int i, fp;
   char *current_substring;
@@ -905,6 +917,7 @@ ax_printf (CORE_ADDR fn, CORE_ADDR chan, char *format,
     }
 
   free_format_pieces (fpieces);
+  fflush (stdout);
 }
 
 /* The agent expression evaluator, as specified by the GDB docs. It
@@ -912,8 +925,7 @@ ax_printf (CORE_ADDR fn, CORE_ADDR chan, char *format,
    otherwise.  */
 
 enum eval_result_type
-gdb_eval_agent_expr (struct regcache *regcache,
-		     struct traceframe *tframe,
+gdb_eval_agent_expr (struct eval_agent_expr_context *ctx,
 		     struct agent_expr *aexpr,
 		     ULONGEST *rslt)
 {
@@ -1032,15 +1044,15 @@ gdb_eval_agent_expr (struct regcache *regcache,
 	  break;
 
 	case gdb_agent_op_trace:
-	  agent_mem_read (tframe,
-			  NULL, (CORE_ADDR) stack[--sp], (ULONGEST) top);
+	  agent_mem_read (ctx, NULL, (CORE_ADDR) stack[--sp],
+			  (ULONGEST) top);
 	  if (--sp >= 0)
 	    top = stack[sp];
 	  break;
 
 	case gdb_agent_op_trace_quick:
 	  arg = aexpr->bytes[pc++];
-	  agent_mem_read (tframe, NULL, (CORE_ADDR) top, (ULONGEST) arg);
+	  agent_mem_read (ctx, NULL, (CORE_ADDR) top, (ULONGEST) arg);
 	  break;
 
 	case gdb_agent_op_log_not:
@@ -1086,22 +1098,22 @@ gdb_eval_agent_expr (struct regcache *regcache,
 	  break;
 
 	case gdb_agent_op_ref8:
-	  agent_mem_read (tframe, cnv.u8.bytes, (CORE_ADDR) top, 1);
+	  agent_mem_read (ctx, cnv.u8.bytes, (CORE_ADDR) top, 1);
 	  top = cnv.u8.val;
 	  break;
 
 	case gdb_agent_op_ref16:
-	  agent_mem_read (tframe, cnv.u16.bytes, (CORE_ADDR) top, 2);
+	  agent_mem_read (ctx, cnv.u16.bytes, (CORE_ADDR) top, 2);
 	  top = cnv.u16.val;
 	  break;
 
 	case gdb_agent_op_ref32:
-	  agent_mem_read (tframe, cnv.u32.bytes, (CORE_ADDR) top, 4);
+	  agent_mem_read (ctx, cnv.u32.bytes, (CORE_ADDR) top, 4);
 	  top = cnv.u32.val;
 	  break;
 
 	case gdb_agent_op_ref64:
-	  agent_mem_read (tframe, cnv.u64.bytes, (CORE_ADDR) top, 8);
+	  agent_mem_read (ctx, cnv.u64.bytes, (CORE_ADDR) top, 8);
 	  top = cnv.u64.val;
 	  break;
 
@@ -1160,8 +1172,9 @@ gdb_eval_agent_expr (struct regcache *regcache,
 	  arg = (arg << 8) + aexpr->bytes[pc++];
 	  {
 	    int regnum = arg;
+	    struct regcache *regcache = ctx->regcache;
 
-	    switch (register_size (regnum))
+	    switch (register_size (regcache->tdesc, regnum))
 	      {
 	      case 8:
 		collect_register (regcache, regnum, cnv.u64.bytes);
@@ -1260,11 +1273,11 @@ gdb_eval_agent_expr (struct regcache *regcache,
 	case gdb_agent_op_tracev:
 	  arg = aexpr->bytes[pc++];
 	  arg = (arg << 8) + aexpr->bytes[pc++];
-	  agent_tsv_read (tframe, arg);
+	  agent_tsv_read (ctx, arg);
 	  break;
 
 	case gdb_agent_op_tracenz:
-	  agent_mem_read_string (tframe, NULL, (CORE_ADDR) stack[--sp],
+	  agent_mem_read_string (ctx, NULL, (CORE_ADDR) stack[--sp],
 				 (ULONGEST) top);
 	  if (--sp >= 0)
 	    top = stack[sp];

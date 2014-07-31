@@ -1,6 +1,6 @@
 /* Target-dependent header for the MIPS architecture, for GDB, the GNU Debugger.
 
-   Copyright (C) 2002-2003, 2007-2012 Free Software Foundation, Inc.
+   Copyright (C) 2002-2014 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -19,6 +19,8 @@
 
 #ifndef MIPS_TDEP_H
 #define MIPS_TDEP_H
+
+#include "objfiles.h"
 
 struct gdbarch;
 
@@ -107,14 +109,6 @@ struct gdbarch_tdep
   int register_size_valid_p;
   int register_size;
 
-  /* General-purpose registers.  */
-  struct regset *gregset;
-  struct regset *gregset64;
-
-  /* Floating-point registers.  */
-  struct regset *fpregset;
-  struct regset *fpregset64;
-
   /* Return the expected next PC if FRAME is stopped at a syscall
      instruction.  */
   CORE_ADDR (*syscall_next_pc) (struct frame_info *frame);
@@ -183,5 +177,13 @@ extern void mips_write_pc (struct regcache *regcache, CORE_ADDR pc);
    registers.  */
 extern struct target_desc *mips_tdesc_gp32;
 extern struct target_desc *mips_tdesc_gp64;
+
+/* Return non-zero if PC is in a MIPS SVR4 lazy binding stub section.  */
+
+static inline int
+in_mips_stubs_section (CORE_ADDR pc)
+{
+  return pc_in_section (pc, ".MIPS.stubs");
+}
 
 #endif /* MIPS_TDEP_H */

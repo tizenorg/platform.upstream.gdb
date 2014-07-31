@@ -1,6 +1,6 @@
 /* Target-dependent code for Xilinx MicroBlaze.
 
-   Copyright 2009-2012 Free Software Foundation, Inc.
+   Copyright (C) 2009-2014 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -29,14 +29,13 @@
 #include "inferior.h"
 #include "regcache.h"
 #include "target.h"
-#include "frame.h"
 #include "frame-base.h"
 #include "frame-unwind.h"
 #include "dwarf2-frame.h"
 #include "osabi.h"
 
 #include "gdb_assert.h"
-#include "gdb_string.h"
+#include <string.h>
 #include "target-descriptions.h"
 #include "opcodes/microblaze-opcm.h"
 #include "opcodes/microblaze-dis.h"
@@ -79,7 +78,7 @@ static const char *microblaze_register_names[] =
 
 #define MICROBLAZE_NUM_REGS ARRAY_SIZE (microblaze_register_names)
 
-static int microblaze_debug_flag = 0;
+static unsigned int microblaze_debug_flag = 0;
 
 static void
 microblaze_debug (const char *fmt, ...)
@@ -123,7 +122,7 @@ microblaze_register_type (struct gdbarch *gdbarch, int regnum)
 static unsigned long
 microblaze_fetch_instruction (CORE_ADDR pc)
 {
-  enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch);
+  enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
   gdb_byte buf[4];
 
   /* If we can't read the instruction at PC, return zero.  */
@@ -677,7 +676,7 @@ microblaze_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
     return arches->gdbarch;
 
   /* Allocate space for the new architecture.  */
-  tdep = XMALLOC (struct gdbarch_tdep);
+  tdep = XNEW (struct gdbarch_tdep);
   gdbarch = gdbarch_alloc (&info, tdep);
 
   set_gdbarch_long_double_bit (gdbarch, 128);
@@ -739,13 +738,13 @@ _initialize_microblaze_tdep (void)
   register_gdbarch_init (bfd_arch_microblaze, microblaze_gdbarch_init);
 
   /* Debug this files internals.  */
-  add_setshow_zinteger_cmd ("microblaze", class_maintenance,
-			    &microblaze_debug_flag, _("\
+  add_setshow_zuinteger_cmd ("microblaze", class_maintenance,
+			     &microblaze_debug_flag, _("\
 Set microblaze debugging."), _("\
 Show microblaze debugging."), _("\
 When non-zero, microblaze specific debugging is enabled."),
-			    NULL,
-			    NULL, 
-			    &setdebuglist, &showdebuglist);
+			     NULL,
+			     NULL,
+			     &setdebuglist, &showdebuglist);
 
 }

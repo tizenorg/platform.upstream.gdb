@@ -1,6 +1,6 @@
 /* Shared utility routines for GDB to interact with agent.
 
-   Copyright (C) 2009-2012 Free Software Foundation, Inc.
+   Copyright (C) 2009-2014 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -22,12 +22,14 @@
 #else
 #include "defs.h"
 #include "target.h"
-#include "inferior.h" /* for non_stop */
+#include "infrun.h"
+#include "objfiles.h"
 #endif
 
 #include <string.h>
 #include <unistd.h>
 #include "agent.h"
+#include "filestuff.h"
 
 int debug_agent = 0;
 
@@ -97,12 +99,12 @@ agent_look_up_symbols (void *arg)
 
       if (look_up_one_symbol (symbol_list[i].name, addrp, 1) == 0)
 #else
-      struct minimal_symbol *sym =
+      struct bound_minimal_symbol sym =
 	lookup_minimal_symbol (symbol_list[i].name, NULL,
 			       (struct objfile *) arg);
 
-      if (sym != NULL)
-	*addrp = SYMBOL_VALUE_ADDRESS (sym);
+      if (sym.minsym != NULL)
+	*addrp = BMSYMBOL_VALUE_ADDRESS (sym);
       else
 #endif
 	{
@@ -125,7 +127,7 @@ agent_get_helper_thread_id (void)
 				(unsigned char *) &helper_thread_id,
 				sizeof helper_thread_id))
 #else
-      enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch);
+      enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
       gdb_byte buf[4];
 
       if (target_read_memory (ipa_sym_addrs.addr_helper_thread_id,
@@ -168,7 +170,7 @@ gdb_connect_sync_socket (int pid)
   if (res >= UNIX_PATH_MAX)
     return -1;
 
-  res = fd = socket (PF_UNIX, SOCK_STREAM, 0);
+  res = fd = gdb_socket_cloexec (PF_UNIX, SOCK_STREAM, 0);
   if (res == -1)
     {
       warning (_("error opening sync socket: %s"), strerror (errno));
@@ -218,7 +220,8 @@ agent_run_command (int pid, const char *cmd, int len)
   int ret = write_inferior_memory (ipa_sym_addrs.addr_cmd_buf,
 				   (const unsigned char *) cmd, len);
 #else
-  int ret = target_write_memory (ipa_sym_addrs.addr_cmd_buf, cmd, len);
+  int ret = target_write_memory (ipa_sym_addrs.addr_cmd_buf,
+				 (gdb_byte *) cmd, len);
 #endif
 
   if (ret != 0)
@@ -332,7 +335,7 @@ agent_capability_check (enum agent_capa agent_capa)
 				(unsigned char *) &agent_capability,
 				sizeof agent_capability))
 #else
-      enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch);
+      enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
       gdb_byte buf[4];
 
       if (target_read_memory (ipa_sym_addrs.addr_capability,

@@ -1,6 +1,5 @@
 /* Multi-process/thread control defs for GDB, the GNU debugger.
-   Copyright (C) 1987-1993, 1997-2000, 2007-2012 Free Software
-   Foundation, Inc.
+   Copyright (C) 1987-2014 Free Software Foundation, Inc.
    Contributed by Lynx Real-Time Systems, Inc.  Los Gatos, CA.
    
 
@@ -28,6 +27,7 @@ struct symtab;
 #include "frame.h"
 #include "ui-out.h"
 #include "inferior.h"
+#include "btrace.h"
 
 /* Frontend view of the thread state.  Possible extensions: stepping,
    finishing, until(ling),...  */
@@ -64,6 +64,14 @@ struct thread_control_state
      not).  */
   CORE_ADDR step_range_start;	/* Inclusive */
   CORE_ADDR step_range_end;	/* Exclusive */
+
+  /* If GDB issues a target step request, and this is nonzero, the
+     target should single-step this thread once, and then continue
+     single-stepping it without GDB core involvement as long as the
+     thread stops in the step range above.  If this is zero, the
+     target should ignore the step range, and only issue one single
+     step.  */
+  int may_range_step;
 
   /* Stack frame address as of when stepping command was issued.
      This is how we know when we step into a subroutine call, and how
@@ -114,6 +122,11 @@ struct thread_control_state
   /* Chain containing status of breakpoint(s) the thread stopped
      at.  */
   bpstat stop_bpstat;
+
+  /* The interpreter that issued the execution command.  NULL if the
+     thread was resumed as a result of a command applied to some other
+     thread (e.g., "next" with scheduler-locking off).  */
+  struct interp *command_interp;
 };
 
 /* Inferior thread specific part of `struct infcall_suspend_state'.
@@ -227,6 +240,9 @@ struct thread_info
   /* Function that is called to free PRIVATE.  If this is NULL, then
      xfree will be called on PRIVATE.  */
   void (*private_dtor) (struct private_thread_info *);
+
+  /* Branch trace information for this thread.  */
+  struct btrace_thread_info btrace;
 };
 
 /* Create an empty thread list, or empty the existing one.  */
@@ -301,10 +317,12 @@ void thread_change_ptid (ptid_t old_ptid, ptid_t new_ptid);
 typedef int (*thread_callback_func) (struct thread_info *, void *);
 extern struct thread_info *iterate_over_threads (thread_callback_func, void *);
 
-/* Traverse all threads.  */
+/* Traverse all threads, except those that have THREAD_EXITED
+   state.  */
 
-#define ALL_THREADS(T)				\
-  for (T = thread_list; T; T = T->next)
+#define ALL_NON_EXITED_THREADS(T)				\
+  for (T = thread_list; T; T = T->next) \
+    if ((T)->state != THREAD_EXITED)
 
 extern int thread_count (void);
 
@@ -312,7 +330,7 @@ extern int thread_count (void);
 extern void switch_to_thread (ptid_t ptid);
 
 /* Marks thread PTID is running, or stopped. 
-   If PIDGET (PTID) is -1, marks all threads.  */
+   If ptid_get_pid (PTID) is -1, marks all threads.  */
 extern void set_running (ptid_t ptid, int running);
 
 /* Marks or clears thread(s) PTID as having been requested to stop.
@@ -350,7 +368,7 @@ extern int is_stopped (ptid_t ptid);
 /* In the frontend's perpective is there any thread running?  */
 extern int any_running (void);
 
-/* Marks thread PTID as executing, or not.  If PIDGET (PTID) is -1,
+/* Marks thread PTID as executing, or not.  If ptid_get_pid (PTID) is -1,
    marks all threads.
 
    Note that this is different from the running state.  See the
@@ -368,7 +386,7 @@ extern int is_executing (ptid_t ptid);
    "executing"     -> "running"
    "exited"        -> "exited"
 
-   If PIDGET (PTID) is -1, go over all threads.
+   If ptid_get_pid (PTID) is -1, go over all threads.
 
    Notifications are only emitted if the thread state did change.  */
 extern void finish_thread_state (ptid_t ptid);
@@ -395,6 +413,10 @@ extern struct cleanup *make_cleanup_restore_current_thread (void);
 extern struct thread_info* inferior_thread (void);
 
 extern void update_thread_list (void);
+
+/* Return true if PC is in the stepping range of THREAD.  */
+
+int pc_in_thread_step_range (CORE_ADDR pc, struct thread_info *thread);
 
 extern struct thread_info *thread_list;
 

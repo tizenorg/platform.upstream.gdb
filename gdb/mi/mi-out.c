@@ -1,7 +1,6 @@
 /* MI Command Set - output generating routines.
 
-   Copyright (C) 2000, 2002-2005, 2007-2012 Free Software Foundation,
-   Inc.
+   Copyright (C) 2000-2014 Free Software Foundation, Inc.
 
    Contributed by Cygnus Solutions (a Red Hat company).
 
@@ -68,10 +67,7 @@ static int mi_redirect (struct ui_out *uiout, struct ui_file *outstream);
 
 /* This is the MI ui-out implementation functions vector */
 
-/* FIXME: This can be initialized dynamically after default is set to
-   handle initial output in main.c */
-
-struct ui_out_impl mi_ui_out_impl =
+static const struct ui_out_impl mi_ui_out_impl =
 {
   mi_table_begin,
   mi_table_body,
@@ -89,6 +85,7 @@ struct ui_out_impl mi_ui_out_impl =
   mi_wrap_hint,
   mi_flush,
   mi_redirect,
+  0,
   1, /* Needs MI hacks.  */
 };
 
@@ -198,7 +195,7 @@ mi_field_int (struct ui_out *uiout, int fldno, int width,
   if (data->suppress_output)
     return;
 
-  sprintf (buffer, "%d", value);
+  xsnprintf (buffer, sizeof (buffer), "%d", value);
   mi_field_string (uiout, fldno, width, alignment, fldname, buffer);
 }
 
@@ -411,7 +408,7 @@ mi_out_new (int mi_version)
 {
   int flags = 0;
 
-  mi_out_data *data = XMALLOC (mi_out_data);
+  mi_out_data *data = XNEW (mi_out_data);
   data->suppress_field_separator = 0;
   data->suppress_output = 0;
   data->mi_version = mi_version;

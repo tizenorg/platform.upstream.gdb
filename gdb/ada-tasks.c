@@ -1,5 +1,4 @@
-/* Copyright (C) 1992-1994, 1997-2000, 2003-2005, 2007-2012 Free
-   Software Foundation, Inc.
+/* Copyright (C) 1992-2014 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -252,7 +251,7 @@ get_ada_tasks_pspace_data (struct program_space *pspace)
   data = program_space_data (pspace, ada_tasks_pspace_data_handle);
   if (data == NULL)
     {
-      data = XZALLOC (struct ada_tasks_pspace_data);
+      data = XCNEW (struct ada_tasks_pspace_data);
       set_program_space_data (pspace, ada_tasks_pspace_data_handle, data);
     }
 
@@ -279,7 +278,7 @@ get_ada_tasks_inferior_data (struct inferior *inf)
   data = inferior_data (inf, ada_tasks_inferior_data_handle);
   if (data == NULL)
     {
-      data = XZALLOC (struct ada_tasks_inferior_data);
+      data = XCNEW (struct ada_tasks_inferior_data);
       set_inferior_data (inf, ada_tasks_inferior_data_handle, data);
     }
 
@@ -434,7 +433,7 @@ read_fat_string_value (char *dest, struct value *val, int max_len)
 
   /* Extract LEN characters from the fat string.  */
   array_val = value_ind (value_field (val, array_fieldno));
-  read_memory (value_address (array_val), dest, len);
+  read_memory (value_address (array_val), (gdb_byte *) dest, len);
 
   /* Add the NUL character to close the string.  */
   dest[len] = '\0';
@@ -471,24 +470,24 @@ get_tcb_types_info (void)
      C-like) lookups to get the first match.  */
 
   struct symbol *atcb_sym =
-    lookup_symbol_in_language (atcb_name, NULL, VAR_DOMAIN,
+    lookup_symbol_in_language (atcb_name, NULL, STRUCT_DOMAIN,
 			       language_c, NULL);
   const struct symbol *common_atcb_sym =
-    lookup_symbol_in_language (common_atcb_name, NULL, VAR_DOMAIN,
+    lookup_symbol_in_language (common_atcb_name, NULL, STRUCT_DOMAIN,
 			       language_c, NULL);
   const struct symbol *private_data_sym =
-    lookup_symbol_in_language (private_data_name, NULL, VAR_DOMAIN,
+    lookup_symbol_in_language (private_data_name, NULL, STRUCT_DOMAIN,
 			       language_c, NULL);
   const struct symbol *entry_call_record_sym =
-    lookup_symbol_in_language (entry_call_record_name, NULL, VAR_DOMAIN,
+    lookup_symbol_in_language (entry_call_record_name, NULL, STRUCT_DOMAIN,
 			       language_c, NULL);
 
   if (atcb_sym == NULL || atcb_sym->type == NULL)
     {
       /* In Ravenscar run-time libs, the  ATCB does not have a dynamic
          size, so the symbol name differs.  */
-      atcb_sym = lookup_symbol_in_language (atcb_name_fixed, NULL, VAR_DOMAIN,
-					    language_c, NULL);
+      atcb_sym = lookup_symbol_in_language (atcb_name_fixed, NULL,
+					    STRUCT_DOMAIN, language_c, NULL);
 
       if (atcb_sym == NULL || atcb_sym->type == NULL)
         error (_("Cannot find Ada_Task_Control_Block type. Aborting"));
@@ -636,12 +635,12 @@ read_atcb (CORE_ADDR task_id, struct ada_task_info *task_info)
                                sizeof (task_info->name) - 1);
       else
 	{
-	  struct minimal_symbol *msym;
+	  struct bound_minimal_symbol msym;
 
 	  msym = lookup_minimal_symbol_by_pc (task_id);
-	  if (msym)
+	  if (msym.minsym)
 	    {
-	      const char *full_name = SYMBOL_LINKAGE_NAME (msym);
+	      const char *full_name = MSYMBOL_LINKAGE_NAME (msym.minsym);
 	      const char *task_name = full_name;
 	      const char *p;
 
@@ -847,7 +846,7 @@ read_known_tasks_list (struct ada_tasks_inferior_data *data)
 static void
 ada_tasks_inferior_data_sniffer (struct ada_tasks_inferior_data *data)
 {
-  struct minimal_symbol *msym;
+  struct bound_minimal_symbol msym;
   struct symbol *sym;
 
   /* Return now if already set.  */
@@ -857,10 +856,10 @@ ada_tasks_inferior_data_sniffer (struct ada_tasks_inferior_data *data)
   /* Try array.  */
 
   msym = lookup_minimal_symbol (KNOWN_TASKS_NAME, NULL, NULL);
-  if (msym != NULL)
+  if (msym.minsym != NULL)
     {
       data->known_tasks_kind = ADA_TASKS_ARRAY;
-      data->known_tasks_addr = SYMBOL_VALUE_ADDRESS (msym);
+      data->known_tasks_addr = BMSYMBOL_VALUE_ADDRESS (msym);
 
       /* Try to get pointer type and array length from the symtab.  */
       sym = lookup_symbol_in_language (KNOWN_TASKS_NAME, NULL, VAR_DOMAIN,
@@ -893,7 +892,7 @@ ada_tasks_inferior_data_sniffer (struct ada_tasks_inferior_data *data)
 	 contains debug information on the task type (due to implicit with of
 	 Ada.Tasking).  */
       data->known_tasks_element =
-	builtin_type (target_gdbarch)->builtin_data_ptr;
+	builtin_type (target_gdbarch ())->builtin_data_ptr;
       data->known_tasks_length = MAX_NUMBER_OF_KNOWN_TASKS;
       return;
     }
@@ -902,10 +901,10 @@ ada_tasks_inferior_data_sniffer (struct ada_tasks_inferior_data *data)
   /* Try list.  */
 
   msym = lookup_minimal_symbol (KNOWN_TASKS_LIST, NULL, NULL);
-  if (msym != NULL)
+  if (msym.minsym != NULL)
     {
       data->known_tasks_kind = ADA_TASKS_LIST;
-      data->known_tasks_addr = SYMBOL_VALUE_ADDRESS (msym);
+      data->known_tasks_addr = BMSYMBOL_VALUE_ADDRESS (msym);
       data->known_tasks_length = 1;
 
       sym = lookup_symbol_in_language (KNOWN_TASKS_LIST, NULL, VAR_DOMAIN,
@@ -924,7 +923,7 @@ ada_tasks_inferior_data_sniffer (struct ada_tasks_inferior_data *data)
 
       /* Fallback to default values.  */
       data->known_tasks_element =
-	builtin_type (target_gdbarch)->builtin_data_ptr;
+	builtin_type (target_gdbarch ())->builtin_data_ptr;
       data->known_tasks_length = 1;
       return;
     }
@@ -1173,7 +1172,7 @@ info_task (struct ui_out *uiout, char *taskno_str, struct inferior *inf)
 
   /* Print the Ada task ID.  */
   printf_filtered (_("Ada Task: %s\n"),
-		   paddress (target_gdbarch, task_info->task_id));
+		   paddress (target_gdbarch (), task_info->task_id));
 
   /* Print the name of the task.  */
   if (task_info->name[0] != '\0')
@@ -1311,7 +1310,8 @@ task_command_1 (char *taskno_str, int from_tty, struct inferior *inf)
   ada_find_printable_frame (get_selected_frame (NULL));
   printf_filtered (_("[Switching to task %d]\n"), taskno);
   print_stack_frame (get_selected_frame (NULL),
-                     frame_relative_level (get_selected_frame (NULL)), 1);
+                     frame_relative_level (get_selected_frame (NULL)),
+		     SRC_AND_LOC, 1);
 }
 
 
@@ -1385,7 +1385,7 @@ ada_tasks_invalidate_inferior_data (struct inferior *inf)
 /* The 'normal_stop' observer notification callback.  */
 
 static void
-ada_normal_stop_observer (struct bpstats *unused_args, int unused_args2)
+ada_tasks_normal_stop_observer (struct bpstats *unused_args, int unused_args2)
 {
   /* The inferior has been resumed, and just stopped. This means that
      our task_list needs to be recomputed before it can be used again.  */
@@ -1395,7 +1395,7 @@ ada_normal_stop_observer (struct bpstats *unused_args, int unused_args2)
 /* A routine to be called when the objfiles have changed.  */
 
 static void
-ada_new_objfile_observer (struct objfile *objfile)
+ada_tasks_new_objfile_observer (struct objfile *objfile)
 {
   struct inferior *inf;
 
@@ -1438,8 +1438,8 @@ _initialize_tasks (void)
   ada_tasks_inferior_data_handle = register_inferior_data ();
 
   /* Attach various observers.  */
-  observer_attach_normal_stop (ada_normal_stop_observer);
-  observer_attach_new_objfile (ada_new_objfile_observer);
+  observer_attach_normal_stop (ada_tasks_normal_stop_observer);
+  observer_attach_new_objfile (ada_tasks_new_objfile_observer);
 
   /* Some new commands provided by this module.  */
   add_info ("tasks", info_tasks_command,

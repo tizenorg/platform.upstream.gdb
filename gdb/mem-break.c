@@ -1,7 +1,6 @@
 /* Simulate breakpoints by patching locations in the target system, for GDB.
 
-   Copyright (C) 1990-1993, 1995, 1997-2000, 2002, 2007-2012 Free
-   Software Foundation, Inc.
+   Copyright (C) 1990-2014 Free Software Foundation, Inc.
 
    Contributed by Cygnus Support.  Written by John Gilmore.
 
@@ -21,15 +20,11 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-
-/* This file is only useful if BREAKPOINT_FROM_PC is set.  If not, we
-   punt.  */
-
 #include "symtab.h"
 #include "breakpoint.h"
 #include "inferior.h"
 #include "target.h"
-#include "gdb_string.h"
+#include <string.h>
 
 
 /* Insert a breakpoint on targets that don't have any better
@@ -82,15 +77,47 @@ default_memory_remove_breakpoint (struct gdbarch *gdbarch,
 
 
 int
-memory_insert_breakpoint (struct gdbarch *gdbarch,
+memory_insert_breakpoint (struct target_ops *ops, struct gdbarch *gdbarch,
 			  struct bp_target_info *bp_tgt)
 {
   return gdbarch_memory_insert_breakpoint (gdbarch, bp_tgt);
 }
 
 int
-memory_remove_breakpoint (struct gdbarch *gdbarch,
+memory_remove_breakpoint (struct target_ops *ops, struct gdbarch *gdbarch,
 			  struct bp_target_info *bp_tgt)
 {
   return gdbarch_memory_remove_breakpoint (gdbarch, bp_tgt);
+}
+
+int
+memory_validate_breakpoint (struct gdbarch *gdbarch,
+			    struct bp_target_info *bp_tgt)
+{
+  CORE_ADDR addr = bp_tgt->placed_address;
+  const gdb_byte *bp;
+  int val;
+  int bplen;
+  gdb_byte cur_contents[BREAKPOINT_MAX];
+  struct cleanup *cleanup;
+  int ret;
+
+  /* Determine appropriate breakpoint contents and size for this
+     address.  */
+  bp = gdbarch_breakpoint_from_pc (gdbarch, &addr, &bplen);
+
+  if (bp == NULL || bp_tgt->placed_size != bplen)
+    return 0;
+
+  /* Make sure we see the memory breakpoints.  */
+  cleanup = make_show_memory_breakpoints_cleanup (1);
+  val = target_read_memory (addr, cur_contents, bplen);
+
+  /* If our breakpoint is no longer at the address, this means that
+     the program modified the code on us, so it is wrong to put back
+     the old value.  */
+  ret = (val == 0 && memcmp (bp, cur_contents, bplen) == 0);
+
+  do_cleanups (cleanup);
+  return ret;
 }

@@ -1,5 +1,5 @@
 /* Remote target communications for serial-line targets in custom GDB protocol
-   Copyright (C) 1999, 2003-2012 Free Software Foundation, Inc.
+   Copyright (C) 1999-2014 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -19,6 +19,8 @@
 #ifndef REMOTE_H
 #define REMOTE_H
 
+#include "remote-notif.h"
+
 struct target_desc;
 
 /* Read a packet from the remote machine, with error checking, and
@@ -37,10 +39,6 @@ extern void getpkt (char **buf, long *sizeof_buf, int forever);
 
 extern int putpkt (char *buf);
 
-extern char *unpack_varlen_hex (char *buff, ULONGEST *result);
-
-extern void async_remote_interrupt_twice (void *arg);
-
 void register_remote_g_packet_guess (struct gdbarch *gdbarch, int bytes,
 				     const struct target_desc *tdesc);
 void register_remote_support_xml (const char *);
@@ -53,10 +51,18 @@ void remote_file_delete (const char *remote_file, int from_tty);
 
 bfd *remote_bfd_open (const char *remote_file, const char *target);
 
+/* If a path starts with this sequence, GDB will retrieve the target
+   libraries from the remote system.  */
+
+#define REMOTE_SYSROOT_PREFIX "remote:"
+
+/* True if FILENAME starts with REMOTE_SYSROOT_PREFIX.  */
+
 int remote_filename_p (const char *filename);
 
 extern int remote_register_number_and_offset (struct gdbarch *gdbarch,
 					      int regnum, int *pnum,
 					      int *poffset);
 
+extern void remote_notif_get_pending_events (struct notif_client *np);
 #endif

@@ -1,3 +1,190 @@
+2014-10-29  Joel Brobecker  <brobecker@adacore.com>
+
+	* version.in: Set GDB version number to 7.8.1.
+
+2014-10-29  Pedro Alves  <palves@redhat.com>
+
+	PR gdb/17408
+	* infrun.c (switch_back_to_stepped_thread): Use currently_stepping
+	instead of assuming a thread with a stepping range is always
+	stepping.
+
+2014-10-29  Pedro Alves  <palves@redhat.com>
+
+	PR python/17372
+	* event-top.c (change_line_handler): Call
+	gdb_rl_callback_handler_remove instead of
+	rl_callback_handler_remove.
+	(callback_handler_installed): New global.
+	(gdb_rl_callback_handler_remove, gdb_rl_callback_handler_install)
+	(gdb_rl_callback_handler_reinstall): New functions.
+	(display_gdb_prompt): Call gdb_rl_callback_handler_remove and
+	gdb_rl_callback_handler_install instead of
+	rl_callback_handler_remove and rl_callback_handler_install.
+	(gdb_disable_readline): Call gdb_rl_callback_handler_remove
+	instead of rl_callback_handler_remove.
+	* event-top.h (gdb_rl_callback_handler_remove)
+	(gdb_rl_callback_handler_install)
+	(gdb_rl_callback_handler_reinstall): New declarations.
+	* infrun.c (reinstall_readline_callback_handler_cleanup): New
+	cleanup function.
+	(fetch_inferior_event): Install it.
+	* top.c (gdb_readline_wrapper_line) Call
+	gdb_rl_callback_handler_remove instead of
+	rl_callback_handler_remove.
+	(gdb_readline_wrapper_cleanup): Don't call
+	rl_callback_handler_install.
+
+2014-10-17  Pedro Alves  <palves@redhat.com>
+
+	PR gdb/17471
+	* infcmd.c (strip_bg_char): Change prototype and rewrite.  Now
+	returns a copy of the input.
+	(run_command_1, continue_command, step_1, jump_command)
+	(signal_command, until_command, advance_command, finish_command)
+	(attach_command): Adjust and install a cleanup to free the
+	stripped args.
+
+2014-10-17  Pedro Alves  <palves@redhat.com>
+
+	PR gdb/17300
+	* infcmd.c (continue_1): If continuing all threads in the
+	foreground, make sure the inferior's terminal settings are put in
+	effect.
+
+2014-10-17  Pedro Alves  <palves@redhat.com>
+
+	PR gdb/17472
+	* annotate.c (annotate_breakpoints_invalid): Use
+	target_terminal_our_for_output instead of target_terminal_ours.
+	Give back the terminal to the target.
+	(annotate_frames_invalid): Likewise.
+
+2014-10-17  Pedro Alves  <palves@redhat.com>
+
+	* target.c (enum terminal_state): New enum.
+	(terminal_state): New global.
+	(target_terminal_init): New function.
+	(target_terminal_inferior): Skip if inferior already owns the
+	terminal.
+	(target_terminal_ours, target_terminal_ours_for_output): New
+	functions.
+	* target.h (target_terminal_init): Convert to function prototype.
+	(target_terminal_ours_for_output): Convert to function prototype
+	and tweak comment.
+	(target_terminal_ours): Convert to function prototype and tweak
+	comment.
+	* windows-nat.c (do_initial_windows_stuff): Call
+	target_terminal_init instead of child_terminal_init_with_pgrp.
+
+2014-10-15  Doug Evans  <dje@google.com>
+	    Walfred Tedeschi  <walfred.tedeschi@intel.com>
+
+	PR python/17364
+	* python/lib/gdb/__init__.py (packages): Add "printer".
+	* python/lib/gdb/command/bound_registers.py: Moved to ...
+	* python/lib/gdb/printer/bound_registers.py: ... here.
+	Add printer to global set of builtin printers.  Rename printer from
+	"bound" to "mpx_bound128".
+	* python/lib/gdb/printing.py (_builtin_pretty_printers): New global,
+	registered as global "builtin" printer.
+	(add_builtin_pretty_printer): New function.
+	* data-directory/Makefile.in (PYTHON_FILE_LIST): Update, and add
+	gdb/printer/__init__.py.
+
+2014-10-01  Pedro Alves  <palves@redhat.com>
+
+	* features/aarch64-core.xml (cpsr): Change back to 32-bit.
+	* features/aarch64.c: Regenerate.
+
+2014-09-11  Pedro Alves  <palves@redhat.com>
+
+	PR gdb/17347
+	* main.c: Include "infrun.h".
+	(catch_command_errors, catch_command_errors_const): Wait for the
+	foreground command to complete.
+	* top.c (maybe_wait_sync_command_done): New function, factored out
+	from ...
+	(maybe_wait_sync_command_done): ... here.
+	* top.h (maybe_wait_sync_command_done): New declaration.
+
+2014-09-09  Doug Evans  <xdje42@gmail.com>
+
+	PR guile/17367
+	* acinclude.m4 (GDB_GUILE_PROGRAM_NAMES): Pass guile version as
+	last parameter to pkg-config, not first.
+	* configure.ac: Pass --with-guile provided pkg-config path to
+	GDB_GUILE_PROGRAM_NAMES.
+	* configure: Regenerate.
+
+2014-09-09  Doug Evans  <xdje42@gmail.com>
+
+	PR 17247
+	* guile.c: #include <signal.h>.
+	(_initialize_guile): Block SIGCHLD while initializing Guile.
+
+	Replaces the following, which is reverted.
+
+	2014-07-26  Doug Evans  <xdje42@gmail.com>
+
+	PR 17185
+	* configure.ac: Add check for header gc/gc.h.
+	Add check for function setenv.
+	* configure: Regenerate.
+	* config.in: Regenerate.
+	* guile/guile.c (_initialize_guile): Add workaround for libgc 7.4.0.
+
+2014-09-07  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	PR python/17355
+	* python/py-framefilter.c (py_print_single_arg): Handle NULL FA->VAL.
+	Fix goto out of TRY_CATCH.
+
+2014-08-30  Siva Chandra Reddy  <sivachandra@google.com>
+
+	* python/lib/gdb/command/xmethods.py (set_xm_status1): Use the
+	'items'	methods instead of 'iteritems' method on dictionaries.
+
+2014-08-27  Yao Qi  <yao@codesourcery.com>
+
+	* ctf.c (CTF_FILE_MIN_SIZE): Remove.
+	(ctf_end): Remove code.
+
+2014-08-21  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* linux-tdep.c (linux_corefile_thread_callback): Ignore THREAD_EXITED.
+	(linux_make_corefile_notes): call update_thread_list, protected against
+	exceptions.
+
+2014-08-15  Eli Zaretskii  <eliz@gnu.org>
+
+	* dcache.h: Include target.h, to avoid compile time warnings.
+
+2014-08-15  Joel Brobecker  <brobecker@adacore.com>
+
+	* gdbarch.sh: #include "frame.h" in gdbarch.h.  Delete "struct
+	frame_info" partial declaration.
+	* gdbarch.h: Regenerate.
+
+2014-08-13  Yao Qi  <yao@codesourcery.com>
+
+	PR build/17104
+	* configure.ac: Use local variable 'pos'.
+	* configure: Regenerated.
+
+2014-08-04  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* NEWS (Changes in GDB-4.0): Move Intel MPX and Intel AVX-512 items ...
+	(Changes in GDB 7.8): ... here.
+
+2014-07-29  Joel Brobecker  <brobecker@adacore.com>
+
+	* version.in: Set GDB version number to 7.8.0.DATE-cvs.
+
+2014-07-29  Joel Brobecker  <brobecker@adacore.com>
+
+	GDB 7.8 released.
+
 2014-07-29  Joel Brobecker  <brobecker@adacore.com>
 
 	* version.in: Set GDB version number to 7.8.

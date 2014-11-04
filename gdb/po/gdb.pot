@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-07-29 05:55-0700\n"
+"POT-Creation-Date: 2014-10-29 12:50-0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -4743,7 +4743,7 @@ msgstr ""
 #: common/print-utils.c:129 common/print-utils.c:297 dbxread.c:3074 exec.c:417
 #: exec.c:705 language.c:536 mdebugread.c:3669 monitor.c:327 monitor.c:357
 #: monitor.c:1324 printcmd.c:486 printcmd.c:841 printcmd.c:2439 psymtab.c:698
-#: psymtab.c:716 remote-mips.c:2727 target.c:614 target.c:698 target.c:725
+#: psymtab.c:716 remote-mips.c:2727 target.c:678 target.c:762 target.c:789
 #: utils.c:1920 valprint.c:1042
 msgid "failed internal consistency check"
 msgstr ""
@@ -5123,7 +5123,7 @@ msgstr ""
 msgid "set logging"
 msgstr ""
 
-#: cli/cli-logging.c:142 cli/cli-logging.c:252 guile/scm-ports.c:530 top.c:514
+#: cli/cli-logging.c:142 cli/cli-logging.c:252 guile/scm-ports.c:530 top.c:522
 msgid "Current output protocol does not support redirection"
 msgstr ""
 
@@ -5617,8 +5617,8 @@ msgstr ""
 msgid "Proceed? "
 msgstr ""
 
-#: cli/cli-script.c:1545 cli/cli-cmds.c:326 infcmd.c:1160 infcmd.c:1174
-#: infcmd.c:2265 symfile.c:1171 symfile.c:1341 symfile.c:2399 symfile.c:2481
+#: cli/cli-script.c:1545 cli/cli-cmds.c:326 infcmd.c:1198 infcmd.c:1212
+#: infcmd.c:2315 symfile.c:1171 symfile.c:1341 symfile.c:2399 symfile.c:2481
 #: tracepoint.c:2286 tracepoint.c:2292
 msgid "Not confirmed."
 msgstr ""
@@ -5626,7 +5626,7 @@ msgstr ""
 #. Should never come here as hookc would be 0.
 #: cli/cli-script.c:1586 complaints.c:304 exceptions.c:159 exceptions.c:176
 #: exceptions.c:203 hppa-tdep.c:3082 hppa-tdep.c:3095 infcall.c:687
-#: infcmd.c:1442 infrun.c:3410 language.c:448 mi/mi-out.c:334 mi/mi-out.c:352
+#: infcmd.c:1489 infrun.c:3430 language.c:448 mi/mi-out.c:334 mi/mi-out.c:352
 #: mips-tdep.c:265 mips-tdep.c:424 mips-tdep.c:2116 mips-tdep.c:5560
 #: mips-tdep.c:6676 mn10300-tdep.c:125 reggroups.c:219 remote.c:1359
 #: remote.c:6697 remote.c:7930 utils.c:747 utils.c:772
@@ -6943,7 +6943,7 @@ msgid "<synthetic pointer>"
 msgstr ""
 
 #: cp-valprint.c:334 guile/scm-pretty-print.c:638 mi/mi-cmd-stack.c:544
-#: python/py-prettyprint.c:293 stack.c:293
+#: python/py-prettyprint.c:293 python/py-framefilter.c:466 stack.c:293
 #, possible-c-format
 msgid "<error reading variable: %s>"
 msgstr ""
@@ -7086,44 +7086,44 @@ msgstr ""
 msgid "Unable to open file '%s' for saving trace data (%s)"
 msgstr ""
 
-#: ctf.c:916
+#: ctf.c:867
 msgid "Unable to create bt_context"
 msgstr ""
 
-#: ctf.c:921
+#: ctf.c:872
 #, possible-c-format
 msgid "Unable to use libbabeltrace on directory \"%s\""
 msgstr ""
 
-#: ctf.c:930
+#: ctf.c:881
 msgid "Unable to create bt_iterator"
 msgstr ""
 
-#: ctf.c:1139
+#: ctf.c:1090
 msgid "No CTF directory specified."
 msgstr ""
 
-#: ctf.c:1151
+#: ctf.c:1102
 msgid "Wrong event id of the first event"
 msgstr ""
 
-#: ctf.c:1158
+#: ctf.c:1109
 msgid "Wrong event id of the second event"
 msgstr ""
 
-#: ctf.c:1175
+#: ctf.c:1126
 msgid "Wrong event id of the first event of the second packet"
 msgstr ""
 
-#: ctf.c:1324
+#: ctf.c:1275
 msgid "ctf_xfer_partial: trace file is read-only"
 msgstr ""
 
-#: ctf.c:1651 tracefile-tfile.c:680
+#: ctf.c:1602 tracefile-tfile.c:680
 msgid "unknown tfind type"
 msgstr ""
 
-#: ctf.c:1731
+#: ctf.c:1682
 #, possible-c-format
 msgid "Unhandled trace block type (%s) while building trace frame info."
 msgstr ""
@@ -10182,13 +10182,13 @@ msgstr ""
 msgid "Exception condition detected on fd %d\n"
 msgstr ""
 
-#: event-top.c:365
+#: event-top.c:416
 msgid "error detected on stdin\n"
 msgstr ""
 
 #. This message is based on ANSI C, section 4.7.  Note that integer
 #. divide by zero causes this, so "float" is a misnomer.
-#: event-top.c:954
+#: event-top.c:1005
 msgid "Erroneous arithmetic operation."
 msgstr ""
 
@@ -10642,7 +10642,7 @@ msgstr ""
 msgid "No selected thread."
 msgstr ""
 
-#: frame.c:1480 infcmd.c:1778
+#: frame.c:1480 infcmd.c:1828
 msgid "Invalid selected thread."
 msgstr ""
 
@@ -12059,31 +12059,31 @@ msgstr ""
 msgid "<gdb:sal>"
 msgstr ""
 
-#: guile/guile.c:183 guile/guile.c:413
+#: guile/guile.c:181 guile/guile.c:411
 msgid "guile-repl currently does not take any arguments."
 msgstr ""
 
-#: guile/guile.c:272
+#: guile/guile.c:270
 msgid "Invalid \"guile\" block structure."
 msgstr ""
 
-#: guile/guile.c:414 guile/guile.c:422
+#: guile/guile.c:412 guile/guile.c:420
 msgid "Guile scripting is not supported in this copy of GDB."
 msgstr ""
 
-#: guile/guile.c:466
+#: guile/guile.c:464
 msgid "\"info guile\" must be followed by the name of an info command.\n"
 msgstr ""
 
-#: guile/guile.c:570
+#: guile/guile.c:568
 msgid "Error in function ~s:~%"
 msgstr ""
 
-#: guile/guile.c:594
+#: guile/guile.c:592
 msgid "Throw to key `~a' with args `~s'.~%"
 msgstr ""
 
-#: guile/guile.c:609
+#: guile/guile.c:607
 #, possible-c-format
 msgid ""
 "Could not complete Guile gdb module initialization from:\n"
@@ -12092,7 +12092,7 @@ msgid ""
 "Suggest passing --data-directory=/path/to/gdb/data-directory.\n"
 msgstr ""
 
-#: guile/guile.c:749
+#: guile/guile.c:747
 msgid ""
 "Start an interactive Guile prompt.\n"
 "\n"
@@ -12100,7 +12100,7 @@ msgid ""
 "prompt) or ,quit."
 msgstr ""
 
-#: guile/guile.c:755
+#: guile/guile.c:753
 msgid ""
 "Start a Guile interactive prompt.\n"
 "\n"
@@ -12108,7 +12108,7 @@ msgid ""
 "This command is only a placeholder."
 msgstr ""
 
-#: guile/guile.c:768
+#: guile/guile.c:766
 msgid ""
 "Evaluate one or more Guile expressions.\n"
 "\n"
@@ -12133,7 +12133,7 @@ msgid ""
 "Type \",help\" once in a Guile interactive session."
 msgstr ""
 
-#: guile/guile.c:791
+#: guile/guile.c:789
 msgid ""
 "Evaluate a Guile expression.\n"
 "\n"
@@ -12141,23 +12141,23 @@ msgid ""
 "This command is only a placeholder."
 msgstr ""
 
-#: guile/guile.c:801 guile/guile.c:807
+#: guile/guile.c:799 guile/guile.c:805
 msgid "Prefix command for Guile preference settings."
 msgstr ""
 
-#: guile/guile.c:813
+#: guile/guile.c:811
 msgid "Prefix command for Guile info displays."
 msgstr ""
 
-#: guile/guile.c:821
+#: guile/guile.c:819
 msgid "Set mode for Guile exception printing on error."
 msgstr ""
 
-#: guile/guile.c:822
+#: guile/guile.c:820
 msgid "Show the mode of Guile exception printing on error."
 msgstr ""
 
-#: guile/guile.c:823 python/python.c:1635
+#: guile/guile.c:821 python/python.c:1635
 msgid ""
 "none  == no stack or message will be printed.\n"
 "full == a message and a stack will be printed.\n"
@@ -13216,291 +13216,291 @@ msgid ""
 "The default is to unwind the frame."
 msgstr ""
 
-#: infcmd.c:115 infcmd.c:2263 infcmd.c:2653 linux-fork.c:664
+#: infcmd.c:113 infcmd.c:2313 infcmd.c:2707 linux-fork.c:664
 #: record-btrace.c:198 remote-sim.c:890
 msgid "The program is not being run."
 msgstr ""
 
-#: infcmd.c:193
+#: infcmd.c:191
 #, possible-c-format
 msgid "Terminal for future runs of program being debugged is \"%s\".\n"
 msgstr ""
 
-#: infcmd.c:357
+#: infcmd.c:355
 msgid "can't handle command-line argument containing whitespace"
 msgstr ""
 
-#: infcmd.c:453
+#: infcmd.c:456
 msgid ""
 "platform-specific solib_create_inferior_hook did not load initial shared "
 "libraries."
 msgstr ""
 
-#: infcmd.c:493
+#: infcmd.c:496
 msgid ""
 "The program being debugged has been started already.\n"
 "Start it from the beginning? "
 msgstr ""
 
-#: infcmd.c:495
+#: infcmd.c:498
 msgid "Program not restarted."
 msgstr ""
 
-#: infcmd.c:508
+#: infcmd.c:511
 msgid "Asynchronous execution not supported on this target."
 msgstr ""
 
-#: infcmd.c:567
+#: infcmd.c:571
 msgid "The target does not support running in non-stop mode."
 msgstr ""
 
-#: infcmd.c:660
+#: infcmd.c:667
 msgid "No symbol table loaded.  Use the \"file\" command."
 msgstr ""
 
-#: infcmd.c:692
+#: infcmd.c:699
 msgid "Cannot execute this command without a live selected thread."
 msgstr ""
 
-#: infcmd.c:703
+#: infcmd.c:710
 msgid "Cannot execute this command while looking at trace frames."
 msgstr ""
 
-#: infcmd.c:711
+#: infcmd.c:718
 msgid "Cannot execute this command while the selected thread is running."
 msgstr ""
 
-#: infcmd.c:780
+#: infcmd.c:807
 msgid "`-a' is meaningless in all-stop mode."
 msgstr ""
 
-#: infcmd.c:783
+#: infcmd.c:810
 msgid "Can't resume all threads and specify proceed count simultaneously."
 msgstr ""
 
-#: infcmd.c:829
+#: infcmd.c:859
 msgid "Continuing.\n"
 msgstr ""
 
-#: infcmd.c:1067
+#: infcmd.c:1101
 msgid "Cannot find bounds of current function"
 msgstr ""
 
-#: infcmd.c:1070
+#: infcmd.c:1104
 #, possible-c-format
 msgid ""
 "Single stepping until exit from function %s,\n"
 "which has no line number information.\n"
 msgstr ""
 
-#: infcmd.c:1136
+#: infcmd.c:1171
 msgid "starting address"
 msgstr ""
 
-#: infcmd.c:1141
+#: infcmd.c:1176
 msgid "Unreasonable jump request"
 msgstr ""
 
-#: infcmd.c:1148
+#: infcmd.c:1186
 msgid "No source file has been specified."
 msgstr ""
 
-#: infcmd.c:1157
+#: infcmd.c:1195
 #, possible-c-format
 msgid "Line %d is not in `%s'.  Jump anyway? "
 msgstr ""
 
-#: infcmd.c:1171
+#: infcmd.c:1209
 msgid "WARNING!!!  Destination is in unmapped overlay!  Jump anyway? "
 msgstr ""
 
-#: infcmd.c:1184
+#: infcmd.c:1222
 msgid "Continuing at "
 msgstr ""
 
-#: infcmd.c:1200
+#: infcmd.c:1238
 msgid "Usage: go <location>\n"
 msgstr ""
 
-#: infcmd.c:1230
+#: infcmd.c:1269
 msgid "signal number"
 msgstr ""
 
-#: infcmd.c:1251
+#: infcmd.c:1290
 msgid "Continuing with no signal.\n"
 msgstr ""
 
-#: infcmd.c:1253
+#: infcmd.c:1292
 #, possible-c-format
 msgid "Continuing with signal %s.\n"
 msgstr ""
 
-#: infcmd.c:1315
+#: infcmd.c:1354
 msgid "Execution is not within a known function."
 msgstr ""
 
-#: infcmd.c:1387
+#: infcmd.c:1431
 msgid "a location"
 msgstr ""
 
-#: infcmd.c:1528
+#: infcmd.c:1575
 msgid "finish_command: function has no target type"
 msgstr ""
 
-#: infcmd.c:1579
+#: infcmd.c:1626
 msgid "Finish: couldn't find function."
 msgstr ""
 
-#: infcmd.c:1686
+#: infcmd.c:1733
 msgid "The \"finish\" command does not take any arguments."
 msgstr ""
 
 #. Finishing from an inline frame is completely different.  We don't
 #. try to show the "return value" - no way to locate it.  So we do
 #. not need a completion.
-#: infcmd.c:1688 infcmd.c:1697
+#: infcmd.c:1738 infcmd.c:1747
 msgid "No selected frame."
 msgstr ""
 
-#: infcmd.c:1690
+#: infcmd.c:1740
 msgid "\"finish\" not meaningful in the outermost frame."
 msgstr ""
 
-#: infcmd.c:1718 infcmd.c:1742
+#: infcmd.c:1768 infcmd.c:1792
 msgid "Run till exit from "
 msgstr ""
 
-#: infcmd.c:1740
+#: infcmd.c:1790
 msgid "Run back to call of "
 msgstr ""
 
-#: infcmd.c:1764
+#: infcmd.c:1814
 msgid "The program being debugged is not being run.\n"
 msgstr ""
 
-#: infcmd.c:1780 infrun.c:6747
+#: infcmd.c:1830 infrun.c:6767
 msgid "Selected thread is running."
 msgstr ""
 
-#: infcmd.c:1787
+#: infcmd.c:1837
 #, possible-c-format
 msgid "Program stopped at %s.\n"
 msgstr ""
 
-#: infcmd.c:1790
+#: infcmd.c:1840
 msgid "It stopped after being stepped.\n"
 msgstr ""
 
-#: infcmd.c:1799
+#: infcmd.c:1849
 msgid "It stopped at a breakpoint that has since been deleted.\n"
 msgstr ""
 
-#: infcmd.c:1803
+#: infcmd.c:1853
 #, possible-c-format
 msgid "It stopped at breakpoint %d.\n"
 msgstr ""
 
-#: infcmd.c:1809
+#: infcmd.c:1859
 #, possible-c-format
 msgid "It stopped with signal %s, %s.\n"
 msgstr ""
 
-#: infcmd.c:1816
+#: infcmd.c:1866
 msgid "Type \"info stack\" or \"info registers\" for more information.\n"
 msgstr ""
 
-#: infcmd.c:1861
+#: infcmd.c:1911
 msgid "environment variable and value"
 msgstr ""
 
-#: infcmd.c:1885
+#: infcmd.c:1935
 msgid "environment variable to set"
 msgstr ""
 
-#: infcmd.c:1907
+#: infcmd.c:1957
 #, possible-c-format
 msgid "Setting environment variable \"%s\" to null value.\n"
 msgstr ""
 
 #. If there is no argument, delete all environment variables.
 #. Ask for confirmation if reading from the terminal.
-#: infcmd.c:1924
+#: infcmd.c:1974
 msgid "Delete all environment variables? "
 msgstr ""
 
-#: infcmd.c:2102 infcmd.c:2248 infcmd.c:2777
+#: infcmd.c:2152 infcmd.c:2298 infcmd.c:2831
 msgid "The program has no registers now."
 msgstr ""
 
-#: infcmd.c:2126
+#: infcmd.c:2176
 msgid "Missing register name"
 msgstr ""
 
 #. Nothing matched.
-#: infcmd.c:2199
+#: infcmd.c:2249
 #, possible-c-format
 msgid "Invalid register `%.*s'"
 msgstr ""
 
-#: infcmd.c:2264
+#: infcmd.c:2314
 msgid "Kill the program being debugged? "
 msgstr ""
 
-#: infcmd.c:2278
+#: infcmd.c:2328
 #, possible-c-format
 msgid "In %s,\n"
 msgstr ""
 
-#: infcmd.c:2472 target.c:2050
+#: infcmd.c:2523 target.c:2114
 msgid "A program is being debugged already.  Kill it? "
 msgstr ""
 
-#: infcmd.c:2475
+#: infcmd.c:2526
 msgid "Not killed."
 msgstr ""
 
-#: infcmd.c:2490
+#: infcmd.c:2541
 msgid "Cannot attach to this target in non-stop mode"
 msgstr ""
 
-#: infcmd.c:2737
+#: infcmd.c:2791
 msgid "-a is meaningless in all-stop mode."
 msgstr ""
 
-#: infcmd.c:2785
+#: infcmd.c:2839
 msgid "\"unset\" must be followed by the name of an unset subcommand.\n"
 msgstr ""
 
-#: infcmd.c:2802 procfs.c:5167
+#: infcmd.c:2856 procfs.c:5167
 msgid "Not supported on this target."
 msgstr ""
 
-#: infcmd.c:2879
+#: infcmd.c:2933
 msgid "Set terminal for future runs of program being debugged."
 msgstr ""
 
-#: infcmd.c:2880
+#: infcmd.c:2934
 msgid "Show terminal for future runs of program being debugged."
 msgstr ""
 
-#: infcmd.c:2881
+#: infcmd.c:2935
 msgid "Usage: set inferior-tty /dev/pts/1"
 msgstr ""
 
-#: infcmd.c:2890
+#: infcmd.c:2944
 msgid "Set argument list to give program being debugged when it is started."
 msgstr ""
 
-#: infcmd.c:2891
+#: infcmd.c:2945
 msgid "Show argument list to give program being debugged when it is started."
 msgstr ""
 
-#: infcmd.c:2892
+#: infcmd.c:2946
 msgid ""
 "Follow this command with any number of args, to be passed to the program."
 msgstr ""
 
-#: infcmd.c:2901
+#: infcmd.c:2955
 msgid ""
 "The environment to give the program, or one variable's value.\n"
 "With an argument VAR, prints the value of environment variable VAR to\n"
@@ -13508,17 +13508,17 @@ msgid ""
 "environment to be given to the program."
 msgstr ""
 
-#: infcmd.c:2909
+#: infcmd.c:2963
 msgid "Complement to certain \"set\" commands."
 msgstr ""
 
-#: infcmd.c:2912
+#: infcmd.c:2966
 msgid ""
 "Cancel environment variable VAR for the program.\n"
 "This does not affect the program until the next \"run\" command."
 msgstr ""
 
-#: infcmd.c:2918
+#: infcmd.c:2972
 msgid ""
 "Set environment variable value to give the program.\n"
 "Arguments are VAR VALUE where VAR is variable name and VALUE is value.\n"
@@ -13526,7 +13526,7 @@ msgid ""
 "This does not affect the program until the next \"run\" command."
 msgstr ""
 
-#: infcmd.c:2926
+#: infcmd.c:2980
 msgid ""
 "Add directory DIR(s) to beginning of search path for object files.\n"
 "$cwd in the path means the current working directory.\n"
@@ -13535,7 +13535,7 @@ msgid ""
 "fully linked executable files and separately compiled object files as needed."
 msgstr ""
 
-#: infcmd.c:2935
+#: infcmd.c:2989
 msgid ""
 "Current search path for finding object files.\n"
 "$cwd in the path means the current working directory.\n"
@@ -13544,11 +13544,11 @@ msgid ""
 "fully linked executable files and separately compiled object files as needed."
 msgstr ""
 
-#: infcmd.c:2946
+#: infcmd.c:3000
 msgid "Kill execution of program being debugged."
 msgstr ""
 
-#: infcmd.c:2949
+#: infcmd.c:3003
 msgid ""
 "Attach to a process or file outside of GDB.\n"
 "This command attaches to another target, of the same type as your last\n"
@@ -13563,21 +13563,21 @@ msgid ""
 "to specify the program, and to load its symbol table."
 msgstr ""
 
-#: infcmd.c:2962
+#: infcmd.c:3016
 msgid ""
 "Detach a process or file previously attached.\n"
 "If a process, it is no longer traced, and it continues its execution.  If\n"
 "you were debugging a file, the file is closed and gdb no longer accesses it."
 msgstr ""
 
-#: infcmd.c:2968
+#: infcmd.c:3022
 msgid ""
 "Disconnect from a target.\n"
 "The target will wait for another debugger to connect.  Not available for\n"
 "all targets."
 msgstr ""
 
-#: infcmd.c:2973
+#: infcmd.c:3027
 msgid ""
 "Continue program with the specified signal.\n"
 "Usage: signal SIGNAL\n"
@@ -13589,28 +13589,28 @@ msgid ""
 "and you want to resume the program while discarding the signal."
 msgstr ""
 
-#: infcmd.c:2983
+#: infcmd.c:3037
 msgid ""
 "Step one instruction exactly.\n"
 "Usage: stepi [N]\n"
 "Argument N means step N times (or till program stops for another reason)."
 msgstr ""
 
-#: infcmd.c:2990
+#: infcmd.c:3044
 msgid ""
 "Step one instruction, but proceed through subroutine calls.\n"
 "Usage: nexti [N]\n"
 "Argument N means step N times (or till program stops for another reason)."
 msgstr ""
 
-#: infcmd.c:2997
+#: infcmd.c:3051
 msgid ""
 "Execute until selected stack frame returns.\n"
 "Usage: finish\n"
 "Upon return, the value returned is printed and put in the value history."
 msgstr ""
 
-#: infcmd.c:3003
+#: infcmd.c:3057
 msgid ""
 "Step program, proceeding through subroutine calls.\n"
 "Usage: next [N]\n"
@@ -13619,28 +13619,28 @@ msgid ""
 "the call, in effect treating it as a single source line."
 msgstr ""
 
-#: infcmd.c:3013
+#: infcmd.c:3067
 msgid ""
 "Step program until it reaches a different source line.\n"
 "Usage: step [N]\n"
 "Argument N means step N times (or till program stops for another reason)."
 msgstr ""
 
-#: infcmd.c:3020
+#: infcmd.c:3074
 msgid ""
 "Execute until the program reaches a source line greater than the current\n"
 "or a specified location (same args as break command) within the current "
 "frame."
 msgstr ""
 
-#: infcmd.c:3027
+#: infcmd.c:3081
 msgid ""
 "Continue the program up to the given location (same form as args for break "
 "command).\n"
 "Execution will also stop upon exit from the current stack frame."
 msgstr ""
 
-#: infcmd.c:3033
+#: infcmd.c:3087
 msgid ""
 "Continue program being debugged at specified line or address.\n"
 "Usage: jump <location>\n"
@@ -13648,7 +13648,7 @@ msgid ""
 "for an address to start at."
 msgstr ""
 
-#: infcmd.c:3043
+#: infcmd.c:3097
 msgid ""
 "Usage: go <location>\n"
 "Continue program being debugged, stopping at specified line or \n"
@@ -13658,7 +13658,7 @@ msgid ""
 "This command is a combination of tbreak and jump."
 msgstr ""
 
-#: infcmd.c:3056
+#: infcmd.c:3110
 msgid ""
 "Continue program being debugged, after signal or breakpoint.\n"
 "Usage: continue [N]\n"
@@ -13672,7 +13672,7 @@ msgid ""
 "Specifying -a and an ignore count simultaneously is an error."
 msgstr ""
 
-#: infcmd.c:3070
+#: infcmd.c:3124
 msgid ""
 "Start debugged program.  You may specify arguments to give it.\n"
 "Args may include \"*\", or \"[...]\"; they are expanded using \"sh\".\n"
@@ -13684,18 +13684,18 @@ msgid ""
 "use \"set args\" without arguments."
 msgstr ""
 
-#: infcmd.c:3083
+#: infcmd.c:3137
 msgid "Start debugged program with no arguments."
 msgstr ""
 
-#: infcmd.c:3085
+#: infcmd.c:3139
 msgid ""
 "Run the debugged program until the beginning of the main procedure.\n"
 "You may specify arguments to give to your program, just as with the\n"
 "\"run\" command."
 msgstr ""
 
-#: infcmd.c:3092
+#: infcmd.c:3146
 msgid ""
 "Interrupt the execution of the debugged program.\n"
 "If non-stop mode is enabled, interrupt only the current thread,\n"
@@ -13703,62 +13703,62 @@ msgid ""
 "interrupt all running threads in non-stop mode, use the -a option."
 msgstr ""
 
-#: infcmd.c:3097 infcmd.c:3103
+#: infcmd.c:3151 infcmd.c:3157
 msgid ""
 "List of integer registers and their contents, for selected stack frame.\n"
 "Register name as argument means describe only that register."
 msgstr ""
 
-#: infcmd.c:3106
+#: infcmd.c:3160
 msgid ""
 "List of all registers and their contents, for selected stack frame.\n"
 "Register name as argument means describe only that register."
 msgstr ""
 
-#: infcmd.c:3111
+#: infcmd.c:3165
 msgid "Execution status of the program."
 msgstr ""
 
-#: infcmd.c:3114
+#: infcmd.c:3168
 msgid "Print the status of the floating point unit\n"
 msgstr ""
 
-#: infcmd.c:3117
+#: infcmd.c:3171
 msgid "Print the status of the vector unit\n"
 msgstr ""
 
-#: infcmd.c:3120
+#: infcmd.c:3174
 msgid ""
 "Show /proc process information about any running process.\n"
 "Specify any process id, or use the program being debugged by default."
 msgstr ""
 
 #. allow-unknown
-#: infcmd.c:3126
+#: infcmd.c:3180
 msgid "List of mapped memory regions."
 msgstr ""
 
-#: infcmd.c:3130
+#: infcmd.c:3184
 msgid "List process info from /proc/PID/stat."
 msgstr ""
 
-#: infcmd.c:3134
+#: infcmd.c:3188
 msgid "List process info from /proc/PID/status."
 msgstr ""
 
-#: infcmd.c:3138
+#: infcmd.c:3192
 msgid "List current working directory of the process."
 msgstr ""
 
-#: infcmd.c:3142
+#: infcmd.c:3196
 msgid "List command line arguments of the process."
 msgstr ""
 
-#: infcmd.c:3146
+#: infcmd.c:3200
 msgid "List absolute filename for executable of the process."
 msgstr ""
 
-#: infcmd.c:3150
+#: infcmd.c:3204
 msgid "List all available /proc info."
 msgstr ""
 
@@ -14001,7 +14001,7 @@ msgid ""
 "this platform."
 msgstr ""
 
-#: infrun.c:187 infrun.c:216 mi/mi-main.c:123 target.c:4126 target.c:4174
+#: infrun.c:187 infrun.c:216 mi/mi-main.c:123 target.c:4190 target.c:4238
 msgid "Cannot change this setting while the inferior is running."
 msgstr ""
 
@@ -14092,132 +14092,132 @@ msgstr ""
 msgid "Program exited while detaching"
 msgstr ""
 
-#: infrun.c:2964
+#: infrun.c:2984
 msgid "completed.\n"
 msgstr ""
 
-#: infrun.c:3493
+#: infrun.c:3513
 #, possible-c-format
 msgid "unhandled stop_soon: %d"
 msgstr ""
 
-#: infrun.c:3564
+#: infrun.c:3584
 msgid "Cannot fill $_exitsignal with the correct signal number.\n"
 msgstr ""
 
-#: infrun.c:6050
+#: infrun.c:6070
 msgid "Unknown value."
 msgstr ""
 
-#: infrun.c:6117 linux-fork.c:378 linux-fork.c:410
+#: infrun.c:6137 linux-fork.c:378 linux-fork.c:410
 #, possible-c-format
 msgid "[Switching to %s]\n"
 msgstr ""
 
-#: infrun.c:6128
+#: infrun.c:6148
 msgid "No unwaited-for children left.\n"
 msgstr ""
 
-#: infrun.c:6136
+#: infrun.c:6156
 msgid ""
 "Cannot remove breakpoints because program is no longer writable.\n"
 "Further execution is probably impossible.\n"
 msgstr ""
 
-#: infrun.c:6379
+#: infrun.c:6399
 msgid "Signal        Stop\tPrint\tPass to program\tDescription\n"
 msgstr ""
 
-#: infrun.c:6416
+#: infrun.c:6436
 msgid "signal to handle"
 msgstr ""
 
 #. Not a number and not a recognized flag word => complain.
-#: infrun.c:6519
+#: infrun.c:6539
 #, possible-c-format
 msgid "Unrecognized or ambiguous flag word: \"%s\"."
 msgstr ""
 
-#: infrun.c:6534
+#: infrun.c:6554
 #, possible-c-format
 msgid ""
 "%s is used by the debugger.\n"
 "Are you sure you want to change it? "
 msgstr ""
 
-#: infrun.c:6542
+#: infrun.c:6562
 msgid "Not confirmed, unchanged.\n"
 msgstr ""
 
-#: infrun.c:6620
+#: infrun.c:6640
 msgid "xdb command"
 msgstr ""
 
-#: infrun.c:6671
+#: infrun.c:6691
 msgid "Invalid signal handling flag.\n"
 msgstr ""
 
-#: infrun.c:6684
+#: infrun.c:6704
 msgid ""
 "Only signals 1-15 are valid as numeric signals.\n"
 "Use \"info signals\" for a list of symbolic signals."
 msgstr ""
 
-#: infrun.c:6727
+#: infrun.c:6747
 msgid ""
 "\n"
 "Use the \"handle\" command to change these tables.\n"
 msgstr ""
 
-#: infrun.c:6739
+#: infrun.c:6759
 msgid "No thread selected."
 msgstr ""
 
-#: infrun.c:6743
+#: infrun.c:6763
 msgid "The current thread has terminated"
 msgstr ""
 
-#: infrun.c:6778
+#: infrun.c:6798
 msgid "Unable to read siginfo"
 msgstr ""
 
-#: infrun.c:6799
+#: infrun.c:6819
 msgid "Unable to write siginfo"
 msgstr ""
 
-#: infrun.c:7037 stack.c:1831 stack.c:2056
+#: infrun.c:7057 stack.c:1831 stack.c:2056
 msgid "Unable to restore previously selected frame."
 msgstr ""
 
-#: infrun.c:7184
+#: infrun.c:7204
 msgid "Target does not support this operation."
 msgstr ""
 
-#: infrun.c:7194
+#: infrun.c:7214
 msgid "Forward.\n"
 msgstr ""
 
-#: infrun.c:7197
+#: infrun.c:7217
 msgid "Reverse.\n"
 msgstr ""
 
-#: infrun.c:7201
+#: infrun.c:7221
 #, possible-c-format
 msgid "bogus execution_direction value: %d"
 msgstr ""
 
-#: infrun.c:7210
+#: infrun.c:7230
 #, possible-c-format
 msgid "Resuming the execution of threads of all processes is %s.\n"
 msgstr ""
 
-#: infrun.c:7230 infrun.c:7263
+#: infrun.c:7250 infrun.c:7283
 msgid ""
 "What debugger does when program gets various signals.\n"
 "Specify a signal as argument to print info on that signal only."
 msgstr ""
 
-#: infrun.c:7235
+#: infrun.c:7255
 msgid ""
 "Specify how to handle signals.\n"
 "Usage: handle SIGNAL [ACTIONS]\n"
@@ -14244,7 +14244,7 @@ msgid ""
 "all signals cumulatively specified."
 msgstr ""
 
-#: infrun.c:7266
+#: infrun.c:7286
 msgid ""
 "Specify how to handle a signal.\n"
 "Args are signals and actions to apply to those signals.\n"
@@ -14263,46 +14263,46 @@ msgid ""
 "Pass and Stop may be combined."
 msgstr ""
 
-#: infrun.c:7286
+#: infrun.c:7306
 msgid ""
 "There is no `stop' command, but you can set a hook on `stop'.\n"
 "This allows you to set a list of commands to be run each time execution\n"
 "of the program stops."
 msgstr ""
 
-#: infrun.c:7291
+#: infrun.c:7311
 msgid "Set inferior debugging."
 msgstr ""
 
-#: infrun.c:7292
+#: infrun.c:7312
 msgid "Show inferior debugging."
 msgstr ""
 
-#: infrun.c:7293
+#: infrun.c:7313
 msgid "When non-zero, inferior specific debugging is enabled."
 msgstr ""
 
-#: infrun.c:7300
+#: infrun.c:7320
 msgid "Set displaced stepping debugging."
 msgstr ""
 
-#: infrun.c:7301
+#: infrun.c:7321
 msgid "Show displaced stepping debugging."
 msgstr ""
 
-#: infrun.c:7302
+#: infrun.c:7322
 msgid "When non-zero, displaced stepping specific debugging is enabled."
 msgstr ""
 
-#: infrun.c:7309
+#: infrun.c:7329
 msgid "Set whether gdb controls the inferior in non-stop mode."
 msgstr ""
 
-#: infrun.c:7310
+#: infrun.c:7330
 msgid "Show whether gdb controls the inferior in non-stop mode."
 msgstr ""
 
-#: infrun.c:7311
+#: infrun.c:7331
 msgid ""
 "When debugging a multi-threaded program and this setting is\n"
 "off (the default, also called all-stop mode), when one thread stops\n"
@@ -14317,30 +14317,30 @@ msgid ""
 "leave it stopped or free to run as needed."
 msgstr ""
 
-#: infrun.c:7386
+#: infrun.c:7406
 msgid "Set stopping for shared library events."
 msgstr ""
 
-#: infrun.c:7387
+#: infrun.c:7407
 msgid "Show stopping for shared library events."
 msgstr ""
 
-#: infrun.c:7388
+#: infrun.c:7408
 msgid ""
 "If nonzero, gdb will give control to the user when the dynamic linker\n"
 "notifies gdb of shared library events.  The most common event of interest\n"
 "to the user would be loading/unloading of a new library."
 msgstr ""
 
-#: infrun.c:7398
+#: infrun.c:7418
 msgid "Set debugger response to a program call of fork or vfork."
 msgstr ""
 
-#: infrun.c:7399
+#: infrun.c:7419
 msgid "Show debugger response to a program call of fork or vfork."
 msgstr ""
 
-#: infrun.c:7400
+#: infrun.c:7420
 msgid ""
 "A fork or vfork creates a new process.  follow-fork-mode can be:\n"
 "  parent  - the original process is debugged after a fork\n"
@@ -14349,15 +14349,15 @@ msgid ""
 "By default, the debugger will follow the parent process."
 msgstr ""
 
-#: infrun.c:7412
+#: infrun.c:7432
 msgid "Set debugger response to a program call of exec."
 msgstr ""
 
-#: infrun.c:7413
+#: infrun.c:7433
 msgid "Show debugger response to a program call of exec."
 msgstr ""
 
-#: infrun.c:7414
+#: infrun.c:7434
 msgid ""
 "An exec call replaces the program image of a process.\n"
 "\n"
@@ -14376,15 +14376,15 @@ msgid ""
 "By default, the debugger will use the same inferior."
 msgstr ""
 
-#: infrun.c:7435
+#: infrun.c:7455
 msgid "Set mode for locking scheduler during execution."
 msgstr ""
 
-#: infrun.c:7436
+#: infrun.c:7456
 msgid "Show mode for locking scheduler during execution."
 msgstr ""
 
-#: infrun.c:7437
+#: infrun.c:7457
 msgid ""
 "off  == no locking (threads may preempt at any time)\n"
 "on   == full locking (no thread except the current thread may run)\n"
@@ -14393,15 +14393,15 @@ msgid ""
 "\tOther threads may run while stepping over a function call ('next')."
 msgstr ""
 
-#: infrun.c:7447
+#: infrun.c:7467
 msgid "Set mode for resuming threads of all processes."
 msgstr ""
 
-#: infrun.c:7448
+#: infrun.c:7468
 msgid "Show mode for resuming threads of all processes."
 msgstr ""
 
-#: infrun.c:7449
+#: infrun.c:7469
 msgid ""
 "When on, execution commands (such as 'continue' or 'next') resume all\n"
 "threads of all processes.  When off (which is the default), execution\n"
@@ -14410,30 +14410,30 @@ msgid ""
 "mode (see help set scheduler-locking)."
 msgstr ""
 
-#: infrun.c:7459
+#: infrun.c:7479
 msgid "Set mode of the step operation."
 msgstr ""
 
-#: infrun.c:7460
+#: infrun.c:7480
 msgid "Show mode of the step operation."
 msgstr ""
 
-#: infrun.c:7461
+#: infrun.c:7481
 msgid ""
 "When set, doing a step over a function without debug line information\n"
 "will stop at the first instruction of that function. Otherwise, the\n"
 "function is skipped and the step command stops at a different source line."
 msgstr ""
 
-#: infrun.c:7470
+#: infrun.c:7490
 msgid "Set debugger's willingness to use displaced stepping."
 msgstr ""
 
-#: infrun.c:7471
+#: infrun.c:7491
 msgid "Show debugger's willingness to use displaced stepping."
 msgstr ""
 
-#: infrun.c:7472
+#: infrun.c:7492
 msgid ""
 "If on, gdb will use displaced stepping to step over breakpoints if it is\n"
 "supported by the target architecture.  If off, gdb will not use displaced\n"
@@ -14445,57 +14445,57 @@ msgid ""
 "use it in all-stop mode (see help set non-stop)."
 msgstr ""
 
-#: infrun.c:7484
+#: infrun.c:7504
 msgid ""
 "Set direction of execution.\n"
 "Options are 'forward' or 'reverse'."
 msgstr ""
 
-#: infrun.c:7486
+#: infrun.c:7506
 msgid "Show direction of execution (forward/reverse)."
 msgstr ""
 
-#: infrun.c:7487
+#: infrun.c:7507
 msgid "Tells gdb whether to execute forward or backward."
 msgstr ""
 
 #. Set/show detach-on-fork: user-settable mode.
-#: infrun.c:7493
+#: infrun.c:7513
 msgid "Set whether gdb will detach the child of a fork."
 msgstr ""
 
-#: infrun.c:7494
+#: infrun.c:7514
 msgid "Show whether gdb will detach the child of a fork."
 msgstr ""
 
-#: infrun.c:7495
+#: infrun.c:7515
 msgid "Tells gdb whether to detach the child of a fork."
 msgstr ""
 
-#: infrun.c:7502
+#: infrun.c:7522
 msgid "Set disabling of debuggee's virtual address space randomization."
 msgstr ""
 
-#: infrun.c:7503
+#: infrun.c:7523
 msgid "Show disabling of debuggee's virtual address space randomization."
 msgstr ""
 
-#: infrun.c:7504
+#: infrun.c:7524
 msgid ""
 "When this mode is on (which is the default), randomization of the virtual\n"
 "address space is disabled.  Standalone programs run with the randomization\n"
 "enabled by default on some platforms."
 msgstr ""
 
-#: infrun.c:7528
+#: infrun.c:7548
 msgid "Set whether gdb controls the inferior in observer mode."
 msgstr ""
 
-#: infrun.c:7529
+#: infrun.c:7549
 msgid "Show whether gdb controls the inferior in observer mode."
 msgstr ""
 
-#: infrun.c:7530
+#: infrun.c:7550
 msgid ""
 "In observer mode, GDB can get data from the inferior, but not\n"
 "affect its execution.  Registers and memory may not be changed,\n"
@@ -16344,78 +16344,78 @@ msgstr ""
 msgid "no definition for macro `%s' in scope to #undef at %s:%d"
 msgstr ""
 
-#: main.c:127 source.c:583
+#: main.c:128 source.c:583
 #, possible-c-format
 msgid "%s is not a directory."
 msgstr ""
 
-#: main.c:504
+#: main.c:513
 #, possible-c-format
 msgid "%s: warning: error finding working directory: %s\n"
 msgstr ""
 
-#: main.c:671
+#: main.c:680
 #, possible-c-format
 msgid "%s: TUI mode is not supported\n"
 msgstr ""
 
-#: main.c:741
+#: main.c:750
 #, possible-c-format
 msgid "%s: empty path for `--data-directory'\n"
 msgstr ""
 
-#: main.c:757
+#: main.c:766
 #, possible-c-format
 msgid "%s: unable to load tclcommand file \"%s\""
 msgstr ""
 
-#: main.c:809
+#: main.c:818
 #, possible-c-format
 msgid "warning: could not set baud rate to `%s'.\n"
 msgstr ""
 
-#: main.c:826
+#: main.c:835
 #, possible-c-format
 msgid "warning: could not set timeout limit to `%s'.\n"
 msgstr ""
 
-#: main.c:835
+#: main.c:844
 #, possible-c-format
 msgid "Use `%s --help' for a complete list of options.\n"
 msgstr ""
 
-#: main.c:860
+#: main.c:869
 #, possible-c-format
 msgid "%s: `--args' specified but no program specified\n"
 msgstr ""
 
-#: main.c:897
+#: main.c:906
 #, possible-c-format
 msgid "Excess command line arguments ignored. (%s%s)\n"
 msgstr ""
 
-#: main.c:961
+#: main.c:970
 #, possible-c-format
 msgid "Interpreter `%s' unrecognized"
 msgstr ""
 
 #. Set off error and warning messages with a blank line.
-#: main.c:990
+#: main.c:999
 msgid ""
 "\n"
 "warning: "
 msgstr ""
 
-#: main.c:1062
+#: main.c:1071
 msgid "Can't attach to process and specify a core file at the same time."
 msgstr ""
 
 #. Error messages should no longer be distinguished with extra output.
-#: main.c:1093
+#: main.c:1102
 msgid "warning: "
 msgstr ""
 
-#: main.c:1103
+#: main.c:1112
 #, possible-c-format
 msgid "auto-load: Loading .gdbinit file \"%s\".\n"
 msgstr ""
@@ -16423,7 +16423,7 @@ msgstr ""
 #. Note: The options in the list below are only approximately sorted
 #. in the alphabetical order, so as to group closely related options
 #. together.
-#: main.c:1186
+#: main.c:1195
 msgid ""
 "This is the GNU debugger.  Usage:\n"
 "\n"
@@ -16432,7 +16432,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: main.c:1191
+#: main.c:1200
 msgid ""
 "Selection of debuggee and its files:\n"
 "\n"
@@ -16448,7 +16448,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: main.c:1203
+#: main.c:1212
 msgid ""
 "Initial commands and command files:\n"
 "\n"
@@ -16466,7 +16466,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: main.c:1217
+#: main.c:1226
 msgid ""
 "Output and user interface control:\n"
 "\n"
@@ -16479,11 +16479,11 @@ msgid ""
 "  --nw               Do not use the GUI interface.\n"
 msgstr ""
 
-#: main.c:1227
+#: main.c:1236
 msgid "  --tui              Use a terminal user interface.\n"
 msgstr ""
 
-#: main.c:1231
+#: main.c:1240
 msgid ""
 "  --dbx              DBX compatibility mode.\n"
 "  --xdb              XDB compatibility mode.\n"
@@ -16492,7 +16492,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: main.c:1237
+#: main.c:1246
 msgid ""
 "Operating modes:\n"
 "\n"
@@ -16516,35 +16516,35 @@ msgid ""
 "                     Set GDB's data-directory to DIR.\n"
 msgstr ""
 
-#: main.c:1254
+#: main.c:1263
 msgid ""
 "\n"
 "At startup, GDB reads the following init files and executes their commands:\n"
 msgstr ""
 
-#: main.c:1258
+#: main.c:1267
 #, possible-c-format
 msgid "   * system-wide init file: %s\n"
 msgstr ""
 
-#: main.c:1262
+#: main.c:1271
 #, possible-c-format
 msgid "   * user-specific init file: %s\n"
 msgstr ""
 
-#: main.c:1266
+#: main.c:1275
 #, possible-c-format
 msgid "   * local init file (see also 'set auto-load local-gdbinit'): ./%s\n"
 msgstr ""
 
-#: main.c:1269
+#: main.c:1278
 msgid ""
 "\n"
 "For more information, type \"help\" from within GDB, or consult the\n"
 "GDB manual (available as on-line info or a printed manual).\n"
 msgstr ""
 
-#: main.c:1274
+#: main.c:1283
 #, possible-c-format
 msgid "Report bugs to \"%s\".\n"
 msgstr ""
@@ -20162,11 +20162,11 @@ msgstr ""
 msgid "Unexpected value.  Expecting a gdb.Symbol or a Python string."
 msgstr ""
 
-#: python/py-framefilter.c:574
+#: python/py-framefilter.c:577
 msgid "No symbol or value provided."
 msgstr ""
 
-#: python/py-framefilter.c:1203
+#: python/py-framefilter.c:1206
 msgid "FrameDecorator.function: expecting a String, integer or None."
 msgstr ""
 
@@ -20716,7 +20716,7 @@ msgstr ""
 msgid "Go backward to insn number %s\n"
 msgstr ""
 
-#: record-full.c:2000 record-full.c:2094 target.c:510
+#: record-full.c:2000 record-full.c:2094 target.c:574
 msgid "You can't do that without a process to debug."
 msgstr ""
 
@@ -20891,7 +20891,7 @@ msgstr ""
 msgid "Invalid modifier: %c."
 msgstr ""
 
-#: record.c:678 top.c:1560
+#: record.c:678 top.c:1575
 #, possible-c-format
 msgid "integer %u out of range"
 msgstr ""
@@ -25829,34 +25829,34 @@ msgid ""
 "`help target ' followed by the protocol name."
 msgstr ""
 
-#: target.c:503
+#: target.c:567
 #, possible-c-format
 msgid "You can't do that when your target is `%s'"
 msgstr ""
 
-#: target.c:516
+#: target.c:580
 msgid "No saved terminal information.\n"
 msgstr ""
 
-#: target.c:656
+#: target.c:720
 msgid "Attempt to unpush the dummy target"
 msgstr ""
 
-#: target.c:777
+#: target.c:841
 msgid "Cannot find thread-local variables in this thread library."
 msgstr ""
 
-#: target.c:782
+#: target.c:846
 #, possible-c-format
 msgid "Cannot find shared library `%s' in dynamic linker's load module list"
 msgstr ""
 
-#: target.c:785
+#: target.c:849
 #, possible-c-format
 msgid "Cannot find executable file `%s' in dynamic linker's load module list"
 msgstr ""
 
-#: target.c:790
+#: target.c:854
 #, possible-c-format
 msgid ""
 "The inferior has not yet allocated storage for thread-local variables in\n"
@@ -25864,7 +25864,7 @@ msgid ""
 "for %s"
 msgstr ""
 
-#: target.c:796
+#: target.c:860
 #, possible-c-format
 msgid ""
 "The inferior has not yet allocated storage for thread-local variables in\n"
@@ -25872,86 +25872,86 @@ msgid ""
 "for %s"
 msgstr ""
 
-#: target.c:804
+#: target.c:868
 #, possible-c-format
 msgid ""
 "Cannot find thread-local storage for %s, shared library %s:\n"
 "%s"
 msgstr ""
 
-#: target.c:809
+#: target.c:873
 #, possible-c-format
 msgid ""
 "Cannot find thread-local storage for %s, executable file %s:\n"
 "%s"
 msgstr ""
 
-#: target.c:823
+#: target.c:887
 msgid "Cannot find thread-local variables on this target"
 msgstr ""
 
-#: target.c:1077
+#: target.c:1141
 msgid "Writing to flash memory forbidden in this context"
 msgstr ""
 
-#: target.c:1208
+#: target.c:1272
 #, possible-c-format
 msgid "Writing to memory is not allowed (addr %s, len %s)"
 msgstr ""
 
-#: target.c:1420
+#: target.c:1484
 msgid "Overlapping regions in memory map: ignoring"
 msgstr ""
 
-#: target.c:1452
+#: target.c:1516
 #, possible-c-format
 msgid "Mode for reading from readonly sections is %s.\n"
 msgstr ""
 
-#: target.c:1877
+#: target.c:1941
 #, possible-c-format
 msgid "target object %d, annex %s, contained unexpected null characters"
 msgstr ""
 
-#: target.c:1920
+#: target.c:1984
 msgid "May not insert breakpoints"
 msgstr ""
 
-#: target.c:1940
+#: target.c:2004
 msgid "May not remove breakpoints"
 msgstr ""
 
-#: target.c:1955
+#: target.c:2019
 #, possible-c-format
 msgid "Symbols from \"%s\".\n"
 msgstr ""
 
-#: target.c:1966
+#: target.c:2030
 msgid "\tWhile running this, GDB does not access memory from...\n"
 msgstr ""
 
-#: target.c:2053
+#: target.c:2117
 msgid "Program not killed."
 msgstr ""
 
-#: target.c:2211
+#: target.c:2275
 msgid "could not find a target to follow fork"
 msgstr ""
 
-#: target.c:2234
+#: target.c:2298
 msgid "could not find a target to follow mourn inferior"
 msgstr ""
 
-#: target.c:2285
+#: target.c:2349
 msgid "Unable to allocate memory to perform the search."
 msgstr ""
 
-#: target.c:2293 target.c:2348
+#: target.c:2357 target.c:2412
 #, possible-c-format
 msgid "Unable to access %s bytes of target memory at %s, halting search."
 msgstr ""
 
-#: target.c:2434
+#: target.c:2498
 #, possible-c-format
 msgid ""
 "The \"%s\" target does not support \"run\".  Try \"help target\" or "
@@ -25961,199 +25961,199 @@ msgstr ""
 #. This function is only called if the target is running.  In that
 #. case there should have been a process_stratum target and it
 #. should either know how to create inferiors, or not...
-#: target.c:2442
+#: target.c:2506
 msgid "No targets found"
 msgstr ""
 
-#: target.c:2454
+#: target.c:2518
 #, possible-c-format
 msgid "Whether GDB may automatically connect to the native target is %s.\n"
 msgstr ""
 
-#: target.c:2493
+#: target.c:2557
 #, possible-c-format
 msgid "Don't know how to %s.  Try \"help target\"."
 msgstr ""
 
-#: target.c:2627
+#: target.c:2691
 #, possible-c-format
 msgid "Can't determine the current address space of thread %s\n"
 msgstr ""
 
-#: target.c:2943
+#: target.c:3007
 #, possible-c-format
 msgid "target file %s contained unexpected null characters"
 msgstr ""
 
-#: target.c:3069 target.c:3078
+#: target.c:3133 target.c:3142
 msgid "Command not implemented for this target."
 msgstr ""
 
-#: target.c:3152
+#: target.c:3216
 msgid "May not interrupt or stop the target, ignoring attempt"
 msgstr ""
 
-#: target.c:3266
+#: target.c:3330
 #, possible-c-format
 msgid "Writing to registers is not allowed (regno %d)"
 msgstr ""
 
-#: target.c:4086
+#: target.c:4150
 msgid "\"monitor\" command not supported by this target."
 msgstr ""
 
-#: target.c:4103
+#: target.c:4167
 msgid "The current target stack is:\n"
 msgstr ""
 
-#: target.c:4138
+#: target.c:4202
 #, possible-c-format
 msgid "Controlling the inferior in asynchronous mode is %s.\n"
 msgstr ""
 
-#: target.c:4207
+#: target.c:4271
 msgid "Set target debugging."
 msgstr ""
 
-#: target.c:4208
+#: target.c:4272
 msgid "Show target debugging."
 msgstr ""
 
-#: target.c:4209
+#: target.c:4273
 msgid ""
 "When non-zero, target debugging is enabled.  Higher numbers are more\n"
 "verbose.  Changes do not take effect until the next \"run\" or \"target\"\n"
 "command."
 msgstr ""
 
-#: target.c:4218
+#: target.c:4282
 msgid "Set mode for reading from readonly sections."
 msgstr ""
 
-#: target.c:4219
+#: target.c:4283
 msgid "Show mode for reading from readonly sections."
 msgstr ""
 
-#: target.c:4220
+#: target.c:4284
 msgid ""
 "When this mode is on, memory reads from readonly sections (such as .text)\n"
 "will be read from the object file instead of from the target.  This will\n"
 "result in significant performance improvement for remote targets."
 msgstr ""
 
-#: target.c:4229
+#: target.c:4293
 msgid "Send a command to the remote monitor (remote targets only)."
 msgstr ""
 
-#: target.c:4232
+#: target.c:4296
 msgid "Print the name of each layer of the internal target stack."
 msgstr ""
 
-#: target.c:4236
+#: target.c:4300
 msgid "Set whether gdb controls the inferior in asynchronous mode."
 msgstr ""
 
-#: target.c:4237
+#: target.c:4301
 msgid "Show whether gdb controls the inferior in asynchronous mode."
 msgstr ""
 
-#: target.c:4238
+#: target.c:4302
 msgid "Tells gdb whether to control the inferior in asynchronous mode."
 msgstr ""
 
-#: target.c:4246
+#: target.c:4310
 msgid "Set permission to write into registers."
 msgstr ""
 
-#: target.c:4247
+#: target.c:4311
 msgid "Show permission to write into registers."
 msgstr ""
 
-#: target.c:4248
+#: target.c:4312
 msgid ""
 "When this permission is on, GDB may write into the target's registers.\n"
 "Otherwise, any sort of write attempt will result in an error."
 msgstr ""
 
-#: target.c:4255
+#: target.c:4319
 msgid "Set permission to write into target memory."
 msgstr ""
 
-#: target.c:4256
+#: target.c:4320
 msgid "Show permission to write into target memory."
 msgstr ""
 
-#: target.c:4257
+#: target.c:4321
 msgid ""
 "When this permission is on, GDB may write into the target's memory.\n"
 "Otherwise, any sort of write attempt will result in an error."
 msgstr ""
 
-#: target.c:4264
+#: target.c:4328
 msgid "Set permission to insert breakpoints in the target."
 msgstr ""
 
-#: target.c:4265
+#: target.c:4329
 msgid "Show permission to insert breakpoints in the target."
 msgstr ""
 
-#: target.c:4266
+#: target.c:4330
 msgid ""
 "When this permission is on, GDB may insert breakpoints in the program.\n"
 "Otherwise, any sort of insertion attempt will result in an error."
 msgstr ""
 
-#: target.c:4273
+#: target.c:4337
 msgid "Set permission to insert tracepoints in the target."
 msgstr ""
 
-#: target.c:4274
+#: target.c:4338
 msgid "Show permission to insert tracepoints in the target."
 msgstr ""
 
-#: target.c:4275
+#: target.c:4339
 msgid ""
 "When this permission is on, GDB may insert tracepoints in the program.\n"
 "Otherwise, any sort of insertion attempt will result in an error."
 msgstr ""
 
-#: target.c:4282
+#: target.c:4346
 msgid "Set permission to insert fast tracepoints in the target."
 msgstr ""
 
-#: target.c:4283
+#: target.c:4347
 msgid "Show permission to insert fast tracepoints in the target."
 msgstr ""
 
-#: target.c:4284
+#: target.c:4348
 msgid ""
 "When this permission is on, GDB may insert fast tracepoints.\n"
 "Otherwise, any sort of insertion attempt will result in an error."
 msgstr ""
 
-#: target.c:4291
+#: target.c:4355
 msgid "Set permission to interrupt or signal the target."
 msgstr ""
 
-#: target.c:4292
+#: target.c:4356
 msgid "Show permission to interrupt or signal the target."
 msgstr ""
 
-#: target.c:4293
+#: target.c:4357
 msgid ""
 "When this permission is on, GDB may interrupt/stop the target's execution.\n"
 "Otherwise, any attempt to interrupt or stop will be ignored."
 msgstr ""
 
-#: target.c:4300
+#: target.c:4364
 msgid "Set whether GDB may automatically connect to the native target."
 msgstr ""
 
-#: target.c:4301
+#: target.c:4365
 msgid "Show whether GDB may automatically connect to the native target."
 msgstr ""
 
-#: target.c:4302
+#: target.c:4366
 msgid ""
 "When on, and GDB is not connected to a target yet, GDB\n"
 "attempts \"run\" and other commands with the native target."
@@ -26322,216 +26322,216 @@ msgstr ""
 msgid "Whether to confirm potentially dangerous operations is %s.\n"
 msgstr ""
 
-#: top.c:458
+#: top.c:475
 msgid "That is not a command, just a help topic."
 msgstr ""
 
-#: top.c:688
+#: top.c:696
 #, possible-c-format
 msgid "Saving of the history record on exit is %s.\n"
 msgstr ""
 
-#: top.c:700
+#: top.c:708
 #, possible-c-format
 msgid "The size of the command history is %s.\n"
 msgstr ""
 
-#: top.c:709
+#: top.c:717
 #, possible-c-format
 msgid "The filename in which to record the command history is \"%s\".\n"
 msgstr ""
 
-#: top.c:1142
+#: top.c:1157
 msgid ""
 "\n"
 "For bug reporting instructions, please see:\n"
 msgstr ""
 
-#: top.c:1146
+#: top.c:1161
 msgid ""
 "Find the GDB manual and other documentation resources online at:\n"
 "<http://www.gnu.org/software/gdb/documentation/>.\n"
 msgstr ""
 
-#: top.c:1148
+#: top.c:1163
 msgid "For help, type \"help\".\n"
 msgstr ""
 
-#: top.c:1149
+#: top.c:1164
 msgid "Type \"apropos word\" to search for commands related to \"word\"."
 msgstr ""
 
-#: top.c:1157
+#: top.c:1172
 #, possible-c-format
 msgid ""
 "This GDB was configured as follows:\n"
 "   configure --host=%s --target=%s\n"
 msgstr ""
 
-#: top.c:1161
+#: top.c:1176
 #, possible-c-format
 msgid ""
 "             --with-auto-load-dir=%s\n"
 "             --with-auto-load-safe-path=%s\n"
 msgstr ""
 
-#: top.c:1166
+#: top.c:1181
 msgid "             --with-expat\n"
 msgstr ""
 
-#: top.c:1170
+#: top.c:1185
 msgid "             --without-expat\n"
 msgstr ""
 
-#: top.c:1175
+#: top.c:1190
 #, possible-c-format
 msgid "             --with-gdb-datadir=%s%s\n"
 msgstr ""
 
-#: top.c:1179
+#: top.c:1194
 #, possible-c-format
 msgid "             --with-iconv-bin=%s%s\n"
 msgstr ""
 
-#: top.c:1184
+#: top.c:1199
 #, possible-c-format
 msgid "             --with-jit-reader-dir=%s%s\n"
 msgstr ""
 
-#: top.c:1188
+#: top.c:1203
 msgid "             --with-libunwind-ia64\n"
 msgstr ""
 
-#: top.c:1192
+#: top.c:1207
 msgid "             --without-libunwind-ia64\n"
 msgstr ""
 
-#: top.c:1197
+#: top.c:1212
 msgid "             --with-lzma\n"
 msgstr ""
 
-#: top.c:1201
+#: top.c:1216
 msgid "             --without-lzma\n"
 msgstr ""
 
-#: top.c:1206
+#: top.c:1221
 #, possible-c-format
 msgid "             --with-python=%s%s\n"
 msgstr ""
 
-#: top.c:1211
+#: top.c:1226
 msgid "             --with-guile\n"
 msgstr ""
 
-#: top.c:1215
+#: top.c:1230
 msgid "             --without-guile\n"
 msgstr ""
 
-#: top.c:1220
+#: top.c:1235
 #, possible-c-format
 msgid "             --with-relocated-sources=%s\n"
 msgstr ""
 
-#: top.c:1225
+#: top.c:1240
 #, possible-c-format
 msgid "             --with-separate-debug-dir=%s%s\n"
 msgstr ""
 
-#: top.c:1229
+#: top.c:1244
 #, possible-c-format
 msgid "             --with-sysroot=%s%s\n"
 msgstr ""
 
-#: top.c:1233
+#: top.c:1248
 #, possible-c-format
 msgid "             --with-system-gdbinit=%s%s\n"
 msgstr ""
 
-#: top.c:1237
+#: top.c:1252
 msgid "             --with-zlib\n"
 msgstr ""
 
-#: top.c:1241
+#: top.c:1256
 msgid "             --without-zlib\n"
 msgstr ""
 
-#: top.c:1246
+#: top.c:1261
 msgid "             --with-babeltrace\n"
 msgstr ""
 
-#: top.c:1250
+#: top.c:1265
 msgid "             --without-babeltrace\n"
 msgstr ""
 
 #. We assume "relocatable" will be printed at least once, thus we always
 #. print this text.  It's a reasonably safe assumption for now.
-#: top.c:1256
+#: top.c:1271
 msgid ""
 "\n"
 "(\"Relocatable\" means the directory can be moved with the GDB installation\n"
 "tree, and GDB will still find it.)\n"
 msgstr ""
 
-#: top.c:1337
+#: top.c:1352
 #, possible-c-format
 msgid "\tInferior %d [%s] will be detached.\n"
 msgstr ""
 
-#: top.c:1341
+#: top.c:1356
 #, possible-c-format
 msgid "\tInferior %d [%s] will be killed.\n"
 msgstr ""
 
-#: top.c:1366
+#: top.c:1381
 msgid ""
 "A debugging session is active.\n"
 "\n"
 msgstr ""
 
-#: top.c:1368
+#: top.c:1383
 msgid ""
 "\n"
 "Quit anyway? "
 msgstr ""
 
-#: top.c:1573
+#: top.c:1588
 msgid "\"set history\" must be followed by the name of a history subcommand.\n"
 msgstr ""
 
-#: top.c:1666
+#: top.c:1681
 #, possible-c-format
 msgid "Gdb's prompt is \"%s\".\n"
 msgstr ""
 
-#: top.c:1673
+#: top.c:1688
 #, possible-c-format
 msgid "Editing of command lines as they are typed is %s.\n"
 msgstr ""
 
-#: top.c:1682
+#: top.c:1697
 #, possible-c-format
 msgid "Annotation_level is %s.\n"
 msgstr ""
 
-#: top.c:1689
+#: top.c:1704
 #, possible-c-format
 msgid "Notification of completion for asynchronous execution commands is %s.\n"
 msgstr ""
 
-#: top.c:1712
+#: top.c:1727
 #, possible-c-format
 msgid "GDB's data directory is \"%s\".\n"
 msgstr ""
 
-#: top.c:1757
+#: top.c:1772
 msgid "Set gdb's prompt"
 msgstr ""
 
-#: top.c:1758
+#: top.c:1773
 msgid "Show gdb's prompt"
 msgstr ""
 
-#: top.c:1763
+#: top.c:1778
 msgid ""
 "Don't repeat this command.\n"
 "Primarily used inside of user-defined commands that should not be repeated "
@@ -26539,44 +26539,44 @@ msgid ""
 "hitting return."
 msgstr ""
 
-#: top.c:1769
+#: top.c:1784
 msgid "Set editing of command lines as they are typed."
 msgstr ""
 
-#: top.c:1770
+#: top.c:1785
 msgid "Show editing of command lines as they are typed."
 msgstr ""
 
-#: top.c:1771
+#: top.c:1786
 msgid ""
 "Use \"on\" to enable the editing, and \"off\" to disable it.\n"
 "Without an argument, command line editing is enabled.  To edit, use\n"
 "EMACS-like or VI-like commands like control-P or ESC."
 msgstr ""
 
-#: top.c:1779
+#: top.c:1794
 msgid "Set saving of the history record on exit."
 msgstr ""
 
-#: top.c:1780
+#: top.c:1795
 msgid "Show saving of the history record on exit."
 msgstr ""
 
-#: top.c:1781
+#: top.c:1796
 msgid ""
 "Use \"on\" to enable the saving, and \"off\" to disable it.\n"
 "Without an argument, saving is enabled."
 msgstr ""
 
-#: top.c:1788
+#: top.c:1803
 msgid "Set the size of the command history,"
 msgstr ""
 
-#: top.c:1789
+#: top.c:1804
 msgid "Show the size of the command history,"
 msgstr ""
 
-#: top.c:1790
+#: top.c:1805
 msgid ""
 "ie. the number of previous commands to keep a record of.\n"
 "If set to \"unlimited\", the number of commands kept in the history\n"
@@ -26584,61 +26584,61 @@ msgid ""
 "variable \"HISTSIZE\", or to 256 if this variable is not set."
 msgstr ""
 
-#: top.c:1799
+#: top.c:1814
 msgid "Set the filename in which to record the command history"
 msgstr ""
 
-#: top.c:1800
+#: top.c:1815
 msgid "Show the filename in which to record the command history"
 msgstr ""
 
-#: top.c:1801
+#: top.c:1816
 msgid "(the list of previous commands of which a record is kept)."
 msgstr ""
 
-#: top.c:1807
+#: top.c:1822
 msgid "Set whether to confirm potentially dangerous operations."
 msgstr ""
 
-#: top.c:1808
+#: top.c:1823
 msgid "Show whether to confirm potentially dangerous operations."
 msgstr ""
 
-#: top.c:1814
+#: top.c:1829
 msgid "Set annotation_level."
 msgstr ""
 
-#: top.c:1815
+#: top.c:1830
 msgid "Show annotation_level."
 msgstr ""
 
-#: top.c:1816
+#: top.c:1831
 msgid ""
 "0 == normal;     1 == fullname (for use when running under emacs)\n"
 "2 == output annotated suitably for use by programs that control GDB."
 msgstr ""
 
-#: top.c:1824
+#: top.c:1839
 msgid "Set notification of completion for asynchronous execution commands."
 msgstr ""
 
-#: top.c:1825
+#: top.c:1840
 msgid "Show notification of completion for asynchronous execution commands."
 msgstr ""
 
-#: top.c:1826
+#: top.c:1841
 msgid "Use \"on\" to enable the notification, and \"off\" to disable it."
 msgstr ""
 
-#: top.c:1833
+#: top.c:1848
 msgid "Set GDB's data directory."
 msgstr ""
 
-#: top.c:1834
+#: top.c:1849
 msgid "Show GDB's data directory."
 msgstr ""
 
-#: top.c:1835
+#: top.c:1850
 msgid "When set, GDB uses the specified path to search for data files."
 msgstr ""
 

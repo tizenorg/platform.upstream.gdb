@@ -375,6 +375,23 @@ check_frame_language_change (void)
     }
 }
 
+/* See top.h.  */
+
+void
+maybe_wait_sync_command_done (int was_sync)
+{
+  /* If the interpreter is in sync mode (we're running a user
+     command's list, running command hooks or similars), and we
+     just ran a synchronous command that started the target, wait
+     for that command to end.  */
+  if (!interpreter_async && !was_sync && sync_execution)
+    {
+      while (gdb_do_one_event () >= 0)
+	if (!sync_execution)
+	  break;
+    }
+}
+
 /* Execute the line P as a command, in the current user context.
    Pass FROM_TTY as second argument to the defining function.  */
 
@@ -461,16 +478,7 @@ execute_command (char *p, int from_tty)
       else
 	cmd_func (c, arg, from_tty);
 
-      /* If the interpreter is in sync mode (we're running a user
-	 command's list, running command hooks or similars), and we
-	 just ran a synchronous command that started the target, wait
-	 for that command to end.  */
-      if (!interpreter_async && !was_sync && sync_execution)
-	{
-	  while (gdb_do_one_event () >= 0)
-	    if (!sync_execution)
-	      break;
-	}
+      maybe_wait_sync_command_done (was_sync);
 
       /* If this command has been post-hooked, run the hook last.  */
       execute_cmd_post_hook (c);
@@ -758,9 +766,14 @@ gdb_readline_wrapper_line (char *line)
 
   /* Prevent parts of the prompt from being redisplayed if annotations
      are enabled, and readline's state getting out of sync.  We'll
-     restore it in gdb_readline_wrapper_cleanup.  */
+     reinstall the callback handler, which puts the terminal in raw
+     mode (or in readline lingo, in prepped state), when we're next
+     ready to process user input, either in display_gdb_prompt, or if
+     we're handling an asynchronous target event and running in the
+     background, just before returning to the event loop to process
+     further input (or more target events).  */
   if (async_command_editing_p)
-    rl_callback_handler_remove ();
+    gdb_rl_callback_handler_remove ();
 }
 
 struct gdb_readline_wrapper_cleanup
@@ -782,10 +795,12 @@ gdb_readline_wrapper_cleanup (void *arg)
   gdb_assert (input_handler == gdb_readline_wrapper_line);
   input_handler = cleanup->handler_orig;
 
-  /* Reinstall INPUT_HANDLER in readline, without displaying a
-     prompt.  */
-  if (async_command_editing_p)
-    rl_callback_handler_install (NULL, input_handler);
+  /* Don't restore our input handler in readline yet.  That would make
+     readline prep the terminal (putting it in raw mode), while the
+     line we just read may trigger execution of a command that expects
+     the terminal in the default cooked/canonical mode, such as e.g.,
+     running Python's interactive online help utility.  See
+     gdb_readline_wrapper_line for when we'll reinstall it.  */
 
   gdb_readline_wrapper_result = NULL;
   gdb_readline_wrapper_done = 0;

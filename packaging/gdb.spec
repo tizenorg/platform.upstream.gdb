@@ -1,11 +1,11 @@
 Name:           gdb
-Version:        7.8.1
+Version:        7.9
 Release:        0
 License:        GPL-3.0+
 Summary:        A GNU source-level debugger for C, C++, Java and other languages
 Url:            http://gnu.org/software/gdb/
 Group:          Development/Toolchain
-Source:         ftp://ftp.gnu.org/gnu/gdb/gdb-%{version}.tar.bz2
+Source:         ftp://ftp.gnu.org/gnu/gdb/gdb-%{version}.tar.xz
 Source1001:     gdb.manifest
 %define gdb_src gdb-%{version}
 %define gdb_build build-%{_target_platform}

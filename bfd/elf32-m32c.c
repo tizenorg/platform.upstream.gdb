@@ -1,5 +1,5 @@
 /* M16C/M32C specific support for 32-bit ELF.
-   Copyright (C) 2005-2014 Free Software Foundation, Inc.
+   Copyright (C) 2005-2015 Free Software Foundation, Inc.
 
    This file is part of BFD, the Binary File Descriptor library.
 
@@ -297,7 +297,11 @@ m32c_info_to_howto_rela
   unsigned int r_type;
 
   r_type = ELF32_R_TYPE (dst->r_info);
-  BFD_ASSERT (r_type < (unsigned int) R_M32C_max);
+  if (r_type >= (unsigned int) R_M32C_max)
+    {
+      _bfd_error_handler (_("%A: invalid M32C reloc number: %d"), abfd, r_type);
+      r_type = 0;
+    }
   cache_ptr->howto = & m32c_elf_howto_table [r_type];
 }
 
@@ -1110,7 +1114,7 @@ m32c_elf_relax_plt_section (asection *splt,
 
   /* Likewise for local symbols, though that's somewhat less convenient
      as we have to walk the list of input bfds and swap in symbol data.  */
-  for (ibfd = info->input_bfds; ibfd ; ibfd = ibfd->link_next)
+  for (ibfd = info->input_bfds; ibfd ; ibfd = ibfd->link.next)
     {
       bfd_vma *local_plt_offsets = elf_local_got_offsets (ibfd);
       Elf_Internal_Shdr *symtab_hdr;
@@ -1184,7 +1188,7 @@ m32c_elf_relax_plt_section (asection *splt,
       elf_link_hash_traverse (elf_hash_table (info),
 			      m32c_relax_plt_realloc, &entry);
 
-      for (ibfd = info->input_bfds; ibfd ; ibfd = ibfd->link_next)
+      for (ibfd = info->input_bfds; ibfd ; ibfd = ibfd->link.next)
 	{
 	  bfd_vma *local_plt_offsets = elf_local_got_offsets (ibfd);
 	  unsigned int nlocals = elf_tdata (ibfd)->symtab_hdr.sh_info;

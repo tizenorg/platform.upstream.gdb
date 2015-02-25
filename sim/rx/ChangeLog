@@ -1,3 +1,18 @@
+2015-12-15  Joel Brobecker  <brobecker@adacore.com>
+
+	* gdb-if.c (open): Rename to...
+	(rx_sim_is_open): This. Replace all uses of "open" by uses of
+	"rx_sim_is_open" throughout.
+
+2014-08-19  Alan Modra  <amodra@gmail.com>
+
+	* configure: Regenerate.
+
+2014-08-15  Roland McGrath  <mcgrathr@google.com>
+
+	* configure: Regenerate.
+	* config.in: Regenerate.
+
 2014-03-10  Mike Frysinger  <vapier@gentoo.org>
 
 	* gdb-if.c (sim_do_command): Add const to cmd.  Move args

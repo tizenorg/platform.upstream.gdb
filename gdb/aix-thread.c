@@ -1,6 +1,6 @@
 /* Low level interface for debugging AIX 4.3+ pthreads.
 
-   Copyright (C) 1999-2014 Free Software Foundation, Inc.
+   Copyright (C) 1999-2015 Free Software Foundation, Inc.
    Written by Nick Duffek <nsd@redhat.com>.
 
    This file is part of GDB.
@@ -40,14 +40,12 @@
      */
 
 #include "defs.h"
-#include "gdb_assert.h"
 #include "gdbthread.h"
 #include "target.h"
 #include "inferior.h"
 #include "regcache.h"
 #include "gdbcmd.h"
 #include "ppc-tdep.h"
-#include <string.h>
 #include "observer.h"
 #include "objfiles.h"
 

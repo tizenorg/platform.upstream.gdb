@@ -1,6 +1,6 @@
 This is gdb.info, produced by makeinfo version 5.2 from gdb.texinfo.
 
-Copyright (C) 1988-2014 Free Software Foundation, Inc.
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -21,9 +21,9 @@ END-INFO-DIR-ENTRY
    This file documents the GNU debugger GDB.
 
    This is the Tenth Edition, of 'Debugging with GDB: the GNU
-Source-Level Debugger' for GDB (GDB) Version 7.8.1.
+Source-Level Debugger' for GDB (GDB) Version 7.9.
 
-   Copyright (C) 1988-2014 Free Software Foundation, Inc.
+   Copyright (C) 1988-2015 Free Software Foundation, Inc.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -44,9 +44,9 @@ Debugging with GDB
 
 This file describes GDB, the GNU symbolic debugger.
 
-   This is the Tenth Edition, for GDB (GDB) Version 7.8.1.
+   This is the Tenth Edition, for GDB (GDB) Version 7.9.
 
-   Copyright (C) 1988-2014 Free Software Foundation, Inc.
+   Copyright (C) 1988-2015 Free Software Foundation, Inc.
 
    This edition of the GDB manual is dedicated to the memory of Fred
 Fish.  Fred was a long-standing contributor to GDB and to Free software
@@ -491,7 +491,7 @@ Let us use GDB to try to see what is going on.
      There is absolutely no warranty for GDB; type "show warranty"
       for details.
 
-     GDB 7.8.1, Copyright 1999 Free Software Foundation, Inc...
+     GDB 7.9, Copyright 1999 Free Software Foundation, Inc...
      (gdb)
 
 GDB reads only enough symbol data to know where to find the rest when
@@ -1604,10 +1604,9 @@ File: gdb.info,  Node: Starting,  Next: Arguments,  Prev: Compilation,  Up: Runn
 'run'
 'r'
      Use the 'run' command to start your program under GDB.  You must
-     first specify the program name (except on VxWorks) with an argument
-     to GDB (*note Getting In and Out of GDB: Invocation.), or by using
-     the 'file' or 'exec-file' command (*note Commands to Specify Files:
-     Files.).
+     first specify the program name with an argument to GDB (*note
+     Getting In and Out of GDB: Invocation.), or by using the 'file' or
+     'exec-file' command (*note Commands to Specify Files: Files.).
 
    If you are running your program in an execution environment that
 supports processes, 'run' creates an inferior process and makes that
@@ -3180,21 +3179,14 @@ with the following commands::
 'set breakpoint always-inserted off'
      All breakpoints, including newly added by the user, are inserted in
      the target only when the target is resumed.  All breakpoints are
-     removed from the target when it stops.
+     removed from the target when it stops.  This is the default mode.
 
 'set breakpoint always-inserted on'
      Causes all breakpoints to be inserted in the target at all times.
      If the user adds a new breakpoint, or changes an existing
      breakpoint, the breakpoints in the target are updated immediately.
      A breakpoint is removed from the target only when breakpoint itself
-     is removed.
-
-'set breakpoint always-inserted auto'
-     This is the default mode.  If GDB is controlling the inferior in
-     non-stop mode (*note Non-Stop Mode::), gdb behaves as if
-     'breakpoint always-inserted' mode is on.  If GDB is controlling the
-     inferior in all-stop mode, GDB behaves as if 'breakpoint
-     always-inserted' mode is off.
+     is deleted.
 
    GDB handles conditional breakpoints by evaluating these conditions
 when a breakpoint breaks.  If the condition is true, then the process
@@ -4266,7 +4258,8 @@ source code, or one machine instruction (depending on what particular
 command you use).  Either when continuing or when stepping, your program
 may stop even sooner, due to a breakpoint or a signal.  (If it stops due
 to a signal, you may want to use 'handle', or use 'signal 0' to resume
-execution.  *Note Signals: Signals.)
+execution (*note Signals: Signals.), or you may step into the signal's
+handler (*note stepping and signal handlers::).)
 
 'continue [IGNORE-COUNT]'
 'c [IGNORE-COUNT]'
@@ -4681,6 +4674,56 @@ more execution; but your program would probably terminate immediately as
 a result of the fatal signal once it saw the signal.  To prevent this,
 you can continue with 'signal 0'.  *Note Giving your Program a Signal:
 Signaling.
+
+   GDB optimizes for stepping the mainline code.  If a signal that has
+'handle nostop' and 'handle pass' set arrives while a stepping command
+(e.g., 'stepi', 'step', 'next') is in progress, GDB lets the signal
+handler run and then resumes stepping the mainline code once the signal
+handler returns.  In other words, GDB steps over the signal handler.
+This prevents signals that you've specified as not interesting (with
+'handle nostop') from changing the focus of debugging unexpectedly.
+Note that the signal handler itself may still hit a breakpoint, stop for
+another signal that has 'handle stop' in effect, or for any other event
+that normally results in stopping the stepping command sooner.  Also
+note that GDB still informs you that the program received a signal if
+'handle print' is set.
+
+   If you set 'handle pass' for a signal, and your program sets up a
+handler for it, then issuing a stepping command, such as 'step' or
+'stepi', when your program is stopped due to the signal will step _into_
+the signal handler (if the target supports that).
+
+   Likewise, if you use the 'queue-signal' command to queue a signal to
+be delivered to the current thread when execution of the thread resumes
+(*note Giving your Program a Signal: Signaling.), then a stepping
+command will step into the signal handler.
+
+   Here's an example, using 'stepi' to step to the first instruction of
+'SIGUSR1''s handler:
+
+     (gdb) handle SIGUSR1
+     Signal        Stop      Print   Pass to program Description
+     SIGUSR1       Yes       Yes     Yes             User defined signal 1
+     (gdb) c
+     Continuing.
+
+     Program received signal SIGUSR1, User defined signal 1.
+     main () sigusr1.c:28
+     28        p = 0;
+     (gdb) si
+     sigusr1_handler () at sigusr1.c:9
+     9       {
+
+   The same, but using 'queue-signal' instead of waiting for the program
+to receive the signal first:
+
+     (gdb) n
+     28        p = 0;
+     (gdb) queue-signal SIGUSR1
+     (gdb) si
+     sigusr1_handler () at sigusr1.c:9
+     9       {
+     (gdb)
 
    On some targets, GDB can inspect extra signal information associated
 with the intercepted signal, before it is actually delivered to the
@@ -6941,77 +6984,4 @@ programming languages:
      pointer (but parentheses are required around binary operators, just
      as in a cast).  This construct is allowed regardless of what kind
      of data is normally supposed to reside at ADDR.
-
-
-File: gdb.info,  Node: Ambiguous Expressions,  Next: Variables,  Prev: Expressions,  Up: Data
-
-10.2 Ambiguous Expressions
-==========================
-
-Expressions can sometimes contain some ambiguous elements.  For
-instance, some programming languages (notably Ada, C++ and Objective-C)
-permit a single function name to be defined several times, for
-application in different contexts.  This is called "overloading".
-Another example involving Ada is generics.  A "generic package" is
-similar to C++ templates and is typically instantiated several times,
-resulting in the same function name being defined in different contexts.
-
-   In some cases and depending on the language, it is possible to adjust
-the expression to remove the ambiguity.  For instance in C++, you can
-specify the signature of the function you want to break on, as in 'break
-FUNCTION(TYPES)'.  In Ada, using the fully qualified name of your
-function often makes the expression unambiguous as well.
-
-   When an ambiguity that needs to be resolved is detected, the debugger
-has the capability to display a menu of numbered choices for each
-possibility, and then waits for the selection with the prompt '>'.  The
-first option is always '[0] cancel', and typing '0 <RET>' aborts the
-current command.  If the command in which the expression was used allows
-more than one choice to be selected, the next option in the menu is '[1]
-all', and typing '1 <RET>' selects all possible choices.
-
-   For example, the following session excerpt shows an attempt to set a
-breakpoint at the overloaded symbol 'String::after'.  We choose three
-particular definitions of that function name:
-
-     (gdb) b String::after
-     [0] cancel
-     [1] all
-     [2] file:String.cc; line number:867
-     [3] file:String.cc; line number:860
-     [4] file:String.cc; line number:875
-     [5] file:String.cc; line number:853
-     [6] file:String.cc; line number:846
-     [7] file:String.cc; line number:735
-     > 2 4 6
-     Breakpoint 1 at 0xb26c: file String.cc, line 867.
-     Breakpoint 2 at 0xb344: file String.cc, line 875.
-     Breakpoint 3 at 0xafcc: file String.cc, line 846.
-     Multiple breakpoints were set.
-     Use the "delete" command to delete unwanted
-      breakpoints.
-     (gdb)
-
-'set multiple-symbols MODE'
-
-     This option allows you to adjust the debugger behavior when an
-     expression is ambiguous.
-
-     By default, MODE is set to 'all'.  If the command with which the
-     expression is used allows more than one choice, then GDB
-     automatically selects all possible choices.  For instance,
-     inserting a breakpoint on a function using an ambiguous name
-     results in a breakpoint inserted on each possible match.  However,
-     if a unique choice must be made, then GDB uses the menu to help you
-     disambiguate the expression.  For instance, printing the address of
-     an overloaded function will result in the use of the menu.
-
-     When MODE is set to 'ask', the debugger always uses the menu when
-     an ambiguity is detected.
-
-     Finally, when MODE is set to 'cancel', the debugger reports an
-     error due to the ambiguity and the command is aborted.
-
-'show multiple-symbols'
-     Show the current value of the 'multiple-symbols' setting.
 

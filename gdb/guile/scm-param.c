@@ -1,6 +1,6 @@
 /* GDB parameters implemented in Guile.
 
-   Copyright (C) 2008-2014 Free Software Foundation, Inc.
+   Copyright (C) 2008-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -19,7 +19,6 @@
 
 #include "defs.h"
 #include "value.h"
-#include "exceptions.h"
 #include "charset.h"
 #include "gdbcmd.h"
 #include "cli/cli-decode.h"
@@ -150,7 +149,7 @@ pascm_print_param_smob (SCM self, SCM port, scm_print_state *pstate)
   if (! pascm_is_valid (p_smob))
     scm_puts (" {invalid}", port);
 
-  gdbscm_printf (port, " %s", pascm_param_type_name (p_smob->type));
+  gdbscm_printf (port, " %s ", pascm_param_type_name (p_smob->type));
 
   value = pascm_param_value (p_smob->type, &p_smob->value,
 			     GDBSCM_ARG_NONE, NULL);

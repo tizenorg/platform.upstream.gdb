@@ -1,6 +1,6 @@
 /* Go language support routines for GDB, the GNU debugger.
 
-   Copyright (C) 2012-2014 Free Software Foundation, Inc.
+   Copyright (C) 2012-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -32,9 +32,7 @@
 */
 
 #include "defs.h"
-#include "gdb_assert.h"
 #include "gdb_obstack.h"
-#include <string.h>
 #include "block.h"
 #include "symtab.h"
 #include "language.h"
@@ -599,6 +597,8 @@ static const struct language_defn go_language_defn =
   NULL,
   iterate_over_symbols,
   &default_varobj_ops,
+  NULL,
+  NULL,
   LANG_MAGIC
 };
 

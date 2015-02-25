@@ -1,5 +1,5 @@
 /* Darwin support for GDB, the GNU debugger.
-   Copyright (C) 2008-2014 Free Software Foundation, Inc.
+   Copyright (C) 2008-2015 Free Software Foundation, Inc.
 
    Contributed by AdaCore.
 
@@ -33,7 +33,6 @@
 #include "event-top.h"
 #include "inf-loop.h"
 #include <sys/stat.h>
-#include "exceptions.h"
 #include "inf-child.h"
 #include "value.h"
 #include "arch-utils.h"
@@ -42,11 +41,10 @@
 
 #include <sys/ptrace.h>
 #include <sys/signal.h>
-#include <machine/setjmp.h>
+#include <setjmp.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <signal.h>
-#include <string.h>
 #include <ctype.h>
 #include <sys/sysctl.h>
 #include <sys/proc.h>
@@ -861,7 +859,7 @@ darwin_resume (ptid_t ptid, int step, enum gdb_signal signal)
     }
   else
     {
-      struct inferior *inf = find_inferior_pid (ptid_get_pid (ptid));
+      struct inferior *inf = find_inferior_ptid (ptid);
       long tid = ptid_get_tid (ptid);
 
       /* Stop the inferior (should be useless).  */

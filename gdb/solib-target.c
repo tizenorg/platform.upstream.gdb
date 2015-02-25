@@ -1,6 +1,6 @@
 /* Definitions for targets which report shared library events.
 
-   Copyright (C) 2007-2014 Free Software Foundation, Inc.
+   Copyright (C) 2007-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -25,8 +25,6 @@
 #include "target.h"
 #include "vec.h"
 #include "solib-target.h"
-
-#include <string.h>
 
 /* Private data for each loaded library.  */
 struct lm_info

@@ -1,6 +1,6 @@
 /* Target-dependent definitions for AMD64.
 
-   Copyright (C) 2001-2014 Free Software Foundation, Inc.
+   Copyright (C) 2001-2015 Free Software Foundation, Inc.
    Contributed by Jiri Smid, SuSE Labs.
 
    This file is part of GDB.
@@ -119,6 +119,8 @@ extern void amd64_collect_fxsave (const struct regcache *regcache, int regnum,
 extern void amd64_collect_xsave (const struct regcache *regcache,
 				 int regnum, void *xsave, int gcore);
 
+/* Floating-point register set. */
+extern const struct regset amd64_fpregset;
 
 /* Variables exported from amd64-linux-tdep.c.  */
 extern int amd64_linux_gregset_reg_offset[];

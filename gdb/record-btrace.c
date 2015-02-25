@@ -1,6 +1,6 @@
 /* Branch trace support for GDB, the GNU debugger.
 
-   Copyright (C) 2013-2014 Free Software Foundation, Inc.
+   Copyright (C) 2013-2015 Free Software Foundation, Inc.
 
    Contributed by Intel Corp. <markus.t.metzger@intel.com>
 
@@ -26,7 +26,6 @@
 #include "gdbcmd.h"
 #include "disasm.h"
 #include "observer.h"
-#include "exceptions.h"
 #include "cli/cli-utils.h"
 #include "source.h"
 #include "ui-out.h"
@@ -67,6 +66,9 @@ static enum exec_direction_kind record_btrace_resume_exec_dir = EXEC_FORWARD;
 
 /* The async event handler for reverse/replay execution.  */
 static struct async_event_handler *record_btrace_async_inferior_event_handler;
+
+/* A flag indicating that we are currently generating a core file.  */
+static int record_btrace_generating_corefile;
 
 /* Print a record-btrace debug message.  Use do ... while (0) to avoid
    ambiguities when used in if statements.  */
@@ -185,7 +187,7 @@ record_btrace_handle_async_inferior_event (gdb_client_data data)
 /* The to_open method of target record-btrace.  */
 
 static void
-record_btrace_open (char *args, int from_tty)
+record_btrace_open (const char *args, int from_tty)
 {
   struct cleanup *disable_chain;
   struct thread_info *tp;
@@ -221,6 +223,7 @@ record_btrace_open (char *args, int from_tty)
   record_btrace_async_inferior_event_handler
     = create_async_event_handler (record_btrace_handle_async_inferior_event,
 				  NULL);
+  record_btrace_generating_corefile = 0;
 
   observer_notify_record_changed (current_inferior (),  1);
 
@@ -261,6 +264,22 @@ record_btrace_close (struct target_ops *self)
      Tear down btrace in case we have not.  */
   ALL_NON_EXITED_THREADS (tp)
     btrace_teardown (tp);
+}
+
+/* The to_async method of target record-btrace.  */
+
+static void
+record_btrace_async (struct target_ops *ops,
+		     void (*callback) (enum inferior_event_type event_type,
+				       void *context),
+		     void *context)
+{
+  if (callback != NULL)
+    mark_async_event_handler (record_btrace_async_inferior_event_handler);
+  else
+    clear_async_event_handler (record_btrace_async_inferior_event_handler);
+
+  ops->beneath->to_async (ops->beneath, callback, context);
 }
 
 /* The to_info_record method of target record-btrace.  */
@@ -553,7 +572,7 @@ btrace_call_history_src_line (struct ui_out *uiout,
     return;
 
   ui_out_field_string (uiout, "file",
-		       symtab_to_filename_for_display (sym->symtab));
+		       symtab_to_filename_for_display (symbol_symtab (sym)));
 
   begin = bfun->lbegin;
   end = bfun->lend;
@@ -854,6 +873,7 @@ record_btrace_xfer_partial (struct target_ops *ops, enum target_object object,
 
   /* Filter out requests that don't make sense during replay.  */
   if (replay_memory_access == replay_memory_access_read_only
+      && !record_btrace_generating_corefile
       && record_btrace_is_replaying (ops))
     {
       switch (object)
@@ -891,13 +911,9 @@ record_btrace_xfer_partial (struct target_ops *ops, enum target_object object,
     }
 
   /* Forward the request.  */
-  for (ops = ops->beneath; ops != NULL; ops = ops->beneath)
-    if (ops->to_xfer_partial != NULL)
-      return ops->to_xfer_partial (ops, object, annex, readbuf, writebuf,
-				   offset, len, xfered_len);
-
-  *xfered_len = len;
-  return TARGET_XFER_UNAVAILABLE;
+  ops = ops->beneath;
+  return ops->to_xfer_partial (ops, object, annex, readbuf, writebuf,
+			       offset, len, xfered_len);
 }
 
 /* The to_insert_breakpoint method of target record-btrace.  */
@@ -969,7 +985,7 @@ record_btrace_fetch_registers (struct target_ops *ops,
   gdb_assert (tp != NULL);
 
   replay = tp->btrace.replay;
-  if (replay != NULL)
+  if (replay != NULL && !record_btrace_generating_corefile)
     {
       const struct btrace_insn *insn;
       struct gdbarch *gdbarch;
@@ -991,14 +1007,9 @@ record_btrace_fetch_registers (struct target_ops *ops,
     }
   else
     {
-      struct target_ops *t;
+      struct target_ops *t = ops->beneath;
 
-      for (t = ops->beneath; t != NULL; t = t->beneath)
-	if (t->to_fetch_registers != NULL)
-	  {
-	    t->to_fetch_registers (t, regcache, regno);
-	    break;
-	  }
+      t->to_fetch_registers (t, regcache, regno);
     }
 }
 
@@ -1010,19 +1021,13 @@ record_btrace_store_registers (struct target_ops *ops,
 {
   struct target_ops *t;
 
-  if (record_btrace_is_replaying (ops))
+  if (!record_btrace_generating_corefile && record_btrace_is_replaying (ops))
     error (_("This record target does not allow writing registers."));
 
   gdb_assert (may_write_registers != 0);
 
-  for (t = ops->beneath; t != NULL; t = t->beneath)
-    if (t->to_store_registers != NULL)
-      {
-	t->to_store_registers (t, regcache, regno);
-	return;
-      }
-
-  noprocess ();
+  t = ops->beneath;
+  t->to_store_registers (t, regcache, regno);
 }
 
 /* The to_prepare_to_store method of target record-btrace.  */
@@ -1033,15 +1038,11 @@ record_btrace_prepare_to_store (struct target_ops *ops,
 {
   struct target_ops *t;
 
-  if (record_btrace_is_replaying (ops))
+  if (!record_btrace_generating_corefile && record_btrace_is_replaying (ops))
     return;
 
-  for (t = ops->beneath; t != NULL; t = t->beneath)
-    if (t->to_prepare_to_store != NULL)
-      {
-	t->to_prepare_to_store (t, regcache);
-	return;
-      }
+  t = ops->beneath;
+  t->to_prepare_to_store (t, regcache);
 }
 
 /* The branch trace frame cache.  */
@@ -1528,11 +1529,8 @@ record_btrace_resume (struct target_ops *ops, ptid_t ptid, int step,
   /* As long as we're not replaying, just forward the request.  */
   if (!record_btrace_is_replaying (ops) && execution_direction != EXEC_REVERSE)
     {
-      for (ops = ops->beneath; ops != NULL; ops = ops->beneath)
-	if (ops->to_resume != NULL)
-	  return ops->to_resume (ops, ptid, step, signal);
-
-      error (_("Cannot find target for stepping."));
+      ops = ops->beneath;
+      return ops->to_resume (ops, ptid, step, signal);
     }
 
   /* Compute the btrace thread flag for the requested move.  */
@@ -1680,7 +1678,7 @@ record_btrace_step_thread (struct thread_info *tp)
       if (replay == NULL)
 	return btrace_step_no_history ();
 
-      inf = find_inferior_pid (ptid_get_pid (tp->ptid));
+      inf = find_inferior_ptid (tp->ptid);
       aspace = inf->aspace;
 
       /* Determine the end of the instruction trace.  */
@@ -1717,7 +1715,7 @@ record_btrace_step_thread (struct thread_info *tp)
       if (replay == NULL)
 	replay = record_btrace_start_replaying (tp);
 
-      inf = find_inferior_pid (ptid_get_pid (tp->ptid));
+      inf = find_inferior_ptid (tp->ptid);
       aspace = inf->aspace;
 
       for (;;)
@@ -1755,11 +1753,8 @@ record_btrace_wait (struct target_ops *ops, ptid_t ptid,
   /* As long as we're not replaying, just forward the request.  */
   if (!record_btrace_is_replaying (ops) && execution_direction != EXEC_REVERSE)
     {
-      for (ops = ops->beneath; ops != NULL; ops = ops->beneath)
-	if (ops->to_wait != NULL)
-	  return ops->to_wait (ops, ptid, status, options);
-
-      error (_("Cannot find target for waiting."));
+      ops = ops->beneath;
+      return ops->to_wait (ops, ptid, status, options);
     }
 
   /* Let's find a thread to move.  */
@@ -1811,22 +1806,18 @@ record_btrace_decr_pc_after_break (struct target_ops *ops,
   return ops->beneath->to_decr_pc_after_break (ops->beneath, gdbarch);
 }
 
-/* The to_find_new_threads method of target record-btrace.  */
+/* The to_update_thread_list method of target record-btrace.  */
 
 static void
-record_btrace_find_new_threads (struct target_ops *ops)
+record_btrace_update_thread_list (struct target_ops *ops)
 {
-  /* Don't expect new threads if we're replaying.  */
+  /* We don't add or remove threads during replay.  */
   if (record_btrace_is_replaying (ops))
     return;
 
   /* Forward the request.  */
-  for (ops = ops->beneath; ops != NULL; ops = ops->beneath)
-    if (ops->to_find_new_threads != NULL)
-      {
-	ops->to_find_new_threads (ops);
-	break;
-      }
+  ops = ops->beneath;
+  ops->to_update_thread_list (ops);
 }
 
 /* The to_thread_alive method of target record-btrace.  */
@@ -1839,11 +1830,8 @@ record_btrace_thread_alive (struct target_ops *ops, ptid_t ptid)
     return find_thread_ptid (ptid) != NULL;
 
   /* Forward the request.  */
-  for (ops = ops->beneath; ops != NULL; ops = ops->beneath)
-    if (ops->to_thread_alive != NULL)
-      return ops->to_thread_alive (ops, ptid);
-
-  return 0;
+  ops = ops->beneath;
+  return ops->to_thread_alive (ops, ptid);
 }
 
 /* Set the replay branch trace instruction iterator.  If IT is NULL, replay
@@ -1939,6 +1927,22 @@ record_btrace_execution_direction (struct target_ops *self)
   return record_btrace_resume_exec_dir;
 }
 
+/* The to_prepare_to_generate_core target method.  */
+
+static void
+record_btrace_prepare_to_generate_core (struct target_ops *self)
+{
+  record_btrace_generating_corefile = 1;
+}
+
+/* The to_done_generating_core target method.  */
+
+static void
+record_btrace_done_generating_core (struct target_ops *self)
+{
+  record_btrace_generating_corefile = 0;
+}
+
 /* Initialize the record-btrace target ops.  */
 
 static void
@@ -1952,6 +1956,7 @@ init_record_btrace_ops (void)
   ops->to_doc = "Collect control-flow trace and provide the execution history.";
   ops->to_open = record_btrace_open;
   ops->to_close = record_btrace_close;
+  ops->to_async = record_btrace_async;
   ops->to_detach = record_detach;
   ops->to_disconnect = record_disconnect;
   ops->to_mourn_inferior = record_mourn_inferior;
@@ -1975,7 +1980,7 @@ init_record_btrace_ops (void)
   ops->to_get_tailcall_unwinder = &record_btrace_to_get_tailcall_unwinder;
   ops->to_resume = record_btrace_resume;
   ops->to_wait = record_btrace_wait;
-  ops->to_find_new_threads = record_btrace_find_new_threads;
+  ops->to_update_thread_list = record_btrace_update_thread_list;
   ops->to_thread_alive = record_btrace_thread_alive;
   ops->to_goto_record_begin = record_btrace_goto_begin;
   ops->to_goto_record_end = record_btrace_goto_end;
@@ -1983,6 +1988,8 @@ init_record_btrace_ops (void)
   ops->to_can_execute_reverse = record_btrace_can_execute_reverse;
   ops->to_decr_pc_after_break = record_btrace_decr_pc_after_break;
   ops->to_execution_direction = record_btrace_execution_direction;
+  ops->to_prepare_to_generate_core = record_btrace_prepare_to_generate_core;
+  ops->to_done_generating_core = record_btrace_done_generating_core;
   ops->to_stratum = record_stratum;
   ops->to_magic = OPS_MAGIC;
 }

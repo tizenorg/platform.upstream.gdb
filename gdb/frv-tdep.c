@@ -1,6 +1,6 @@
 /* Target-dependent code for the Fujitsu FR-V, for GDB, the GNU Debugger.
 
-   Copyright (C) 2002-2014 Free Software Foundation, Inc.
+   Copyright (C) 2002-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -18,7 +18,6 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include <string.h>
 #include "inferior.h"
 #include "gdbcore.h"
 #include "arch-utils.h"
@@ -28,7 +27,6 @@
 #include "frame-base.h"
 #include "trad-frame.h"
 #include "dis-asm.h"
-#include "gdb_assert.h"
 #include "sim-regno.h"
 #include "gdb/sim-frv.h"
 #include "opcodes/frv-desc.h"	/* for the H_SPR_... enums */

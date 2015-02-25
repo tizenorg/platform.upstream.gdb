@@ -1,5 +1,5 @@
 /* Support for printing C and C++ types for GDB, the GNU debugger.
-   Copyright (C) 1986-2014 Free Software Foundation, Inc.
+   Copyright (C) 1986-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -31,8 +31,6 @@
 #include "typeprint.h"
 #include "cp-abi.h"
 #include "jv-lang.h"
-#include <string.h>
-#include <errno.h>
 #include "cp-support.h"
 
 static void c_type_print_varspec_prefix (struct type *,

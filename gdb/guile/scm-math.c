@@ -1,6 +1,6 @@
 /* GDB/Scheme support for math operations on values.
 
-   Copyright (C) 2008-2014 Free Software Foundation, Inc.
+   Copyright (C) 2008-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -27,7 +27,6 @@
 #include "doublest.h" /* Needed by dfp.h.  */
 #include "expression.h" /* Needed by dfp.h.  */
 #include "dfp.h"
-#include "gdb_assert.h"
 #include "symtab.h" /* Needed by language.h.  */
 #include "language.h"
 #include "valprint.h"

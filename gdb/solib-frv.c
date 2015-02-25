@@ -1,5 +1,5 @@
 /* Handle FR-V (FDPIC) shared libraries for GDB, the GNU Debugger.
-   Copyright (C) 2004-2014 Free Software Foundation, Inc.
+   Copyright (C) 2004-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -18,7 +18,6 @@
 
 
 #include "defs.h"
-#include <string.h>
 #include "inferior.h"
 #include "gdbcore.h"
 #include "solib.h"
@@ -30,7 +29,6 @@
 #include "command.h"
 #include "gdbcmd.h"
 #include "elf/frv.h"
-#include "exceptions.h"
 #include "gdb_bfd.h"
 
 /* Flag which indicates whether internal debug messages should be printed.  */

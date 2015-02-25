@@ -1,5 +1,5 @@
 /* aarch64-dis.c -- AArch64 disassembler.
-   Copyright (C) 2009-2014 Free Software Foundation, Inc.
+   Copyright (C) 2009-2015 Free Software Foundation, Inc.
    Contributed by ARM Ltd.
 
    This file is part of the GNU opcodes library.
@@ -221,6 +221,17 @@ aarch64_ext_regno (const aarch64_operand *self, aarch64_opnd_info *info,
 		   const aarch64_inst *inst ATTRIBUTE_UNUSED)
 {
   info->reg.regno = extract_field (self->fields[0], code, 0);
+  return 1;
+}
+
+int
+aarch64_ext_regno_pair (const aarch64_operand *self ATTRIBUTE_UNUSED, aarch64_opnd_info *info,
+		   const aarch64_insn code ATTRIBUTE_UNUSED,
+		   const aarch64_inst *inst ATTRIBUTE_UNUSED)
+{
+  assert (info->idx == 1
+	  || info->idx ==3);
+  info->reg.regno = inst->operands[info->idx - 1].reg.regno + 1;
   return 1;
 }
 
@@ -1359,6 +1370,13 @@ do_special_decoding (aarch64_inst *inst)
       if ((inst->opcode->flags & F_N)
 	  && extract_field (FLD_N, inst->value, 0) != value)
 	return 0;
+    }
+  /* 'sf' field.  */
+  if (inst->opcode->flags & F_LSE_SZ)
+    {
+      idx = select_operand_for_sf_field_coding (inst->opcode);
+      value = extract_field (FLD_lse_sz, inst->value, 0);
+      inst->operands[idx].qualifier = get_greg_qualifier_from_value (value);
     }
   /* size:Q fields.  */
   if (inst->opcode->flags & F_SIZEQ)

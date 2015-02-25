@@ -1,5 +1,5 @@
 /* Remote utility routines for the remote server for GDB.
-   Copyright (C) 1986-2014 Free Software Foundation, Inc.
+   Copyright (C) 1986-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -23,9 +23,7 @@
 #include "tdesc.h"
 #include "dll.h"
 #include "rsp-low.h"
-
-#include <stdio.h>
-#include <string.h>
+#include <ctype.h>
 #if HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #endif
@@ -59,9 +57,6 @@
 #include <arpa/inet.h>
 #endif
 #include <sys/stat.h>
-#if HAVE_ERRNO_H
-#include <errno.h>
-#endif
 
 #if USE_WIN32API
 #include <winsock2.h>
@@ -253,7 +248,7 @@ remote_prepare (char *name)
 
   port = strtoul (port_str + 1, &port_end, 10);
   if (port_str[1] == '\0' || *port_end != '\0')
-    fatal ("Bad port argument: %s", name);
+    error ("Bad port argument: %s", name);
 
 #ifdef USE_WIN32API
   if (!winsock_initialized)
@@ -692,7 +687,7 @@ putpkt_binary_1 (char *buf, int cnt, int is_notif)
 	}
 
       /* Check for an input interrupt while we're here.  */
-      if (cc == '\003' && current_inferior != NULL)
+      if (cc == '\003' && current_thread != NULL)
 	(*the_target->request_interrupt) ();
     }
   while (cc != '+');
@@ -747,10 +742,18 @@ input_interrupt (int unused)
 
       cc = read_prim (&c, 1);
 
-      if (cc != 1 || c != '\003' || current_inferior == NULL)
+      if (cc == 0)
 	{
-	  fprintf (stderr, "input_interrupt, count = %d c = %d ('%c')\n",
-		   cc, c, c);
+	  fprintf (stderr, "client connection closed\n");
+	  return;
+	}
+      else if (cc != 1 || c != '\003' || current_thread == NULL)
+	{
+	  fprintf (stderr, "input_interrupt, count = %d c = %d ", cc, c);
+	  if (isprint (c))
+	    fprintf (stderr, "('%c')\n", c);
+	  else
+	    fprintf (stderr, "('\\x%02x')\n", c & 0xff);
 	  return;
 	}
 
@@ -1112,20 +1115,20 @@ prepare_resume_reply (char *buf, ptid_t ptid,
     {
     case TARGET_WAITKIND_STOPPED:
       {
-	struct thread_info *saved_inferior;
+	struct thread_info *saved_thread;
 	const char **regp;
 	struct regcache *regcache;
 
 	sprintf (buf, "T%02x", status->value.sig);
 	buf += strlen (buf);
 
-	saved_inferior = current_inferior;
+	saved_thread = current_thread;
 
-	current_inferior = find_thread_ptid (ptid);
+	current_thread = find_thread_ptid (ptid);
 
 	regp = current_target_desc ()->expedite_regs;
 
-	regcache = get_thread_regcache (current_inferior, 1);
+	regcache = get_thread_regcache (current_thread, 1);
 
 	if (the_target->stopped_by_watchpoint != NULL
 	    && (*the_target->stopped_by_watchpoint) ())
@@ -1202,7 +1205,7 @@ prepare_resume_reply (char *buf, ptid_t ptid,
 	    dlls_changed = 0;
 	  }
 
-	current_inferior = saved_inferior;
+	current_thread = saved_thread;
       }
       break;
     case TARGET_WAITKIND_EXITED:

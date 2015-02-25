@@ -1,6 +1,6 @@
 /* GDB/Scheme exception support.
 
-   Copyright (C) 2014 Free Software Foundation, Inc.
+   Copyright (C) 2014-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -30,7 +30,6 @@
 
 #include "defs.h"
 #include <signal.h>
-#include "gdb_assert.h"
 #include "guile-internal.h"
 
 /* The <gdb:exception> smob.

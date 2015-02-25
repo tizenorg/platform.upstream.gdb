@@ -1,6 +1,6 @@
 /* Support for complaint handling during symbol reading in GDB.
 
-   Copyright (C) 1990-2014 Free Software Foundation, Inc.
+   Copyright (C) 1990-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -19,7 +19,6 @@
 
 #include "defs.h"
 #include "complaints.h"
-#include "gdb_assert.h"
 #include "command.h"
 #include "gdbcmd.h"
 

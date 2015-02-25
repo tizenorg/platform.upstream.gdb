@@ -1,6 +1,6 @@
 /* Process record and replay target for GDB, the GNU debugger.
 
-   Copyright (C) 2013-2014 Free Software Foundation, Inc.
+   Copyright (C) 2013-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -22,7 +22,6 @@
 #include "regcache.h"
 #include "gdbthread.h"
 #include "event-top.h"
-#include "exceptions.h"
 #include "completer.h"
 #include "arch-utils.h"
 #include "gdbcore.h"
@@ -792,7 +791,7 @@ record_full_async_inferior_event_handler (gdb_client_data data)
 /* Open the process record target.  */
 
 static void
-record_full_core_open_1 (char *name, int from_tty)
+record_full_core_open_1 (const char *name, int from_tty)
 {
   struct regcache *regcache = get_current_regcache ();
   int regnum = gdbarch_num_regs (get_regcache_arch (regcache));
@@ -822,7 +821,7 @@ record_full_core_open_1 (char *name, int from_tty)
 /* "to_open" target method for 'live' processes.  */
 
 static void
-record_full_open_1 (char *name, int from_tty)
+record_full_open_1 (const char *name, int from_tty)
 {
   if (record_debug)
     fprintf_unfiltered (gdb_stdlog, "Process record: record_full_open\n");
@@ -846,7 +845,7 @@ static void record_full_init_record_breakpoints (void);
 /* "to_open" target method.  Open the process record target.  */
 
 static void
-record_full_open (char *name, int from_tty)
+record_full_open (const char *name, int from_tty)
 {
   struct target_ops *t;
 
@@ -911,6 +910,22 @@ record_full_close (struct target_ops *self)
     delete_async_event_handler (&record_full_async_inferior_event_token);
 }
 
+/* "to_async" target method.  */
+
+static void
+record_full_async (struct target_ops *ops,
+		   void (*callback) (enum inferior_event_type event_type,
+				     void *context),
+		   void *context)
+{
+  if (callback != NULL)
+    mark_async_event_handler (record_full_async_inferior_event_token);
+  else
+    clear_async_event_handler (record_full_async_inferior_event_token);
+
+  ops->beneath->to_async (ops->beneath, callback, context);
+}
+
 static int record_full_resume_step = 0;
 
 /* True if we've been resumed, and so each record_full_wait call should
@@ -961,7 +976,7 @@ record_full_resume (struct target_ops *ops, ptid_t ptid, int step,
           else
             {
               /* This arch support soft sigle step.  */
-              if (single_step_breakpoints_inserted ())
+              if (thread_has_single_step_breakpoints_set (inferior_thread ()))
                 {
                   /* This is a soft single step.  */
                   record_full_resume_step = 1;
@@ -990,12 +1005,7 @@ record_full_resume (struct target_ops *ops, ptid_t ptid, int step,
   /* We are about to start executing the inferior (or simulate it),
      let's register it with the event loop.  */
   if (target_can_async_p ())
-    {
-      target_async (inferior_event_handler, 0);
-      /* Notify the event loop there's an event to wait for.  We do
-	 most of the work in record_full_wait.  */
-      mark_async_event_handler (record_full_async_inferior_event_token);
-    }
+    target_async (inferior_event_handler, 0);
 }
 
 static int record_full_get_sig = 0;
@@ -1085,6 +1095,8 @@ record_full_wait_1 (struct target_ops *ops,
 
 	  while (1)
 	    {
+	      struct thread_info *tp;
+
 	      ret = ops->beneath->to_wait (ops->beneath, ptid, status, options);
 	      if (status->kind == TARGET_WAITKIND_IGNORE)
 		{
@@ -1095,8 +1107,8 @@ record_full_wait_1 (struct target_ops *ops,
 		  return ret;
 		}
 
-              if (single_step_breakpoints_inserted ())
-                remove_single_step_breakpoints ();
+	      ALL_NON_EXITED_THREADS (tp)
+                delete_single_step_breakpoints (tp);
 
 	      if (record_full_resume_step)
 		return ret;
@@ -1703,7 +1715,8 @@ record_full_can_execute_reverse (struct target_ops *self)
 /* "to_get_bookmark" method for process record and prec over core.  */
 
 static gdb_byte *
-record_full_get_bookmark (struct target_ops *self, char *args, int from_tty)
+record_full_get_bookmark (struct target_ops *self, const char *args,
+			  int from_tty)
 {
   char *ret = NULL;
 
@@ -1727,9 +1740,10 @@ record_full_get_bookmark (struct target_ops *self, char *args, int from_tty)
 
 static void
 record_full_goto_bookmark (struct target_ops *self,
-			   gdb_byte *raw_bookmark, int from_tty)
+			   const gdb_byte *raw_bookmark, int from_tty)
 {
-  char *bookmark = (char *) raw_bookmark;
+  const char *bookmark = (const char *) raw_bookmark;
+  struct cleanup *cleanup = make_cleanup (null_cleanup, NULL);
 
   if (record_debug)
     fprintf_unfiltered (gdb_stdlog,
@@ -1737,18 +1751,20 @@ record_full_goto_bookmark (struct target_ops *self,
 
   if (bookmark[0] == '\'' || bookmark[0] == '\"')
     {
+      char *copy;
+
       if (bookmark[strlen (bookmark) - 1] != bookmark[0])
 	error (_("Unbalanced quotes: %s"), bookmark);
 
-      /* Strip trailing quote.  */
-      bookmark[strlen (bookmark) - 1] = '\0';
-      /* Strip leading quote.  */
-      bookmark++;
-      /* Pass along to cmd_record_full_goto.  */
+
+      copy = savestring (bookmark + 1, strlen (bookmark) - 2);
+      make_cleanup (xfree, copy);
+      bookmark = copy;
     }
 
-  cmd_record_goto (bookmark, from_tty);
-  return;
+  record_goto (bookmark);
+
+  do_cleanups (cleanup);
 }
 
 static enum exec_direction_kind
@@ -1897,6 +1913,7 @@ init_record_full_ops (void)
     "Log program while executing and replay execution from log.";
   record_full_ops.to_open = record_full_open;
   record_full_ops.to_close = record_full_close;
+  record_full_ops.to_async = record_full_async;
   record_full_ops.to_resume = record_full_resume;
   record_full_ops.to_wait = record_full_wait;
   record_full_ops.to_disconnect = record_disconnect;
@@ -1938,12 +1955,7 @@ record_full_core_resume (struct target_ops *ops, ptid_t ptid, int step,
   /* We are about to start executing the inferior (or simulate it),
      let's register it with the event loop.  */
   if (target_can_async_p ())
-    {
-      target_async (inferior_event_handler, 0);
-
-      /* Notify the event loop there's an event to wait for.  */
-      mark_async_event_handler (record_full_async_inferior_event_token);
-    }
+    target_async (inferior_event_handler, 0);
 }
 
 /* "to_kill" method for prec over corefile.  */
@@ -2136,6 +2148,7 @@ init_record_full_core_ops (void)
     "Log program while executing and replay execution from log.";
   record_full_core_ops.to_open = record_full_open;
   record_full_core_ops.to_close = record_full_close;
+  record_full_core_ops.to_async = record_full_async;
   record_full_core_ops.to_resume = record_full_core_resume;
   record_full_core_ops.to_wait = record_full_wait;
   record_full_core_ops.to_kill = record_full_core_kill;

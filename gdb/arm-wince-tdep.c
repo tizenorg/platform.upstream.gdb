@@ -1,7 +1,7 @@
 /* Target-dependent code for Windows CE running on ARM processors,
    for GDB.
 
-   Copyright (C) 2007-2014 Free Software Foundation, Inc.
+   Copyright (C) 2007-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -24,8 +24,6 @@
 #include "target.h"
 #include "frame.h"
 
-#include <string.h>
-
 #include "arm-tdep.h"
 #include "windows-tdep.h"
 
@@ -47,9 +45,12 @@ arm_pe_skip_trampoline_code (struct frame_info *frame, CORE_ADDR pc)
   CORE_ADDR next_pc;
 
   /* The format of an ARM DLL trampoline is:
+
        ldr  ip, [pc]
        ldr  pc, [ip]
-       .dw __imp_<func>  */
+       .dw __imp_<func>
+
+  */
 
   if (pc == 0
       || read_memory_unsigned_integer (pc + 0, 4, byte_order) != 0xe59fc000

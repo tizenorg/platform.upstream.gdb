@@ -1,6 +1,6 @@
 /* MI Console code.
 
-   Copyright (C) 2000-2014 Free Software Foundation, Inc.
+   Copyright (C) 2000-2015 Free Software Foundation, Inc.
 
    Contributed by Cygnus Solutions (a Red Hat company).
 
@@ -26,8 +26,6 @@
 
 #include "defs.h"
 #include "mi-console.h"
-#include <string.h>
-
 static ui_file_fputs_ftype mi_console_file_fputs;
 static ui_file_flush_ftype mi_console_file_flush;
 static ui_file_delete_ftype mi_console_file_delete;

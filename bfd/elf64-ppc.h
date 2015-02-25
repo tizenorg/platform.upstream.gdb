@@ -1,5 +1,5 @@
 /* PowerPC64-specific support for 64-bit ELF.
-   Copyright (C) 2002-2014 Free Software Foundation, Inc.
+   Copyright (C) 2002-2015 Free Software Foundation, Inc.
 
    This file is part of BFD, the Binary File Descriptor library.
 
@@ -72,7 +72,7 @@ bfd_boolean ppc64_elf_edit_toc
 bfd_boolean ppc64_elf_has_small_toc_reloc
   (asection *);
 bfd_vma ppc64_elf_set_toc
-(struct bfd_link_info *, bfd *);
+  (struct bfd_link_info *, bfd *);
 int ppc64_elf_setup_section_lists
   (struct bfd_link_info *);
 void ppc64_elf_start_multitoc_partition

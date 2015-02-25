@@ -1,5 +1,5 @@
 /* Handle TIC6X (DSBT) shared libraries for GDB, the GNU Debugger.
-   Copyright (C) 2010-2014 Free Software Foundation, Inc.
+   Copyright (C) 2010-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -18,7 +18,6 @@
 
 
 #include "defs.h"
-#include <string.h>
 #include "inferior.h"
 #include "gdbcore.h"
 #include "solib.h"
@@ -29,7 +28,6 @@
 #include "command.h"
 #include "gdbcmd.h"
 #include "elf-bfd.h"
-#include "exceptions.h"
 #include "gdb_bfd.h"
 
 #define GOT_MODULE_OFFSET 4

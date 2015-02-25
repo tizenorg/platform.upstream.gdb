@@ -1,6 +1,6 @@
 /* Target-dependent code for NetBSD/sparc.
 
-   Copyright (C) 2002-2014 Free Software Foundation, Inc.
+   Copyright (C) 2002-2015 Free Software Foundation, Inc.
    Contributed by Wasabi Systems, Inc.
 
    This file is part of GDB.
@@ -29,9 +29,6 @@
 #include "solib-svr4.h"
 #include "symtab.h"
 #include "trad-frame.h"
-
-#include "gdb_assert.h"
-#include <string.h>
 
 #include "sparc-tdep.h"
 #include "nbsd-tdep.h"

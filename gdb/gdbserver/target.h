@@ -1,5 +1,5 @@
 /* Target operations for the remote server for GDB.
-   Copyright (C) 2002-2014 Free Software Foundation, Inc.
+   Copyright (C) 2002-2015 Free Software Foundation, Inc.
 
    Contributed by MontaVista Software.
 
@@ -21,6 +21,7 @@
 #ifndef TARGET_H
 #define TARGET_H
 
+#include "target/target.h"
 #include "target/resume.h"
 #include "target/wait.h"
 #include "target/waitstatus.h"
@@ -303,9 +304,6 @@ struct target_ops
      the pause call.  */
   void (*unpause_all) (int unfreeze);
 
-  /* Cancel all pending breakpoints hits in all threads.  */
-  void (*cancel_breakpoints) (void);
-
   /* Stabilize all threads.  That is, force them out of jump pads.  */
   void (*stabilize_threads) (void);
 
@@ -452,13 +450,6 @@ int kill_inferior (int);
 	(*the_target->unpause_all) (unfreeze);	\
     } while (0)
 
-#define cancel_breakpoints()			\
-  do						\
-    {						\
-      if (the_target->cancel_breakpoints)     	\
-	(*the_target->cancel_breakpoints) ();  	\
-    } while (0)
-
 #define stabilize_threads()			\
   do						\
     {						\
@@ -543,7 +534,7 @@ int read_inferior_memory (CORE_ADDR memaddr, unsigned char *myaddr, int len);
 int write_inferior_memory (CORE_ADDR memaddr, const unsigned char *myaddr,
 			   int len);
 
-void set_desired_inferior (int id);
+void set_desired_thread (int id);
 
 const char *target_pid_to_str (ptid_t);
 

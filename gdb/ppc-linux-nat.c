@@ -1,6 +1,6 @@
 /* PPC GNU/Linux native support.
 
-   Copyright (C) 1988-2014 Free Software Foundation, Inc.
+   Copyright (C) 1988-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -18,14 +18,12 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include <string.h>
 #include "observer.h"
 #include "frame.h"
 #include "inferior.h"
 #include "gdbthread.h"
 #include "gdbcore.h"
 #include "regcache.h"
-#include "gdb_assert.h"
 #include "target.h"
 #include "linux-nat.h"
 
@@ -1692,7 +1690,7 @@ ppc_linux_insert_hw_breakpoint (struct target_ops *self,
   p.version = PPC_DEBUG_CURRENT_VERSION;
   p.trigger_type = PPC_BREAKPOINT_TRIGGER_EXECUTE;
   p.condition_mode = PPC_BREAKPOINT_CONDITION_NONE;
-  p.addr = (uint64_t) bp_tgt->placed_address;
+  p.addr = (uint64_t) (bp_tgt->placed_address = bp_tgt->reqstd_address);
   p.condition_value = 0;
 
   if (bp_tgt->length)

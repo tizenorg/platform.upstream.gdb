@@ -1,6 +1,6 @@
 /* GDB-specific functions for operating on agent expressions.
 
-   Copyright (C) 1998-2014 Free Software Foundation, Inc.
+   Copyright (C) 1998-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -30,7 +30,6 @@
 #include "target.h"
 #include "ax.h"
 #include "ax-gdb.h"
-#include <string.h>
 #include "block.h"
 #include "regcache.h"
 #include "user-regs.h"
@@ -2188,7 +2187,7 @@ gen_expr (struct expression *exp, union exp_element **pc,
     case OP_THIS:
       {
 	struct symbol *sym, *func;
-	struct block *b;
+	const struct block *b;
 	const struct language_defn *lang;
 
 	b = block_for_pc (ax->scope);

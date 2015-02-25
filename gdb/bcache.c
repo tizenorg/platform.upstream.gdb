@@ -2,7 +2,7 @@
    Written by Fred Fish <fnf@cygnus.com>
    Rewritten by Jim Blandy <jimb@cygnus.com>
 
-   Copyright (C) 1999-2014 Free Software Foundation, Inc.
+   Copyright (C) 1999-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -22,11 +22,6 @@
 #include "defs.h"
 #include "gdb_obstack.h"
 #include "bcache.h"
-#include <string.h>		/* For memcpy declaration */
-#include "gdb_assert.h"
-
-#include <stddef.h>
-#include <stdlib.h>
 
 /* The type used to hold a single bcache string.  The user data is
    stored in d.data.  Since it can be any type, it needs to have the

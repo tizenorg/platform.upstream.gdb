@@ -1,6 +1,6 @@
 /* Target dependent code for GDB on TI C6x systems.
 
-   Copyright (C) 2010-2014 Free Software Foundation, Inc.
+   Copyright (C) 2010-2015 Free Software Foundation, Inc.
    Contributed by Andrew Jenner <andrew@codesourcery.com>
    Contributed by Yao Qi <yao@codesourcery.com>
 
@@ -44,7 +44,6 @@
 #include "linux-tdep.h"
 #include "solib.h"
 #include "objfiles.h"
-#include "gdb_assert.h"
 #include "osabi.h"
 #include "tic6x-tdep.h"
 #include "language.h"

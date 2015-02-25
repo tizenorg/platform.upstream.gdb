@@ -1,6 +1,6 @@
 /* Scheme interface to lazy strings.
 
-   Copyright (C) 2010-2014 Free Software Foundation, Inc.
+   Copyright (C) 2010-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -23,10 +23,8 @@
 #include "defs.h"
 #include "charset.h"
 #include "value.h"
-#include "exceptions.h"
 #include "valprint.h"
 #include "language.h"
-#include "gdb_assert.h"
 #include "guile-internal.h"
 
 /* The <gdb:lazy-string> smob.  */

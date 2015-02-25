@@ -1,5 +1,5 @@
 /* BFD support for handling relocation entries.
-   Copyright (C) 1990-2014 Free Software Foundation, Inc.
+   Copyright (C) 1990-2015 Free Software Foundation, Inc.
    Written by Cygnus Support.
 
    This file is part of BFD, the Binary File Descriptor library.
@@ -437,6 +437,7 @@ bfd_get_reloc_size (reloc_howto_type *howto)
     case 3: return 0;
     case 4: return 8;
     case 8: return 16;
+    case -1: return 2;
     case -2: return 4;
     default: abort ();
     }
@@ -592,6 +593,10 @@ bfd_perform_relocation (bfd *abfd,
       return bfd_reloc_ok;
     }
 
+  /* PR 17512: file: 0f67f69d.  */
+  if (howto == NULL)
+    return bfd_reloc_undefined;
+
   /* If we are not producing relocatable output, return an error if
      the symbol is not defined.  An undefined weak symbol is
      considered to have a value of zero (SVR4 ABI, p. 4-27).  */
@@ -614,7 +619,11 @@ bfd_perform_relocation (bfd *abfd,
     }
 
   /* Is the address of the relocation really within the section?  */
-  if (reloc_entry->address > bfd_get_section_limit (abfd, input_section))
+  if (reloc_entry->address > bfd_get_section_limit (abfd, input_section)
+      /* PR 17512: file: c146ab8b.
+	 PR 17512: file: 46dff27f.
+	 Include the size of the reloc in the test for out of range addresses.  */
+      - bfd_get_reloc_size (howto))
     return bfd_reloc_outofrange;
 
   /* Work out which section the relocation is targeted at and the
@@ -2287,6 +2296,17 @@ ENUMX
   BFD_RELOC_MICROMIPS_16_PCREL_S1
 ENUMDOC
   microMIPS PC-relative relocations.
+
+ENUM
+  BFD_RELOC_MIPS_21_PCREL_S2
+ENUMX
+  BFD_RELOC_MIPS_26_PCREL_S2
+ENUMX
+  BFD_RELOC_MIPS_18_PCREL_S3
+ENUMX
+  BFD_RELOC_MIPS_19_PCREL_S2
+ENUMDOC
+  MIPS PC-relative relocations.
 
 ENUM
   BFD_RELOC_MICROMIPS_GPREL16
@@ -3989,6 +4009,20 @@ ENUMX
   BFD_RELOC_NDS32_17_FIXED
 ENUMX
   BFD_RELOC_NDS32_25_FIXED
+ENUMX
+  BFD_RELOC_NDS32_LONGCALL4
+ENUMX
+  BFD_RELOC_NDS32_LONGCALL5
+ENUMX
+  BFD_RELOC_NDS32_LONGCALL6
+ENUMX
+  BFD_RELOC_NDS32_LONGJUMP4
+ENUMX
+  BFD_RELOC_NDS32_LONGJUMP5
+ENUMX
+  BFD_RELOC_NDS32_LONGJUMP6
+ENUMX
+  BFD_RELOC_NDS32_LONGJUMP7
 ENUMDOC
   for relax
 ENUM
@@ -4091,8 +4125,14 @@ ENUMX
 ENUMX
   BFD_RELOC_NDS32_DIFF_ULEB128
 ENUMX
+  BFD_RELOC_NDS32_EMPTY
+ENUMDOC
+  relaxation relative relocation types
+ENUM
   BFD_RELOC_NDS32_25_ABS
-ENUMX
+ENUMDOC
+  This is a 25 bit absolute address.
+ENUM
   BFD_RELOC_NDS32_DATA
 ENUMX
   BFD_RELOC_NDS32_TRAN
@@ -4101,7 +4141,35 @@ ENUMX
 ENUMX
   BFD_RELOC_NDS32_10IFCU_PCREL
 ENUMDOC
-  relaxation relative relocation types
+  For ex9 and ifc using.
+ENUM
+  BFD_RELOC_NDS32_TPOFF
+ENUMX
+  BFD_RELOC_NDS32_TLS_LE_HI20
+ENUMX
+  BFD_RELOC_NDS32_TLS_LE_LO12
+ENUMX
+  BFD_RELOC_NDS32_TLS_LE_ADD
+ENUMX
+  BFD_RELOC_NDS32_TLS_LE_LS
+ENUMX
+  BFD_RELOC_NDS32_GOTTPOFF
+ENUMX
+  BFD_RELOC_NDS32_TLS_IE_HI20
+ENUMX
+  BFD_RELOC_NDS32_TLS_IE_LO12S2
+ENUMX
+  BFD_RELOC_NDS32_TLS_TPOFF
+ENUMX
+  BFD_RELOC_NDS32_TLS_LE_20
+ENUMX
+  BFD_RELOC_NDS32_TLS_LE_15S0
+ENUMX
+  BFD_RELOC_NDS32_TLS_LE_15S1
+ENUMX
+  BFD_RELOC_NDS32_TLS_LE_15S2
+ENUMDOC
+  For TLS.
 
 
 ENUM
@@ -4789,6 +4857,21 @@ ENUMDOC
   assuming no relaxation.  The relocation encodes the position of the
   second symbol so the linker can determine whether to adjust the field
   value.
+ENUM
+  BFD_RELOC_AVR_LDS_STS_16
+ENUMDOC
+  This is a 7 bit reloc for the AVR that stores SRAM address for 16bit
+  lds and sts instructions supported only tiny core.
+ENUM
+  BFD_RELOC_AVR_PORT6
+ENUMDOC
+  This is a 6 bit reloc for the AVR that stores an I/O register
+  number for the IN and OUT instructions
+ENUM
+  BFD_RELOC_AVR_PORT5
+ENUMDOC
+  This is a 5 bit reloc for the AVR that stores an I/O register
+  number for the SBIC, SBIS, SBI and CBI instructions
 ENUM
   BFD_RELOC_RL78_NEG8
 ENUMX
@@ -7223,6 +7306,7 @@ ENUMX
   BFD_RELOC_TILEGX_IMM8_Y1_TLS_ADD
 ENUMDOC
   Tilera TILE-Gx Relocations.
+
 ENUM
   BFD_RELOC_EPIPHANY_SIMM8
 ENUMDOC
@@ -7252,6 +7336,22 @@ ENUM
 ENUMDOC
   Adapteva EPIPHANY - 8 bit immediate for 16 bit mov instruction.
 
+ENUM
+  BFD_RELOC_VISIUM_HI16
+ENUMX
+  BFD_RELOC_VISIUM_LO16
+ENUMX
+  BFD_RELOC_VISIUM_IM16
+ENUMX
+  BFD_RELOC_VISIUM_REL16
+ENUMX
+  BFD_RELOC_VISIUM_HI16_PCREL
+ENUMX
+  BFD_RELOC_VISIUM_LO16_PCREL
+ENUMX
+  BFD_RELOC_VISIUM_IM16_PCREL
+ENUMDOC
+  Visium Relocations.
 
 ENDSENUM
   BFD_RELOC_UNUSED
@@ -7578,6 +7678,15 @@ bfd_generic_get_relocated_section_contents (bfd *abfd,
 		     message instead.  */
 		  link_info->callbacks->einfo
 		    (_("%X%P: %B(%A): relocation \"%R\" goes out of range\n"),
+		     abfd, input_section, * parent);
+		  goto error_return;
+
+		case bfd_reloc_notsupported:
+		  /* PR ld/17512
+		     This error can result when processing a corrupt binary.
+		     Do not abort.  Issue an error message instead.  */
+		  link_info->callbacks->einfo
+		    (_("%X%P: %B(%A): relocation \"%R\" is not supported\n"),
 		     abfd, input_section, * parent);
 		  goto error_return;
 

@@ -1,5 +1,5 @@
 /* Memory breakpoint operations for the remote server for GDB.
-   Copyright (C) 2002-2014 Free Software Foundation, Inc.
+   Copyright (C) 2002-2015 Free Software Foundation, Inc.
 
    Contributed by MontaVista Software.
 
@@ -189,7 +189,8 @@ raw_bkpt_type_to_target_hw_bp_type (enum raw_bkpt_type raw_type)
     case raw_bkpt_type_access_wp:
       return hw_access;
     default:
-      fatal ("bad raw breakpoing type %d", (int) raw_type);
+      internal_error (__FILE__, __LINE__,
+		      "bad raw breakpoint type %d", (int) raw_type);
     }
 }
 
@@ -994,7 +995,7 @@ check_gdb_bp_preconditions (char z_type, int *err)
       *err = 1;
       return 0;
     }
-  else if (current_inferior == NULL)
+  else if (current_thread == NULL)
     {
       *err = -1;
       return 0;
@@ -1211,7 +1212,7 @@ gdb_condition_true_at_breakpoint_z_type (char z_type, CORE_ADDR addr)
   if (bp->cond_list == NULL)
     return 1;
 
-  ctx.regcache = get_thread_regcache (current_inferior, 1);
+  ctx.regcache = get_thread_regcache (current_thread, 1);
   ctx.tframe = NULL;
   ctx.tpoint = NULL;
 
@@ -1335,7 +1336,7 @@ run_breakpoint_commands_z_type (char z_type, CORE_ADDR addr)
   if (bp == NULL)
     return 1;
 
-  ctx.regcache = get_thread_regcache (current_inferior, 1);
+  ctx.regcache = get_thread_regcache (current_thread, 1);
   ctx.tframe = NULL;
   ctx.tpoint = NULL;
 
@@ -1602,6 +1603,40 @@ breakpoint_inserted_here (CORE_ADDR addr)
   for (bp = proc->raw_breakpoints; bp != NULL; bp = bp->next)
     if ((bp->raw_type == raw_bkpt_type_sw
 	 || bp->raw_type == raw_bkpt_type_hw)
+	&& bp->pc == addr
+	&& bp->inserted)
+      return 1;
+
+  return 0;
+}
+
+/* See mem-break.h.  */
+
+int
+software_breakpoint_inserted_here (CORE_ADDR addr)
+{
+  struct process_info *proc = current_process ();
+  struct raw_breakpoint *bp;
+
+  for (bp = proc->raw_breakpoints; bp != NULL; bp = bp->next)
+    if (bp->raw_type == raw_bkpt_type_sw
+	&& bp->pc == addr
+	&& bp->inserted)
+      return 1;
+
+  return 0;
+}
+
+/* See mem-break.h.  */
+
+int
+hardware_breakpoint_inserted_here (CORE_ADDR addr)
+{
+  struct process_info *proc = current_process ();
+  struct raw_breakpoint *bp;
+
+  for (bp = proc->raw_breakpoints; bp != NULL; bp = bp->next)
+    if (bp->raw_type == raw_bkpt_type_hw
 	&& bp->pc == addr
 	&& bp->inserted)
       return 1;

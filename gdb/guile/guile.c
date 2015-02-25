@@ -1,6 +1,6 @@
 /* General GDB/Guile code.
 
-   Copyright (C) 2014 Free Software Foundation, Inc.
+   Copyright (C) 2014-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -21,7 +21,6 @@
    conventions, et.al.  */
 
 #include "defs.h"
-#include <string.h>
 #include "breakpoint.h"
 #include "cli/cli-cmds.h"
 #include "cli/cli-script.h"
@@ -302,7 +301,7 @@ gdbscm_source_script (const struct extension_language_defn *extlang,
     }
 }
 
-/* (execute string [#:from-tty boolean] [#:to-string boolean\
+/* (execute string [#:from-tty boolean] [#:to-string boolean])
    A Scheme function which evaluates a string using the gdb CLI.  */
 
 static SCM
@@ -463,7 +462,7 @@ info_guile_command (char *args, int from_tty)
 {
   printf_unfiltered (_("\"info guile\" must be followed"
 		       " by the name of an info command.\n"));
-  help_list (info_guile_list, "info guile ", -1, gdb_stdout);
+  help_list (info_guile_list, "info guile ", all_commands, gdb_stdout);
 }
 
 /* Initialization.  */

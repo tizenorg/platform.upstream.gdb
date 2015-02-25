@@ -1,6 +1,6 @@
 /* Target-dependent code for OpenBSD/amd64.
 
-   Copyright (C) 2003-2014 Free Software Foundation, Inc.
+   Copyright (C) 2003-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -28,9 +28,6 @@
 #include "regset.h"
 #include "target.h"
 #include "trad-frame.h"
-
-#include "gdb_assert.h"
-#include <string.h>
 
 #include "obsd-tdep.h"
 #include "amd64-tdep.h"
@@ -60,20 +57,19 @@ static const struct regset amd64obsd_combined_regset =
     NULL, amd64obsd_supply_regset, NULL
   };
 
-static const struct regset *
-amd64obsd_regset_from_core_section (struct gdbarch *gdbarch,
-				    const char *sect_name, size_t sect_size)
+static void
+amd64obsd_iterate_over_regset_sections (struct gdbarch *gdbarch,
+					iterate_over_regset_sections_cb *cb,
+					void *cb_data,
+					const struct regcache *regcache)
 {
   struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
 
   /* OpenBSD core dumps don't use seperate register sets for the
      general-purpose and floating-point registers.  */
 
-  if (strcmp (sect_name, ".reg") == 0
-      && sect_size >= tdep->sizeof_gregset + I387_SIZEOF_FXSAVE)
-    return &amd64obsd_combined_regset;
-
-  return NULL;
+  cb (".reg", tdep->sizeof_gregset + I387_SIZEOF_FXSAVE,
+      &amd64obsd_combined_regset, NULL, cb_data);
 }
 
 
@@ -495,8 +491,8 @@ amd64obsd_core_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 {
   amd64obsd_init_abi (info, gdbarch);
 
-  set_gdbarch_regset_from_core_section
-    (gdbarch, amd64obsd_regset_from_core_section);
+  set_gdbarch_iterate_over_regset_sections
+    (gdbarch, amd64obsd_iterate_over_regset_sections);
 }
 
 

@@ -1,6 +1,6 @@
 /* Memory-access and commands for "inferior" process, for GDB.
 
-   Copyright (C) 1986-2014 Free Software Foundation, Inc.
+   Copyright (C) 1986-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -20,7 +20,6 @@
 #include "defs.h"
 #include "arch-utils.h"
 #include <signal.h>
-#include <string.h>
 #include "symtab.h"
 #include "gdbtypes.h"
 #include "frame.h"
@@ -43,11 +42,9 @@
 #include "block.h"
 #include "solib.h"
 #include <ctype.h>
-#include "gdb_assert.h"
 #include "observer.h"
 #include "target-descriptions.h"
 #include "user-regs.h"
-#include "exceptions.h"
 #include "cli/cli-decode.h"
 #include "gdbthread.h"
 #include "valprint.h"
@@ -686,7 +683,7 @@ proceed_thread_callback (struct thread_info *thread, void *arg)
     return 0;
 
   switch_to_thread (thread->ptid);
-  clear_proceed_status ();
+  clear_proceed_status (0);
   proceed ((CORE_ADDR) -1, GDB_SIGNAL_DEFAULT, 0);
   return 0;
 }
@@ -770,7 +767,7 @@ continue_1 (int all_threads)
     {
       ensure_valid_thread ();
       ensure_not_running ();
-      clear_proceed_status ();
+      clear_proceed_status (0);
       proceed ((CORE_ADDR) -1, GDB_SIGNAL_DEFAULT, 0);
     }
 }
@@ -1047,7 +1044,7 @@ step_once (int skip_subroutines, int single_inst, int count, int thread)
 	 THREAD is set.  */
       struct thread_info *tp = inferior_thread ();
 
-      clear_proceed_status ();
+      clear_proceed_status (!skip_subroutines);
       set_step_frame ();
 
       if (!single_inst)
@@ -1202,9 +1199,12 @@ jump_command (char *arg, int from_tty)
 
   if (sfn != NULL)
     {
+      struct obj_section *section;
+
       fixup_symbol_section (sfn, 0);
-      if (section_is_overlay (SYMBOL_OBJ_SECTION (SYMBOL_OBJFILE (sfn), sfn)) &&
-	  !section_is_mapped (SYMBOL_OBJ_SECTION (SYMBOL_OBJFILE (sfn), sfn)))
+      section = SYMBOL_OBJ_SECTION (symbol_objfile (sfn), sfn);
+      if (section_is_overlay (section)
+	  && !section_is_mapped (section))
 	{
 	  if (!query (_("WARNING!!!  Destination is in "
 			"unmapped overlay!  Jump anyway? ")))
@@ -1224,7 +1224,7 @@ jump_command (char *arg, int from_tty)
       printf_filtered (".\n");
     }
 
-  clear_proceed_status ();
+  clear_proceed_status (0);
   proceed (addr, GDB_SIGNAL_0, 0);
 }
 
@@ -1284,6 +1284,50 @@ signal_command (char *signum_exp, int from_tty)
 	oursig = gdb_signal_from_command (num);
     }
 
+  /* Look for threads other than the current that this command ends up
+     resuming too (due to schedlock off), and warn if they'll get a
+     signal delivered.  "signal 0" is used to suppress a previous
+     signal, but if the current thread is no longer the one that got
+     the signal, then the user is potentially suppressing the signal
+     of the wrong thread.  */
+  if (!non_stop)
+    {
+      struct thread_info *tp;
+      ptid_t resume_ptid;
+      int must_confirm = 0;
+
+      /* This indicates what will be resumed.  Either a single thread,
+	 a whole process, or all threads of all processes.  */
+      resume_ptid = user_visible_resume_ptid (0);
+
+      ALL_NON_EXITED_THREADS (tp)
+	{
+	  if (ptid_equal (tp->ptid, inferior_ptid))
+	    continue;
+	  if (!ptid_match (tp->ptid, resume_ptid))
+	    continue;
+
+	  if (tp->suspend.stop_signal != GDB_SIGNAL_0
+	      && signal_pass_state (tp->suspend.stop_signal))
+	    {
+	      if (!must_confirm)
+		printf_unfiltered (_("Note:\n"));
+	      printf_unfiltered (_("  Thread %d previously stopped with signal %s, %s.\n"),
+				 tp->num,
+				 gdb_signal_to_name (tp->suspend.stop_signal),
+				 gdb_signal_to_string (tp->suspend.stop_signal));
+	      must_confirm = 1;
+	    }
+	}
+
+      if (must_confirm
+	  && !query (_("Continuing thread %d (the current thread) with specified signal will\n"
+		       "still deliver the signals noted above to their respective threads.\n"
+		       "Continue anyway? "),
+		     inferior_thread ()->num))
+	error (_("Not confirmed."));
+    }
+
   if (from_tty)
     {
       if (oursig == GDB_SIGNAL_0)
@@ -1293,8 +1337,48 @@ signal_command (char *signum_exp, int from_tty)
 			 gdb_signal_to_name (oursig));
     }
 
-  clear_proceed_status ();
+  clear_proceed_status (0);
   proceed ((CORE_ADDR) -1, oursig, 0);
+}
+
+/* Queue a signal to be delivered to the current thread.  */
+
+static void
+queue_signal_command (char *signum_exp, int from_tty)
+{
+  enum gdb_signal oursig;
+  struct thread_info *tp;
+
+  ERROR_NO_INFERIOR;
+  ensure_not_tfind_mode ();
+  ensure_valid_thread ();
+  ensure_not_running ();
+
+  if (signum_exp == NULL)
+    error_no_arg (_("signal number"));
+
+  /* It would be even slicker to make signal names be valid expressions,
+     (the type could be "enum $signal" or some such), then the user could
+     assign them to convenience variables.  */
+  oursig = gdb_signal_from_name (signum_exp);
+
+  if (oursig == GDB_SIGNAL_UNKNOWN)
+    {
+      /* No, try numeric.  */
+      int num = parse_and_eval_long (signum_exp);
+
+      if (num == 0)
+	oursig = GDB_SIGNAL_0;
+      else
+	oursig = gdb_signal_from_command (num);
+    }
+
+  if (oursig != GDB_SIGNAL_0
+      && !signal_pass_state (oursig))
+    error (_("Signal handling set to not pass this signal to the program."));
+
+  tp = inferior_thread ();
+  tp->suspend.stop_signal = oursig;
 }
 
 /* Continuation args to be passed to the "until" command
@@ -1334,7 +1418,7 @@ until_next_command (int from_tty)
   int thread = tp->num;
   struct cleanup *old_chain;
 
-  clear_proceed_status ();
+  clear_proceed_status (0);
   set_step_frame ();
 
   frame = get_current_frame ();
@@ -1622,8 +1706,7 @@ finish_backward (struct symbol *function)
   pc = get_frame_pc (get_current_frame ());
 
   if (find_pc_partial_function (pc, NULL, &func_addr, NULL) == 0)
-    internal_error (__FILE__, __LINE__,
-		    _("Finish: couldn't find function."));
+    error (_("Cannot find bounds of current function"));
 
   sal = find_pc_line (func_addr, 0);
 
@@ -1739,7 +1822,7 @@ finish_command (char *arg, int from_tty)
   if (frame == 0)
     error (_("\"finish\" not meaningful in the outermost frame."));
 
-  clear_proceed_status ();
+  clear_proceed_status (0);
 
   /* Finishing from an inline frame is completely different.  We don't
      try to show the "return value" - no way to locate it.  So we do
@@ -1861,7 +1944,7 @@ program_info (char *args, int from_tty)
 		       gdb_signal_to_string (tp->suspend.stop_signal));
     }
 
-  if (!from_tty)
+  if (from_tty)
     {
       printf_filtered (_("Type \"info stack\" or \"info "
 			 "registers\" for more information.\n"));
@@ -2351,7 +2434,7 @@ proceed_after_attach_callback (struct thread_info *thread,
       && thread->suspend.stop_signal == GDB_SIGNAL_0)
     {
       switch_to_thread (thread->ptid);
-      clear_proceed_status ();
+      clear_proceed_status (0);
       proceed ((CORE_ADDR) -1, GDB_SIGNAL_DEFAULT, 0);
     }
 
@@ -2373,16 +2456,6 @@ proceed_after_attach (int pid)
   /* Restore selected ptid.  */
   do_cleanups (old_chain);
 }
-
-/*
- * TODO:
- * Should save/restore the tty state since it might be that the
- * program to be debugged was started on this tty and it wants
- * the tty in some state other than what we want.  If it's running
- * on another terminal or without a terminal, then saving and
- * restoring the tty state is a harmless no-op.
- * This only needs to be done if we are attaching to a process.
- */
 
 /* attach_command --
    takes a program started up outside of gdb and ``attaches'' to it.
@@ -2448,7 +2521,7 @@ attach_command_post_wait (char *args, int from_tty, int async_exec)
 	{
 	  if (inferior_thread ()->suspend.stop_signal == GDB_SIGNAL_0)
 	    {
-	      clear_proceed_status ();
+	      clear_proceed_status (0);
 	      proceed ((CORE_ADDR) -1, GDB_SIGNAL_DEFAULT, 0);
 	    }
 	}
@@ -2571,7 +2644,7 @@ attach_command (char *args, int from_tty)
   /* Set up execution context to know that we should return from
      wait_for_inferior as soon as the target reports a stop.  */
   init_wait_for_inferior ();
-  clear_proceed_status ();
+  clear_proceed_status (0);
 
   if (non_stop)
     {
@@ -2794,43 +2867,41 @@ interrupt_command (char *args, int from_tty)
     }
 }
 
-static void
-print_float_info (struct ui_file *file,
-		  struct frame_info *frame, const char *args)
+/* See inferior.h.  */
+
+void
+default_print_float_info (struct gdbarch *gdbarch, struct ui_file *file,
+			  struct frame_info *frame, const char *args)
 {
-  struct gdbarch *gdbarch = get_frame_arch (frame);
+  int regnum;
+  int printed_something = 0;
 
-  if (gdbarch_print_float_info_p (gdbarch))
-    gdbarch_print_float_info (gdbarch, file, frame, args);
-  else
+  for (regnum = 0;
+       regnum < gdbarch_num_regs (gdbarch)
+	 + gdbarch_num_pseudo_regs (gdbarch);
+       regnum++)
     {
-      int regnum;
-      int printed_something = 0;
-
-      for (regnum = 0;
-	   regnum < gdbarch_num_regs (gdbarch)
-		    + gdbarch_num_pseudo_regs (gdbarch);
-	   regnum++)
+      if (gdbarch_register_reggroup_p (gdbarch, regnum, float_reggroup))
 	{
-	  if (gdbarch_register_reggroup_p (gdbarch, regnum, float_reggroup))
-	    {
-	      printed_something = 1;
-	      gdbarch_print_registers_info (gdbarch, file, frame, regnum, 1);
-	    }
+	  printed_something = 1;
+	  gdbarch_print_registers_info (gdbarch, file, frame, regnum, 1);
 	}
-      if (!printed_something)
-	fprintf_filtered (file, "No floating-point info "
-			  "available for this processor.\n");
     }
+  if (!printed_something)
+    fprintf_filtered (file, "No floating-point info "
+		      "available for this processor.\n");
 }
 
 static void
 float_info (char *args, int from_tty)
 {
+  struct frame_info *frame;
+
   if (!target_has_registers)
     error (_("The program has no registers now."));
 
-  print_float_info (gdb_stdout, get_selected_frame (NULL), args);
+  frame = get_selected_frame (NULL);
+  gdbarch_print_float_info (get_frame_arch (frame), gdb_stdout, frame, args);
 }
 
 static void
@@ -2838,7 +2909,7 @@ unset_command (char *args, int from_tty)
 {
   printf_filtered (_("\"unset\" must be followed by the "
 		     "name of an unset subcommand.\n"));
-  help_list (unsetlist, "unset ", -1, gdb_stdout);
+  help_list (unsetlist, "unset ", all_commands, gdb_stdout);
 }
 
 /* Implement `info proc' family of commands.  */
@@ -3031,7 +3102,24 @@ The SIGNAL argument is processed the same as the handle command.\n\
 \n\
 An argument of \"0\" means continue the program without sending it a signal.\n\
 This is useful in cases where the program stopped because of a signal,\n\
-and you want to resume the program while discarding the signal."));
+and you want to resume the program while discarding the signal.\n\
+\n\
+In a multi-threaded program the signal is delivered to, or discarded from,\n\
+the current thread only."));
+  set_cmd_completer (c, signal_completer);
+
+  c = add_com ("queue-signal", class_run, queue_signal_command, _("\
+Queue a signal to be delivered to the current thread when it is resumed.\n\
+Usage: queue-signal SIGNAL\n\
+The SIGNAL argument is processed the same as the handle command.\n\
+It is an error if the handling state of SIGNAL is \"nopass\".\n\
+\n\
+An argument of \"0\" means remove any currently queued signal from\n\
+the current thread.  This is useful in cases where the program stopped\n\
+because of a signal, and you want to resume it while discarding the signal.\n\
+\n\
+In a multi-threaded program the signal is queued with, or discarded from,\n\
+the current thread only."));
   set_cmd_completer (c, signal_completer);
 
   add_com ("stepi", class_run, stepi_command, _("\
@@ -3148,18 +3236,24 @@ If non-stop mode is enabled, interrupt only the current thread,\n\
 otherwise all the threads in the program are stopped.  To \n\
 interrupt all running threads in non-stop mode, use the -a option."));
 
-  add_info ("registers", nofp_registers_info, _("\
+  c = add_info ("registers", nofp_registers_info, _("\
 List of integer registers and their contents, for selected stack frame.\n\
 Register name as argument means describe only that register."));
   add_info_alias ("r", "registers", 1);
+  set_cmd_completer (c, reg_or_group_completer);
 
   if (xdb_commands)
-    add_com ("lr", class_info, nofp_registers_info, _("\
+    {
+      c = add_com ("lr", class_info, nofp_registers_info, _("\
 List of integer registers and their contents, for selected stack frame.\n\
 Register name as argument means describe only that register."));
-  add_info ("all-registers", all_registers_info, _("\
+      set_cmd_completer (c, reg_or_group_completer);
+    }
+
+  c = add_info ("all-registers", all_registers_info, _("\
 List of all registers and their contents, for selected stack frame.\n\
 Register name as argument means describe only that register."));
+  set_cmd_completer (c, reg_or_group_completer);
 
   add_info ("program", program_info,
 	    _("Execution status of the program."));

@@ -1,6 +1,6 @@
 /* CTF format support.
 
-   Copyright (C) 2012-2014 Free Software Foundation, Inc.
+   Copyright (C) 2012-2015 Free Software Foundation, Inc.
    Contributed by Hui Zhu <hui_zhu@mentor.com>
    Contributed by Yao Qi <yao@codesourcery.com>
 
@@ -855,7 +855,7 @@ ctf_destroy (void)
 /* Open CTF trace data in DIRNAME.  */
 
 static void
-ctf_open_dir (char *dirname)
+ctf_open_dir (const char *dirname)
 {
   struct bt_iter_pos begin_pos;
   struct bt_iter_pos *pos;
@@ -1078,7 +1078,7 @@ ctf_read_tp (struct uploaded_tp **uploaded_tps)
    second packet which contains events on trace blocks.  */
 
 static void
-ctf_open (char *dirname, int from_tty)
+ctf_open (const char *dirname, int from_tty)
 {
   struct bt_ctf_event *event;
   uint32_t event_id;

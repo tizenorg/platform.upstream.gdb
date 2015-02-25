@@ -1,6 +1,6 @@
 /* Handle SOM shared libraries.
 
-   Copyright (C) 2004-2014 Free Software Foundation, Inc.
+   Copyright (C) 2004-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -30,8 +30,6 @@
 #include "solist.h"
 #include "solib.h"
 #include "solib-som.h"
-
-#include <string.h>
 
 #undef SOLIB_SOM_DBG 
 

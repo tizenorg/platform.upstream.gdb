@@ -1,5 +1,5 @@
 /* C preprocessor macro expansion commands for GDB.
-   Copyright (C) 2002-2014 Free Software Foundation, Inc.
+   Copyright (C) 2002-2015 Free Software Foundation, Inc.
    Contributed by Red Hat, Inc.
 
    This file is part of GDB.
@@ -25,7 +25,6 @@
 #include "cli/cli-utils.h"
 #include "command.h"
 #include "gdbcmd.h"
-#include <string.h>
 #include "linespec.h"
 
 
@@ -38,7 +37,7 @@ macro_command (char *arg, int from_tty)
 {
   printf_unfiltered
     ("\"macro\" must be followed by the name of a macro command.\n");
-  help_list (macrolist, "macro ", -1, gdb_stdout);
+  help_list (macrolist, "macro ", all_commands, gdb_stdout);
 }
 
 

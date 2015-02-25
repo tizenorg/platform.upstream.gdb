@@ -1,5 +1,5 @@
 /* 32-bit ELF support for S+core.
-   Copyright (C) 2006-2014 Free Software Foundation, Inc.
+   Copyright (C) 2006-2015 Free Software Foundation, Inc.
    Contributed by
    Brain.lin (brain.lin@sunplusct.com)
    Mei Ligang (ligang@sunnorth.com.cn)
@@ -3199,7 +3199,7 @@ s3_bfd_score_elf_always_size_sections (bfd *output_bfd,
 
   /* Calculate the total loadable size of the output.  That will give us the
      maximum number of GOT_PAGE entries required.  */
-  for (sub = info->input_bfds; sub; sub = sub->link_next)
+  for (sub = info->input_bfds; sub; sub = sub->link.next)
     {
       asection *subsection;
 

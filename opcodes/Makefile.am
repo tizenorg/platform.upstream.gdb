@@ -1,6 +1,6 @@
 ## Process this file with automake to generate Makefile.in
 #
-#   Copyright (C) 2012-2014 Free Software Foundation, Inc.
+#   Copyright (C) 2012-2015 Free Software Foundation, Inc.
 #
 # This file is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -250,6 +250,8 @@ TARGET_LIBOPCODES_CFILES = \
 	v850-dis.c \
 	v850-opc.c \
 	vax-dis.c \
+	visium-dis.c \
+	visium-opc.c \
 	w65-dis.c \
 	xc16x-asm.c \
 	xc16x-desc.c \
@@ -294,10 +296,8 @@ ALL_MACHINES = $(TARGET_LIBOPCODES_CFILES:.c=.lo)
 
 OFILES = @BFD_MACHINES@
 
-# We should reconfigure whenever bfd/configure.in changes, because
-# that's where the version number in Makefile comes from.
-CONFIG_STATUS_DEPENDENCIES = $(BFDDIR)/configure.in \
-	$(BFDDIR)/development.sh
+# development.sh is used to determine -Werror default.
+CONFIG_STATUS_DEPENDENCIES = $(BFDDIR)/development.sh
 
 AM_CPPFLAGS = -I. -I$(srcdir) -I../bfd -I$(INCDIR) -I$(BFDDIR) @HDEFINES@ @INCINTL@
 

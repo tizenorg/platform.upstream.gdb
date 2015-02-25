@@ -1,4 +1,4 @@
-# Copyright 2014 Free Software Foundation, Inc.
+# Copyright 2014-2015 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,6 +14,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Utility procedures, shared between test suite domains.
+
+# A helper procedure to retrieve commands to send to GDB before a program
+# is started.
+
+proc gdb_init_commands {} {
+    set commands ""
+    if [target_info exists gdb_init_command] {
+	lappend commands [target_info gdb_init_command]
+    }
+    if [target_info exists gdb_init_commands] {
+	set commands [concat $commands [target_info gdb_init_commands]]
+    }
+    return $commands
+}
 
 # Given an input string, adds backslashes as needed to create a
 # regexp that will match the string.

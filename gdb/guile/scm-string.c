@@ -1,6 +1,6 @@
 /* GDB/Scheme charset interface.
 
-   Copyright (C) 2014 Free Software Foundation, Inc.
+   Copyright (C) 2014-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -21,7 +21,6 @@
    conventions, et.al.  */
 
 #include "defs.h"
-#include <stdarg.h>
 #include "charset.h"
 #include "guile-internal.h"
 

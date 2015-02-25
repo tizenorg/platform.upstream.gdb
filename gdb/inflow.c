@@ -1,5 +1,5 @@
 /* Low level interface to ptrace, for GDB when running under Unix.
-   Copyright (C) 1986-2014 Free Software Foundation, Inc.
+   Copyright (C) 1986-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -25,8 +25,6 @@
 #include "target.h"
 #include "gdbthread.h"
 #include "observer.h"
-
-#include <string.h>
 #include <signal.h>
 #include <fcntl.h>
 #include "gdb_select.h"
@@ -80,6 +78,10 @@ struct terminal_info
    settings of flags which readline saves and restores and
    unimportant.  */
 static struct terminal_info our_terminal_info;
+
+/* Snapshot of our own tty state taken during initialization of GDB.
+   This is used as the initial tty state given to each new inferior.  */
+static serial_ttystate initial_gdb_ttystate;
 
 static struct terminal_info *get_inflow_inferior_data (struct inferior *);
 
@@ -158,6 +160,14 @@ show_interactive_mode (struct ui_file *file, int from_tty,
     fprintf_filtered (file, "Debugger's interactive mode is %s.\n", value);
 }
 
+/* Set the initial tty state that is to be inherited by new inferiors.  */
+
+void
+set_initial_gdb_ttystate (void)
+{
+  initial_gdb_ttystate = serial_get_tty_state (stdin_serial);
+}
+
 /* Does GDB have a terminal (on stdin)?  */
 int
 gdb_has_a_terminal (void)
@@ -229,7 +239,7 @@ child_terminal_init_with_pgrp (int pgrp)
     {
       xfree (tinfo->ttystate);
       tinfo->ttystate = serial_copy_tty_state (stdin_serial,
-					       our_terminal_info.ttystate);
+					       initial_gdb_ttystate);
 
       /* Make sure that next time we call terminal_inferior (which will be
          before the program runs, as it needs to be), we install the new
@@ -243,7 +253,7 @@ child_terminal_init_with_pgrp (int pgrp)
    and gdb must be able to restore it correctly.  */
 
 void
-child_terminal_save_ours (struct target_ops *self)
+gdb_save_tty_state (void)
 {
   if (gdb_has_a_terminal ())
     {
@@ -267,7 +277,11 @@ child_terminal_init (struct target_ops *self)
 }
 
 /* Put the inferior's terminal settings into effect.
-   This is preparation for starting or resuming the inferior.  */
+   This is preparation for starting or resuming the inferior.
+
+   N.B. Targets that want to use this with async support must build that
+   support on top of this (e.g., the caller still needs to remove stdin
+   from the event loop).  E.g., see linux_nat_terminal_inferior.  */
 
 void
 child_terminal_inferior (struct target_ops *self)
@@ -348,7 +362,10 @@ child_terminal_inferior (struct target_ops *self)
    so that no input is discarded.
 
    After doing this, either terminal_ours or terminal_inferior
-   should be called to get back to a normal state of affairs.  */
+   should be called to get back to a normal state of affairs.
+
+   N.B. The implementation is (currently) no different than
+   child_terminal_ours.  See child_terminal_ours_1.  */
 
 void
 child_terminal_ours_for_output (struct target_ops *self)
@@ -358,7 +375,11 @@ child_terminal_ours_for_output (struct target_ops *self)
 
 /* Put our terminal settings into effect.
    First record the inferior's terminal settings
-   so they can be restored properly later.  */
+   so they can be restored properly later.
+
+   N.B. Targets that want to use this with async support must build that
+   support on top of this (e.g., the caller still needs to add stdin to the
+   event loop).  E.g., see linux_nat_terminal_ours.  */
 
 void
 child_terminal_ours (struct target_ops *self)

@@ -1,5 +1,5 @@
 /* GNU/Linux on ARM native support.
-   Copyright (C) 1999-2014 Free Software Foundation, Inc.
+   Copyright (C) 1999-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -19,7 +19,6 @@
 #include "defs.h"
 #include "inferior.h"
 #include "gdbcore.h"
-#include <string.h>
 #include "regcache.h"
 #include "target.h"
 #include "linux-nat.h"
@@ -976,7 +975,7 @@ arm_linux_hw_breakpoint_initialize (struct gdbarch *gdbarch,
 				    struct arm_linux_hw_breakpoint *p)
 {
   unsigned mask;
-  CORE_ADDR address = bp_tgt->placed_address;
+  CORE_ADDR address = bp_tgt->placed_address = bp_tgt->reqstd_address;
 
   /* We have to create a mask for the control register which says which bits
      of the word pointed to by address to break on.  */

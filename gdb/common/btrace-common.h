@@ -1,6 +1,6 @@
 /* Branch trace support for GDB, the GNU debugger.
 
-   Copyright (C) 2013-2014 Free Software Foundation, Inc.
+   Copyright (C) 2013-2015 Free Software Foundation, Inc.
 
    Contributed by Intel Corp. <markus.t.metzger@intel.com>.
 
@@ -25,12 +25,6 @@
 /* Branch tracing (btrace) is a per-thread control-flow execution trace of the
    inferior.  For presentation purposes, the branch trace is represented as a
    list of sequential control-flow blocks, one such list per thread.  */
-
-#ifdef GDBSERVER
-#  include "server.h"
-#else
-#  include "defs.h"
-#endif
 
 #include "vec.h"
 

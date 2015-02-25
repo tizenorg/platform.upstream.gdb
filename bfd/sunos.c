@@ -1,5 +1,5 @@
 /* BFD backend for SunOS binaries.
-   Copyright (C) 1990-2014 Free Software Foundation, Inc.
+   Copyright (C) 1990-2015 Free Software Foundation, Inc.
    Written by Cygnus Support.
 
    This file is part of BFD, the Binary File Descriptor library.
@@ -1891,7 +1891,7 @@ bfd_sunos_size_dynamic_sections (bfd *output_bfd,
      to determine the number of dynamic relocs we need, and, more
      importantly, there is no other way to know which symbols should
      get an entry in the procedure linkage table.  */
-  for (sub = info->input_bfds; sub != NULL; sub = sub->link_next)
+  for (sub = info->input_bfds; sub != NULL; sub = sub->link.next)
     {
       if ((sub->flags & DYNAMIC) == 0
 	  && sub->xvec == output_bfd->xvec)

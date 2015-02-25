@@ -1,6 +1,6 @@
 /* Everything about catch/throw catchpoints, for GDB.
 
-   Copyright (C) 1986-2014 Free Software Foundation, Inc.
+   Copyright (C) 1986-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -29,7 +29,6 @@
 #include "completer.h"
 #include "gdb_obstack.h"
 #include "mi/mi-common.h"
-#include "exceptions.h"
 #include "linespec.h"
 #include "probe.h"
 #include "objfiles.h"

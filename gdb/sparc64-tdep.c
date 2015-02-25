@@ -1,6 +1,6 @@
 /* Target-dependent code for UltraSPARC.
 
-   Copyright (C) 2003-2014 Free Software Foundation, Inc.
+   Copyright (C) 2003-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -33,9 +33,6 @@
 #include "regcache.h"
 #include "target.h"
 #include "value.h"
-
-#include "gdb_assert.h"
-#include <string.h>
 
 #include "sparc64-tdep.h"
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2010-2014 Free Software Foundation, Inc.
+/* Copyright (C) 2010-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -30,7 +30,6 @@
 #include "symfile.h"
 #include "objfiles.h"
 #include "elf-bfd.h"
-#include "exceptions.h"
 
 /* Need to define the following macro in order to get the complete
    load_module_desc struct definition in dlfcn.h  Otherwise, it doesn't

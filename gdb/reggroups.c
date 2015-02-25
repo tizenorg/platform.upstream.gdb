@@ -1,6 +1,6 @@
 /* Register groupings for GDB, the GNU debugger.
 
-   Copyright (C) 2002-2014 Free Software Foundation, Inc.
+   Copyright (C) 2002-2015 Free Software Foundation, Inc.
 
    Contributed by Red Hat.
 
@@ -23,7 +23,6 @@
 #include "arch-utils.h"
 #include "reggroups.h"
 #include "gdbtypes.h"
-#include "gdb_assert.h"
 #include "regcache.h"
 #include "command.h"
 #include "gdbcmd.h"		/* For maintenanceprintlist.  */

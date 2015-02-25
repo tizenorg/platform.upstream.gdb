@@ -1,6 +1,6 @@
 /* GDB/Scheme smobs (gsmob is pronounced "jee smob")
 
-   Copyright (C) 2014 Free Software Foundation, Inc.
+   Copyright (C) 2014-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -43,7 +43,6 @@
 
 #include "defs.h"
 #include "hashtab.h"
-#include "gdb_assert.h"
 #include "objfiles.h"
 #include "guile-internal.h"
 

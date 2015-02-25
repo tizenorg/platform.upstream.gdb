@@ -1,6 +1,6 @@
 /* Definitions for frame unwinder, for GDB, the GNU debugger.
 
-   Copyright (C) 2003-2014 Free Software Foundation, Inc.
+   Copyright (C) 2003-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -24,8 +24,6 @@
 #include "inline-frame.h"
 #include "value.h"
 #include "regcache.h"
-#include "exceptions.h"
-#include "gdb_assert.h"
 #include "gdb_obstack.h"
 #include "target.h"
 
@@ -203,7 +201,7 @@ frame_unwind_got_optimized (struct frame_info *frame, int regnum)
      "<not saved>".  */
   val = allocate_value_lazy (type);
   set_value_lazy (val, 0);
-  set_value_optimized_out (val, 1);
+  mark_value_bytes_optimized_out (val, 0, TYPE_LENGTH (type));
   VALUE_LVAL (val) = lval_register;
   VALUE_REGNUM (val) = regnum;
   VALUE_FRAME_ID (val) = get_frame_id (frame);

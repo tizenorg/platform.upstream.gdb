@@ -1,6 +1,6 @@
 /* Serial interface for local (hardwired) serial ports on Windows systems
 
-   Copyright (C) 2006-2014 Free Software Foundation, Inc.
+   Copyright (C) 2006-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -28,9 +28,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/types.h>
-
-#include "gdb_assert.h"
-#include <string.h>
 
 #include "command.h"
 

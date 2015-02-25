@@ -1,5 +1,5 @@
 /* Thread management interface, for the remote server for GDB.
-   Copyright (C) 2002-2014 Free Software Foundation, Inc.
+   Copyright (C) 2002-2015 Free Software Foundation, Inc.
 
    Contributed by MontaVista Software.
 
@@ -27,7 +27,7 @@ extern int debug_threads;
 static int thread_db_use_events;
 
 #include "gdb_proc_service.h"
-#include "gdb_thread_db.h"
+#include "nat/gdb_thread_db.h"
 #include "gdb_vecs.h"
 
 #ifndef USE_LIBTHREAD_DB_DIRECTLY
@@ -193,8 +193,7 @@ thread_db_create_event (CORE_ADDR where)
   struct lwp_info *lwp;
   struct thread_db *thread_db = current_process ()->private->thread_db;
 
-  if (thread_db->td_ta_event_getmsg_p == NULL)
-    fatal ("unexpected thread_db->td_ta_event_getmsg_p == NULL");
+  gdb_assert (thread_db->td_ta_event_getmsg_p != NULL);
 
   if (debug_threads)
     debug_printf ("Thread creation event.\n");
@@ -211,9 +210,9 @@ thread_db_create_event (CORE_ADDR where)
   /* If we do not know about the main thread yet, this would be a good time to
      find it.  We need to do this to pick up the main thread before any newly
      created threads.  */
-  lwp = get_thread_lwp (current_inferior);
+  lwp = get_thread_lwp (current_thread);
   if (lwp->thread_known == 0)
-    find_one_thread (current_inferior->entry.id);
+    find_one_thread (current_thread->entry.id);
 
   /* msg.event == TD_EVENT_CREATE */
 
@@ -340,7 +339,7 @@ attach_thread (const td_thrhandle_t *th_p, td_thrinfo_t *ti_p)
     {
       warning ("Could not attach to thread %ld (LWP %d): %s\n",
 	       ti_p->ti_tid, ti_p->ti_lid,
-	       linux_attach_fail_reason_string (ptid, err));
+	       linux_ptrace_attach_fail_reason_string (ptid, err));
       return 0;
     }
 
@@ -396,6 +395,17 @@ find_new_threads_callback (const td_thrhandle_t *th_p, void *data)
   err = thread_db->td_thr_get_info_p (th_p, &ti);
   if (err != TD_OK)
     error ("Cannot get thread info: %s", thread_db_err_str (err));
+
+  if (ti.ti_lid == -1)
+    {
+      /* A thread with kernel thread ID -1 is either a thread that
+	 exited and was joined, or a thread that is being created but
+	 hasn't started yet, and that is reusing the tcb/stack of a
+	 thread that previously exited and was joined.  (glibc marks
+	 terminated and joined threads with kernel thread ID -1.  See
+	 glibc PR17707.  */
+      return 0;
+    }
 
   /* Check for zombies.  */
   if (ti.ti_state == TD_THR_UNKNOWN || ti.ti_state == TD_THR_ZOMBIE)
@@ -495,7 +505,7 @@ thread_db_get_tls_address (struct thread_info *thread, CORE_ADDR offset,
   psaddr_t addr;
   td_err_e err;
   struct lwp_info *lwp;
-  struct thread_info *saved_inferior;
+  struct thread_info *saved_thread;
   struct process_info *proc;
   struct thread_db *thread_db;
 
@@ -518,8 +528,8 @@ thread_db_get_tls_address (struct thread_info *thread, CORE_ADDR offset,
   if (!lwp->thread_known)
     return TD_NOTHR;
 
-  saved_inferior = current_inferior;
-  current_inferior = thread;
+  saved_thread = current_thread;
+  current_thread = thread;
 
   if (load_module != 0)
     {
@@ -542,7 +552,7 @@ thread_db_get_tls_address (struct thread_info *thread, CORE_ADDR offset,
       addr = (char *) addr + offset;
     }
 
-  current_inferior = saved_inferior;
+  current_thread = saved_thread;
   if (err == TD_OK)
     {
       *address = (CORE_ADDR) (uintptr_t) addr;
@@ -561,8 +571,7 @@ thread_db_load_search (void)
   struct thread_db *tdb;
   struct process_info *proc = current_process ();
 
-  if (proc->private->thread_db != NULL)
-    fatal ("unexpected: proc->private->thread_db != NULL");
+  gdb_assert (proc->private->thread_db == NULL);
 
   tdb = xcalloc (1, sizeof (*tdb));
   proc->private->thread_db = tdb;
@@ -607,8 +616,7 @@ try_thread_db_load_1 (void *handle)
   struct thread_db *tdb;
   struct process_info *proc = current_process ();
 
-  if (proc->private->thread_db != NULL)
-    fatal ("unexpected: proc->private->thread_db != NULL");
+  gdb_assert (proc->private->thread_db == NULL);
 
   tdb = xcalloc (1, sizeof (*tdb));
   proc->private->thread_db = tdb;
@@ -872,7 +880,7 @@ switch_to_process (struct process_info *proc)
 {
   int pid = pid_of (proc);
 
-  current_inferior =
+  current_thread =
     (struct thread_info *) find_inferior (&all_threads,
 					  any_thread_of, &pid);
 }
@@ -896,7 +904,7 @@ disable_thread_event_reporting (struct process_info *proc)
 
       if (td_ta_clear_event_p != NULL)
 	{
-	  struct thread_info *saved_inferior = current_inferior;
+	  struct thread_info *saved_thread = current_thread;
 	  td_thr_events_t events;
 
 	  switch_to_process (proc);
@@ -906,7 +914,7 @@ disable_thread_event_reporting (struct process_info *proc)
 	  td_event_fillset (&events);
 	  (*td_ta_clear_event_p) (thread_db->thread_agent, &events);
 
-	  current_inferior = saved_inferior;
+	  current_thread = saved_thread;
 	}
     }
 }
@@ -918,14 +926,14 @@ remove_thread_event_breakpoints (struct process_info *proc)
 
   if (thread_db->td_create_bp != NULL)
     {
-      struct thread_info *saved_inferior = current_inferior;
+      struct thread_info *saved_thread = current_thread;
 
       switch_to_process (proc);
 
       delete_breakpoint (thread_db->td_create_bp);
       thread_db->td_create_bp = NULL;
 
-      current_inferior = saved_inferior;
+      current_thread = saved_thread;
     }
 }
 

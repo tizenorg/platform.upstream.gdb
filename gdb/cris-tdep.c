@@ -1,6 +1,6 @@
 /* Target dependent code for CRIS, for GDB, the GNU debugger.
 
-   Copyright (C) 2001-2014 Free Software Foundation, Inc.
+   Copyright (C) 2001-2015 Free Software Foundation, Inc.
 
    Contributed by Axis Communications AB.
    Written by Hendrik Ruijter, Stefan Andersson, and Orjan Friberg.
@@ -37,13 +37,11 @@
 #include "osabi.h"
 #include "arch-utils.h"
 #include "regcache.h"
-#include "gdb_assert.h"
 
 #include "objfiles.h"
 
 #include "solib.h"              /* Support for shared libraries.  */
 #include "solib-svr4.h"
-#include <string.h>
 #include "dis-asm.h"
 
 #include "cris-tdep.h"

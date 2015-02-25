@@ -1,6 +1,6 @@
 This is gdb.info, produced by makeinfo version 5.2 from gdb.texinfo.
 
-Copyright (C) 1988-2014 Free Software Foundation, Inc.
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -21,9 +21,9 @@ END-INFO-DIR-ENTRY
    This file documents the GNU debugger GDB.
 
    This is the Tenth Edition, of 'Debugging with GDB: the GNU
-Source-Level Debugger' for GDB (GDB) Version 7.8.1.
+Source-Level Debugger' for GDB (GDB) Version 7.9.
 
-   Copyright (C) 1988-2014 Free Software Foundation, Inc.
+   Copyright (C) 1988-2015 Free Software Foundation, Inc.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -35,6 +35,790 @@ with the Back-Cover Texts as in (a) below.
    (a) The FSF's Back-Cover Text is: "You are free to copy and modify
 this GNU Manual.  Buying copies from GNU Press supports the FSF in
 developing GNU and promoting software freedom."
+
+
+File: gdb.info,  Node: Remote Protocol,  Next: Agent Expressions,  Prev: Maintenance Commands,  Up: Top
+
+Appendix E GDB Remote Serial Protocol
+*************************************
+
+* Menu:
+
+* Overview::
+* Packets::
+* Stop Reply Packets::
+* General Query Packets::
+* Architecture-Specific Protocol Details::
+* Tracepoint Packets::
+* Host I/O Packets::
+* Interrupts::
+* Notification Packets::
+* Remote Non-Stop::
+* Packet Acknowledgment::
+* Examples::
+* File-I/O Remote Protocol Extension::
+* Library List Format::
+* Library List Format for SVR4 Targets::
+* Memory Map Format::
+* Thread List Format::
+* Traceframe Info Format::
+* Branch Trace Format::
+
+
+File: gdb.info,  Node: Overview,  Next: Packets,  Up: Remote Protocol
+
+E.1 Overview
+============
+
+There may be occasions when you need to know something about the
+protocol--for example, if there is only one serial port to your target
+machine, you might want your program to do something special if it
+recognizes a packet meant for GDB.
+
+   In the examples below, '->' and '<-' are used to indicate transmitted
+and received data, respectively.
+
+   All GDB commands and responses (other than acknowledgments and
+notifications, see *note Notification Packets::) are sent as a PACKET.
+A PACKET is introduced with the character '$', the actual PACKET-DATA,
+and the terminating character '#' followed by a two-digit CHECKSUM:
+
+     $PACKET-DATA#CHECKSUM
+
+The two-digit CHECKSUM is computed as the modulo 256 sum of all
+characters between the leading '$' and the trailing '#' (an eight bit
+unsigned checksum).
+
+   Implementors should note that prior to GDB 5.0 the protocol
+specification also included an optional two-digit SEQUENCE-ID:
+
+     $SEQUENCE-ID:PACKET-DATA#CHECKSUM
+
+That SEQUENCE-ID was appended to the acknowledgment.  GDB has never
+output SEQUENCE-IDs.  Stubs that handle packets added since GDB 5.0 must
+not accept SEQUENCE-ID.
+
+   When either the host or the target machine receives a packet, the
+first response expected is an acknowledgment: either '+' (to indicate
+the package was received correctly) or '-' (to request retransmission):
+
+     -> $PACKET-DATA#CHECKSUM
+     <- +
+
+   The '+'/'-' acknowledgments can be disabled once a connection is
+established.  *Note Packet Acknowledgment::, for details.
+
+   The host (GDB) sends COMMANDs, and the target (the debugging stub
+incorporated in your program) sends a RESPONSE.  In the case of step and
+continue COMMANDs, the response is only sent when the operation has
+completed, and the target has again stopped all threads in all attached
+processes.  This is the default all-stop mode behavior, but the remote
+protocol also supports GDB's non-stop execution mode; see *note Remote
+Non-Stop::, for details.
+
+   PACKET-DATA consists of a sequence of characters with the exception
+of '#' and '$' (see 'X' packet for additional exceptions).
+
+   Fields within the packet should be separated using ',' ';' or ':'.
+Except where otherwise noted all numbers are represented in HEX with
+leading zeros suppressed.
+
+   Implementors should note that prior to GDB 5.0, the character ':'
+could not appear as the third character in a packet (as it would
+potentially conflict with the SEQUENCE-ID).
+
+   Binary data in most packets is encoded either as two hexadecimal
+digits per byte of binary data.  This allowed the traditional remote
+protocol to work over connections which were only seven-bit clean.  Some
+packets designed more recently assume an eight-bit clean connection, and
+use a more efficient encoding to send and receive binary data.
+
+   The binary data representation uses '7d' (ASCII '}') as an escape
+character.  Any escaped byte is transmitted as the escape character
+followed by the original character XORed with '0x20'.  For example, the
+byte '0x7d' would be transmitted as the two bytes '0x7d 0x5d'.  The
+bytes '0x23' (ASCII '#'), '0x24' (ASCII '$'), and '0x7d' (ASCII '}')
+must always be escaped.  Responses sent by the stub must also escape
+'0x2a' (ASCII '*'), so that it is not interpreted as the start of a
+run-length encoded sequence (described next).
+
+   Response DATA can be run-length encoded to save space.  Run-length
+encoding replaces runs of identical characters with one instance of the
+repeated character, followed by a '*' and a repeat count.  The repeat
+count is itself sent encoded, to avoid binary characters in DATA: a
+value of N is sent as 'N+29'.  For a repeat count greater or equal to 3,
+this produces a printable ASCII character, e.g. a space (ASCII code 32)
+for a repeat count of 3.  (This is because run-length encoding starts to
+win for counts 3 or more.)  Thus, for example, '0* ' is a run-length
+encoding of "0000": the space character after '*' means repeat the
+leading '0' '32 - 29 = 3' more times.
+
+   The printable characters '#' and '$' or with a numeric value greater
+than 126 must not be used.  Runs of six repeats ('#') or seven repeats
+('$') can be expanded using a repeat count of only five ('"').  For
+example, '00000000' can be encoded as '0*"00'.
+
+   The error response returned for some packets includes a two character
+error number.  That number is not well defined.
+
+   For any COMMAND not supported by the stub, an empty response ('$#00')
+should be returned.  That way it is possible to extend the protocol.  A
+newer GDB can tell if a packet is supported based on that response.
+
+   At a minimum, a stub is required to support the 'g' and 'G' commands
+for register access, and the 'm' and 'M' commands for memory access.
+Stubs that only control single-threaded targets can implement run
+control with the 'c' (continue), and 's' (step) commands.  Stubs that
+support multi-threading targets should support the 'vCont' command.  All
+other commands are optional.
+
+
+File: gdb.info,  Node: Packets,  Next: Stop Reply Packets,  Prev: Overview,  Up: Remote Protocol
+
+E.2 Packets
+===========
+
+The following table provides a complete list of all currently defined
+COMMANDs and their corresponding response DATA.  *Note File-I/O Remote
+Protocol Extension::, for details about the File I/O extension of the
+remote protocol.
+
+   Each packet's description has a template showing the packet's overall
+syntax, followed by an explanation of the packet's meaning.  We include
+spaces in some of the templates for clarity; these are not part of the
+packet's syntax.  No GDB packet uses spaces to separate its components.
+For example, a template like 'foo BAR BAZ' describes a packet beginning
+with the three ASCII bytes 'foo', followed by a BAR, followed directly
+by a BAZ.  GDB does not transmit a space character between the 'foo' and
+the BAR, or between the BAR and the BAZ.
+
+   Several packets and replies include a THREAD-ID field to identify a
+thread.  Normally these are positive numbers with a target-specific
+interpretation, formatted as big-endian hex strings.  A THREAD-ID can
+also be a literal '-1' to indicate all threads, or '0' to pick any
+thread.
+
+   In addition, the remote protocol supports a multiprocess feature in
+which the THREAD-ID syntax is extended to optionally include both
+process and thread ID fields, as 'pPID.TID'.  The PID (process) and TID
+(thread) components each have the format described above: a positive
+number with target-specific interpretation formatted as a big-endian hex
+string, literal '-1' to indicate all processes or threads
+(respectively), or '0' to indicate an arbitrary process or thread.
+Specifying just a process, as 'pPID', is equivalent to 'pPID.-1'.  It is
+an error to specify all processes but a specific thread, such as
+'p-1.TID'.  Note that the 'p' prefix is _not_ used for those packets and
+replies explicitly documented to include a process ID, rather than a
+THREAD-ID.
+
+   The multiprocess THREAD-ID syntax extensions are only used if both
+GDB and the stub report support for the 'multiprocess' feature using
+'qSupported'.  *Note multiprocess extensions::, for more information.
+
+   Note that all packet forms beginning with an upper- or lower-case
+letter, other than those described here, are reserved for future use.
+
+   Here are the packet descriptions.
+
+'!'
+     Enable extended mode.  In extended mode, the remote server is made
+     persistent.  The 'R' packet is used to restart the program being
+     debugged.
+
+     Reply:
+     'OK'
+          The remote target both supports and has enabled extended mode.
+
+'?'
+     Indicate the reason the target halted.  The reply is the same as
+     for step and continue.  This packet has a special interpretation
+     when the target is in non-stop mode; see *note Remote Non-Stop::.
+
+     Reply: *Note Stop Reply Packets::, for the reply specifications.
+
+'A ARGLEN,ARGNUM,ARG,...'
+     Initialized 'argv[]' array passed into program.  ARGLEN specifies
+     the number of bytes in the hex encoded byte stream ARG.  See
+     'gdbserver' for more details.
+
+     Reply:
+     'OK'
+          The arguments were set.
+     'E NN'
+          An error occurred.
+
+'b BAUD'
+     (Don't use this packet; its behavior is not well-defined.)  Change
+     the serial line speed to BAUD.
+
+     JTC: _When does the transport layer state change?  When it's
+     received, or after the ACK is transmitted.  In either case, there
+     are problems if the command or the acknowledgment packet is
+     dropped._
+
+     Stan: _If people really wanted to add something like this, and get
+     it working for the first time, they ought to modify ser-unix.c to
+     send some kind of out-of-band message to a specially-setup stub and
+     have the switch happen "in between" packets, so that from remote
+     protocol's point of view, nothing actually happened._
+
+'B ADDR,MODE'
+     Set (MODE is 'S') or clear (MODE is 'C') a breakpoint at ADDR.
+
+     Don't use this packet.  Use the 'Z' and 'z' packets instead (*note
+     insert breakpoint or watchpoint packet::).
+
+'bc'
+     Backward continue.  Execute the target system in reverse.  No
+     parameter.  *Note Reverse Execution::, for more information.
+
+     Reply: *Note Stop Reply Packets::, for the reply specifications.
+
+'bs'
+     Backward single step.  Execute one instruction in reverse.  No
+     parameter.  *Note Reverse Execution::, for more information.
+
+     Reply: *Note Stop Reply Packets::, for the reply specifications.
+
+'c [ADDR]'
+     Continue at ADDR, which is the address to resume.  If ADDR is
+     omitted, resume at current address.
+
+     This packet is deprecated for multi-threading support.  *Note vCont
+     packet::.
+
+     Reply: *Note Stop Reply Packets::, for the reply specifications.
+
+'C SIG[;ADDR]'
+     Continue with signal SIG (hex signal number).  If ';ADDR' is
+     omitted, resume at same address.
+
+     This packet is deprecated for multi-threading support.  *Note vCont
+     packet::.
+
+     Reply: *Note Stop Reply Packets::, for the reply specifications.
+
+'d'
+     Toggle debug flag.
+
+     Don't use this packet; instead, define a general set packet (*note
+     General Query Packets::).
+
+'D'
+'D;PID'
+     The first form of the packet is used to detach GDB from the remote
+     system.  It is sent to the remote target before GDB disconnects via
+     the 'detach' command.
+
+     The second form, including a process ID, is used when multiprocess
+     protocol extensions are enabled (*note multiprocess extensions::),
+     to detach only a specific process.  The PID is specified as a
+     big-endian hex string.
+
+     Reply:
+     'OK'
+          for success
+     'E NN'
+          for an error
+
+'F RC,EE,CF;XX'
+     A reply from GDB to an 'F' packet sent by the target.  This is part
+     of the File-I/O protocol extension.  *Note File-I/O Remote Protocol
+     Extension::, for the specification.
+
+'g'
+     Read general registers.
+
+     Reply:
+     'XX...'
+          Each byte of register data is described by two hex digits.
+          The bytes with the register are transmitted in target byte
+          order.  The size of each register and their position within
+          the 'g' packet are determined by the GDB internal gdbarch
+          functions 'DEPRECATED_REGISTER_RAW_SIZE' and
+          'gdbarch_register_name'.  The specification of several
+          standard 'g' packets is specified below.
+
+          When reading registers from a trace frame (*note Using the
+          Collected Data: Analyze Collected Data.), the stub may also
+          return a string of literal 'x''s in place of the register data
+          digits, to indicate that the corresponding register has not
+          been collected, thus its value is unavailable.  For example,
+          for an architecture with 4 registers of 4 bytes each, the
+          following reply indicates to GDB that registers 0 and 2 have
+          not been collected, while registers 1 and 3 have been
+          collected, and both have zero value:
+
+               -> g
+               <- xxxxxxxx00000000xxxxxxxx00000000
+
+     'E NN'
+          for an error.
+
+'G XX...'
+     Write general registers.  *Note read registers packet::, for a
+     description of the XX... data.
+
+     Reply:
+     'OK'
+          for success
+     'E NN'
+          for an error
+
+'H OP THREAD-ID'
+     Set thread for subsequent operations ('m', 'M', 'g', 'G', et.al.).
+     Depending on the operation to be performed, OP should be 'c' for
+     step and continue operations (note that this is deprecated,
+     supporting the 'vCont' command is a better option), and 'g' for
+     other operations.  The thread designator THREAD-ID has the format
+     and interpretation described in *note thread-id syntax::.
+
+     Reply:
+     'OK'
+          for success
+     'E NN'
+          for an error
+
+'i [ADDR[,NNN]]'
+     Step the remote target by a single clock cycle.  If ',NNN' is
+     present, cycle step NNN cycles.  If ADDR is present, cycle step
+     starting at that address.
+
+'I'
+     Signal, then cycle step.  *Note step with signal packet::.  *Note
+     cycle step packet::.
+
+'k'
+     Kill request.
+
+     The exact effect of this packet is not specified.
+
+     For a bare-metal target, it may power cycle or reset the target
+     system.  For that reason, the 'k' packet has no reply.
+
+     For a single-process target, it may kill that process if possible.
+
+     A multiple-process target may choose to kill just one process, or
+     all that are under GDB's control.  For more precise control, use
+     the vKill packet (*note vKill packet::).
+
+     If the target system immediately closes the connection in response
+     to 'k', GDB does not consider the lack of packet acknowledgment to
+     be an error, and assumes the kill was successful.
+
+     If connected using 'target extended-remote', and the target does
+     not close the connection in response to a kill request, GDB probes
+     the target state as if a new connection was opened (*note ?
+     packet::).
+
+'m ADDR,LENGTH'
+     Read LENGTH bytes of memory starting at address ADDR.  Note that
+     ADDR may not be aligned to any particular boundary.
+
+     The stub need not use any particular size or alignment when
+     gathering data from memory for the response; even if ADDR is
+     word-aligned and LENGTH is a multiple of the word size, the stub is
+     free to use byte accesses, or not.  For this reason, this packet
+     may not be suitable for accessing memory-mapped I/O devices.
+
+     Reply:
+     'XX...'
+          Memory contents; each byte is transmitted as a two-digit
+          hexadecimal number.  The reply may contain fewer bytes than
+          requested if the server was able to read only part of the
+          region of memory.
+     'E NN'
+          NN is errno
+
+'M ADDR,LENGTH:XX...'
+     Write LENGTH bytes of memory starting at address ADDR.  The data is
+     given by XX...; each byte is transmitted as a two-digit hexadecimal
+     number.
+
+     Reply:
+     'OK'
+          for success
+     'E NN'
+          for an error (this includes the case where only part of the
+          data was written).
+
+'p N'
+     Read the value of register N; N is in hex.  *Note read registers
+     packet::, for a description of how the returned register value is
+     encoded.
+
+     Reply:
+     'XX...'
+          the register's value
+     'E NN'
+          for an error
+     ''
+          Indicating an unrecognized QUERY.
+
+'P N...=R...'
+     Write register N... with value R....  The register number N is in
+     hexadecimal, and R... contains two hex digits for each byte in the
+     register (target byte order).
+
+     Reply:
+     'OK'
+          for success
+     'E NN'
+          for an error
+
+'q NAME PARAMS...'
+'Q NAME PARAMS...'
+     General query ('q') and set ('Q').  These packets are described
+     fully in *note General Query Packets::.
+
+'r'
+     Reset the entire system.
+
+     Don't use this packet; use the 'R' packet instead.
+
+'R XX'
+     Restart the program being debugged.  The XX, while needed, is
+     ignored.  This packet is only available in extended mode (*note
+     extended mode::).
+
+     The 'R' packet has no reply.
+
+'s [ADDR]'
+     Single step, resuming at ADDR.  If ADDR is omitted, resume at same
+     address.
+
+     This packet is deprecated for multi-threading support.  *Note vCont
+     packet::.
+
+     Reply: *Note Stop Reply Packets::, for the reply specifications.
+
+'S SIG[;ADDR]'
+     Step with signal.  This is analogous to the 'C' packet, but
+     requests a single-step, rather than a normal resumption of
+     execution.
+
+     This packet is deprecated for multi-threading support.  *Note vCont
+     packet::.
+
+     Reply: *Note Stop Reply Packets::, for the reply specifications.
+
+'t ADDR:PP,MM'
+     Search backwards starting at address ADDR for a match with pattern
+     PP and mask MM, both of which are are 4 byte long.  There must be
+     at least 3 digits in ADDR.
+
+'T THREAD-ID'
+     Find out if the thread THREAD-ID is alive.  *Note thread-id
+     syntax::.
+
+     Reply:
+     'OK'
+          thread is still alive
+     'E NN'
+          thread is dead
+
+'v'
+     Packets starting with 'v' are identified by a multi-letter name, up
+     to the first ';' or '?' (or the end of the packet).
+
+'vAttach;PID'
+     Attach to a new process with the specified process ID PID.  The
+     process ID is a hexadecimal integer identifying the process.  In
+     all-stop mode, all threads in the attached process are stopped; in
+     non-stop mode, it may be attached without being stopped if that is
+     supported by the target.
+
+     This packet is only available in extended mode (*note extended
+     mode::).
+
+     Reply:
+     'E NN'
+          for an error
+     'Any stop packet'
+          for success in all-stop mode (*note Stop Reply Packets::)
+     'OK'
+          for success in non-stop mode (*note Remote Non-Stop::)
+
+'vCont[;ACTION[:THREAD-ID]]...'
+     Resume the inferior, specifying different actions for each thread.
+     If an action is specified with no THREAD-ID, then it is applied to
+     any threads that don't have a specific action specified; if no
+     default action is specified then other threads should remain
+     stopped in all-stop mode and in their current state in non-stop
+     mode.  Specifying multiple default actions is an error; specifying
+     no actions is also an error.  Thread IDs are specified using the
+     syntax described in *note thread-id syntax::.
+
+     Currently supported actions are:
+
+     'c'
+          Continue.
+     'C SIG'
+          Continue with signal SIG.  The signal SIG should be two hex
+          digits.
+     's'
+          Step.
+     'S SIG'
+          Step with signal SIG.  The signal SIG should be two hex
+          digits.
+     't'
+          Stop.
+     'r START,END'
+          Step once, and then keep stepping as long as the thread stops
+          at addresses between START (inclusive) and END (exclusive).
+          The remote stub reports a stop reply when either the thread
+          goes out of the range or is stopped due to an unrelated
+          reason, such as hitting a breakpoint.  *Note range stepping::.
+
+          If the range is empty (START == END), then the action becomes
+          equivalent to the 's' action.  In other words, single-step
+          once, and report the stop (even if the stepped instruction
+          jumps to START).
+
+          (A stop reply may be sent at any point even if the PC is still
+          within the stepping range; for example, it is valid to
+          implement this packet in a degenerate way as a single
+          instruction step operation.)
+
+     The optional argument ADDR normally associated with the 'c', 'C',
+     's', and 'S' packets is not supported in 'vCont'.
+
+     The 't' action is only relevant in non-stop mode (*note Remote
+     Non-Stop::) and may be ignored by the stub otherwise.  A stop reply
+     should be generated for any affected thread not already stopped.
+     When a thread is stopped by means of a 't' action, the
+     corresponding stop reply should indicate that the thread has
+     stopped with signal '0', regardless of whether the target uses some
+     other signal as an implementation detail.
+
+     The stub must support 'vCont' if it reports support for
+     multiprocess extensions (*note multiprocess extensions::).  Note
+     that in this case 'vCont' actions can be specified to apply to all
+     threads in a process by using the 'pPID.-1' form of the THREAD-ID.
+
+     Reply: *Note Stop Reply Packets::, for the reply specifications.
+
+'vCont?'
+     Request a list of actions supported by the 'vCont' packet.
+
+     Reply:
+     'vCont[;ACTION...]'
+          The 'vCont' packet is supported.  Each ACTION is a supported
+          command in the 'vCont' packet.
+     ''
+          The 'vCont' packet is not supported.
+
+'vFile:OPERATION:PARAMETER...'
+     Perform a file operation on the target system.  For details, see
+     *note Host I/O Packets::.
+
+'vFlashErase:ADDR,LENGTH'
+     Direct the stub to erase LENGTH bytes of flash starting at ADDR.
+     The region may enclose any number of flash blocks, but its start
+     and end must fall on block boundaries, as indicated by the flash
+     block size appearing in the memory map (*note Memory Map Format::).
+     GDB groups flash memory programming operations together, and sends
+     a 'vFlashDone' request after each group; the stub is allowed to
+     delay erase operation until the 'vFlashDone' packet is received.
+
+     Reply:
+     'OK'
+          for success
+     'E NN'
+          for an error
+
+'vFlashWrite:ADDR:XX...'
+     Direct the stub to write data to flash address ADDR.  The data is
+     passed in binary form using the same encoding as for the 'X' packet
+     (*note Binary Data::).  The memory ranges specified by
+     'vFlashWrite' packets preceding a 'vFlashDone' packet must not
+     overlap, and must appear in order of increasing addresses (although
+     'vFlashErase' packets for higher addresses may already have been
+     received; the ordering is guaranteed only between 'vFlashWrite'
+     packets).  If a packet writes to an address that was neither erased
+     by a preceding 'vFlashErase' packet nor by some other
+     target-specific method, the results are unpredictable.
+
+     Reply:
+     'OK'
+          for success
+     'E.memtype'
+          for vFlashWrite addressing non-flash memory
+     'E NN'
+          for an error
+
+'vFlashDone'
+     Indicate to the stub that flash programming operation is finished.
+     The stub is permitted to delay or batch the effects of a group of
+     'vFlashErase' and 'vFlashWrite' packets until a 'vFlashDone' packet
+     is received.  The contents of the affected regions of flash memory
+     are unpredictable until the 'vFlashDone' request is completed.
+
+'vKill;PID'
+     Kill the process with the specified process ID PID, which is a
+     hexadecimal integer identifying the process.  This packet is used
+     in preference to 'k' when multiprocess protocol extensions are
+     supported; see *note multiprocess extensions::.
+
+     Reply:
+     'E NN'
+          for an error
+     'OK'
+          for success
+
+'vRun;FILENAME[;ARGUMENT]...'
+     Run the program FILENAME, passing it each ARGUMENT on its command
+     line.  The file and arguments are hex-encoded strings.  If FILENAME
+     is an empty string, the stub may use a default program (e.g. the
+     last program run).  The program is created in the stopped state.
+
+     This packet is only available in extended mode (*note extended
+     mode::).
+
+     Reply:
+     'E NN'
+          for an error
+     'Any stop packet'
+          for success (*note Stop Reply Packets::)
+
+'vStopped'
+     *Note Notification Packets::.
+
+'X ADDR,LENGTH:XX...'
+     Write data to memory, where the data is transmitted in binary.
+     Memory is specified by its address ADDR and number of bytes LENGTH;
+     'XX...' is binary data (*note Binary Data::).
+
+     Reply:
+     'OK'
+          for success
+     'E NN'
+          for an error
+
+'z TYPE,ADDR,KIND'
+'Z TYPE,ADDR,KIND'
+     Insert ('Z') or remove ('z') a TYPE breakpoint or watchpoint
+     starting at address ADDRESS of kind KIND.
+
+     Each breakpoint and watchpoint packet TYPE is documented
+     separately.
+
+     _Implementation notes: A remote target shall return an empty string
+     for an unrecognized breakpoint or watchpoint packet TYPE.  A remote
+     target shall support either both or neither of a given 'ZTYPE...'
+     and 'zTYPE...' packet pair.  To avoid potential problems with
+     duplicate packets, the operations should be implemented in an
+     idempotent way._
+
+'z0,ADDR,KIND'
+'Z0,ADDR,KIND[;COND_LIST...][;cmds:PERSIST,CMD_LIST...]'
+     Insert ('Z0') or remove ('z0') a memory breakpoint at address ADDR
+     of type KIND.
+
+     A memory breakpoint is implemented by replacing the instruction at
+     ADDR with a software breakpoint or trap instruction.  The KIND is
+     target-specific and typically indicates the size of the breakpoint
+     in bytes that should be inserted.  E.g., the ARM and MIPS can
+     insert either a 2 or 4 byte breakpoint.  Some architectures have
+     additional meanings for KIND; COND_LIST is an optional list of
+     conditional expressions in bytecode form that should be evaluated
+     on the target's side.  These are the conditions that should be
+     taken into consideration when deciding if the breakpoint trigger
+     should be reported back to GDBN.
+
+     The COND_LIST parameter is comprised of a series of expressions,
+     concatenated without separators.  Each expression has the following
+     form:
+
+     'X LEN,EXPR'
+          LEN is the length of the bytecode expression and EXPR is the
+          actual conditional expression in bytecode form.
+
+     The optional CMD_LIST parameter introduces commands that may be run
+     on the target, rather than being reported back to GDB.  The
+     parameter starts with a numeric flag PERSIST; if the flag is
+     nonzero, then the breakpoint may remain active and the commands
+     continue to be run even when GDB disconnects from the target.
+     Following this flag is a series of expressions concatenated with no
+     separators.  Each expression has the following form:
+
+     'X LEN,EXPR'
+          LEN is the length of the bytecode expression and EXPR is the
+          actual conditional expression in bytecode form.
+
+     see *note Architecture-Specific Protocol Details::.
+
+     _Implementation note: It is possible for a target to copy or move
+     code that contains memory breakpoints (e.g., when implementing
+     overlays).  The behavior of this packet, in the presence of such a
+     target, is not defined._
+
+     Reply:
+     'OK'
+          success
+     ''
+          not supported
+     'E NN'
+          for an error
+
+'z1,ADDR,KIND'
+'Z1,ADDR,KIND[;COND_LIST...]'
+     Insert ('Z1') or remove ('z1') a hardware breakpoint at address
+     ADDR.
+
+     A hardware breakpoint is implemented using a mechanism that is not
+     dependant on being able to modify the target's memory.  The KIND
+     and COND_LIST have the same meaning as in 'Z0' packets.
+
+     _Implementation note: A hardware breakpoint is not affected by code
+     movement._
+
+     Reply:
+     'OK'
+          success
+     ''
+          not supported
+     'E NN'
+          for an error
+
+'z2,ADDR,KIND'
+'Z2,ADDR,KIND'
+     Insert ('Z2') or remove ('z2') a write watchpoint at ADDR.  The
+     number of bytes to watch is specified by KIND.
+
+     Reply:
+     'OK'
+          success
+     ''
+          not supported
+     'E NN'
+          for an error
+
+'z3,ADDR,KIND'
+'Z3,ADDR,KIND'
+     Insert ('Z3') or remove ('z3') a read watchpoint at ADDR.  The
+     number of bytes to watch is specified by KIND.
+
+     Reply:
+     'OK'
+          success
+     ''
+          not supported
+     'E NN'
+          for an error
+
+'z4,ADDR,KIND'
+'Z4,ADDR,KIND'
+     Insert ('Z4') or remove ('z4') an access watchpoint at ADDR.  The
+     number of bytes to watch is specified by KIND.
+
+     Reply:
+     'OK'
+          success
+     ''
+          not supported
+     'E NN'
+          for an error
 
 
 File: gdb.info,  Node: Stop Reply Packets,  Next: General Query Packets,  Prev: Packets,  Up: Remote Protocol
@@ -3949,7 +4733,7 @@ describing them, to save time.
      where fetching a 16-bit on an unaligned address raises an
      exception, you should fetch the register number one byte at a time.
 
-'setv' (0x2d) N: => V
+'setv' (0x2d) N: V => V
      Set trace state variable number N to the value found on the top of
      the stack.  The stack is unchanged, so that the value is readily
      available if the assignment is part of a larger expression.  The
@@ -4638,6 +5422,7 @@ the capitalization used in the description.
 * AArch64 Features::
 * ARM Features::
 * i386 Features::
+* MicroBlaze Features::
 * MIPS Features::
 * M68K Features::
 * Nios II Features::
@@ -4693,7 +5478,7 @@ pairs of double-precision registers.  If this feature is present,
 double-precision registers.
 
 
-File: gdb.info,  Node: i386 Features,  Next: MIPS Features,  Prev: ARM Features,  Up: Standard Target Features
+File: gdb.info,  Node: i386 Features,  Next: MicroBlaze Features,  Prev: ARM Features,  Up: Standard Target Features
 
 G.4.3 i386 Features
 -------------------
@@ -4754,9 +5539,23 @@ registers:
    - 'zmm16h' through 'zmm31h', only valid for amd64.
 
 
-File: gdb.info,  Node: MIPS Features,  Next: M68K Features,  Prev: i386 Features,  Up: Standard Target Features
+File: gdb.info,  Node: MicroBlaze Features,  Next: MIPS Features,  Prev: i386 Features,  Up: Standard Target Features
 
-G.4.4 MIPS Features
+G.4.4 MicroBlaze Features
+-------------------------
+
+The 'org.gnu.gdb.microblaze.core' feature is required for MicroBlaze
+targets.  It should contain registers 'r0' through 'r31', 'rpc', 'rmsr',
+'rear', 'resr', 'rfsr', 'rbtr', 'rpvr', 'rpvr1' through 'rpvr11',
+'redr', 'rpid', 'rzpr', 'rtlbx', 'rtlbsx', 'rtlblo', and 'rtlbhi'.
+
+   The 'org.gnu.gdb.microblaze.stack-protect' feature is optional.  If
+present, it should contain registers 'rshr' and 'rslr'
+
+
+File: gdb.info,  Node: MIPS Features,  Next: M68K Features,  Prev: MicroBlaze Features,  Up: Standard Target Features
+
+G.4.5 MIPS Features
 -------------------
 
 The 'org.gnu.gdb.mips.cpu' feature is required for MIPS targets.  It
@@ -4784,7 +5583,7 @@ control restartable syscalls.
 
 File: gdb.info,  Node: M68K Features,  Next: Nios II Features,  Prev: MIPS Features,  Up: Standard Target Features
 
-G.4.5 M68K Features
+G.4.6 M68K Features
 -------------------
 
 ''org.gnu.gdb.m68k.core''
@@ -4802,7 +5601,7 @@ G.4.5 M68K Features
 
 File: gdb.info,  Node: Nios II Features,  Next: PowerPC Features,  Prev: M68K Features,  Up: Standard Target Features
 
-G.4.6 Nios II Features
+G.4.7 Nios II Features
 ----------------------
 
 The 'org.gnu.gdb.nios2.cpu' feature is required for Nios II targets.  It
@@ -4813,7 +5612,7 @@ should contain the 32 core registers ('zero', 'at', 'r2' through 'r23',
 
 File: gdb.info,  Node: PowerPC Features,  Next: S/390 and System z Features,  Prev: Nios II Features,  Up: Standard Target Features
 
-G.4.7 PowerPC Features
+G.4.8 PowerPC Features
 ----------------------
 
 The 'org.gnu.gdb.power.core' feature is required for PowerPC targets.
@@ -4841,7 +5640,7 @@ present registers 'ev0' through 'ev31' to the user.
 
 File: gdb.info,  Node: S/390 and System z Features,  Next: TIC6x Features,  Prev: PowerPC Features,  Up: Standard Target Features
 
-G.4.8 S/390 and System z Features
+G.4.9 S/390 and System z Features
 ---------------------------------
 
 The 'org.gnu.gdb.s390.core' feature is required for S/390 and System z
@@ -4872,8 +5671,8 @@ the 64-bit registers 'tdb0', 'tac', 'tct', 'atia', and 'tr0' through
 
 File: gdb.info,  Node: TIC6x Features,  Prev: S/390 and System z Features,  Up: Standard Target Features
 
-G.4.9 TMS320C6x Features
-------------------------
+G.4.10 TMS320C6x Features
+-------------------------
 
 The 'org.gnu.gdb.tic6x.core' feature is required for TMS320C6x targets.
 It should contain registers 'A0' through 'A15', registers 'B0' through

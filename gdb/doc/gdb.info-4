@@ -1,6 +1,6 @@
 This is gdb.info, produced by makeinfo version 5.2 from gdb.texinfo.
 
-Copyright (C) 1988-2014 Free Software Foundation, Inc.
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -21,9 +21,9 @@ END-INFO-DIR-ENTRY
    This file documents the GNU debugger GDB.
 
    This is the Tenth Edition, of 'Debugging with GDB: the GNU
-Source-Level Debugger' for GDB (GDB) Version 7.8.1.
+Source-Level Debugger' for GDB (GDB) Version 7.9.
 
-   Copyright (C) 1988-2014 Free Software Foundation, Inc.
+   Copyright (C) 1988-2015 Free Software Foundation, Inc.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -35,6 +35,446 @@ with the Back-Cover Texts as in (a) below.
    (a) The FSF's Back-Cover Text is: "You are free to copy and modify
 this GNU Manual.  Buying copies from GNU Press supports the FSF in
 developing GNU and promoting software freedom."
+
+
+File: gdb.info,  Node: Frame Decorator API,  Next: Writing a Frame Filter,  Prev: Frame Filter API,  Up: Python API
+
+23.2.2.10 Decorating Frames.
+............................
+
+Frame decorators are sister objects to frame filters (*note Frame Filter
+API::).  Frame decorators are applied by a frame filter and can only be
+used in conjunction with frame filters.
+
+   The purpose of a frame decorator is to customize the printed content
+of each 'gdb.Frame' in commands where frame filters are executed.  This
+concept is called decorating a frame.  Frame decorators decorate a
+'gdb.Frame' with Python code contained within each API call.  This
+separates the actual data contained in a 'gdb.Frame' from the decorated
+data produced by a frame decorator.  This abstraction is necessary to
+maintain integrity of the data contained in each 'gdb.Frame'.
+
+   Frame decorators have a mandatory interface, defined below.
+
+   GDB already contains a frame decorator called 'FrameDecorator'.  This
+contains substantial amounts of boilerplate code to decorate the content
+of a 'gdb.Frame'.  It is recommended that other frame decorators inherit
+and extend this object, and only to override the methods needed.
+
+ -- Function: FrameDecorator.elided (self)
+
+     The 'elided' method groups frames together in a hierarchical
+     system.  An example would be an interpreter, where multiple
+     low-level frames make up a single call in the interpreted language.
+     In this example, the frame filter would elide the low-level frames
+     and present a single high-level frame, representing the call in the
+     interpreted language, to the user.
+
+     The 'elided' function must return an iterable and this iterable
+     must contain the frames that are being elided wrapped in a suitable
+     frame decorator.  If no frames are being elided this function may
+     return an empty iterable, or 'None'.  Elided frames are indented
+     from normal frames in a 'CLI' backtrace, or in the case of
+     'GDB/MI', are placed in the 'children' field of the eliding frame.
+
+     It is the frame filter's task to also filter out the elided frames
+     from the source iterator.  This will avoid printing the frame
+     twice.
+
+ -- Function: FrameDecorator.function (self)
+
+     This method returns the name of the function in the frame that is
+     to be printed.
+
+     This method must return a Python string describing the function, or
+     'None'.
+
+     If this function returns 'None', GDB will not print any data for
+     this field.
+
+ -- Function: FrameDecorator.address (self)
+
+     This method returns the address of the frame that is to be printed.
+
+     This method must return a Python numeric integer type of sufficient
+     size to describe the address of the frame, or 'None'.
+
+     If this function returns a 'None', GDB will not print any data for
+     this field.
+
+ -- Function: FrameDecorator.filename (self)
+
+     This method returns the filename and path associated with this
+     frame.
+
+     This method must return a Python string containing the filename and
+     the path to the object file backing the frame, or 'None'.
+
+     If this function returns a 'None', GDB will not print any data for
+     this field.
+
+ -- Function: FrameDecorator.line (self):
+
+     This method returns the line number associated with the current
+     position within the function addressed by this frame.
+
+     This method must return a Python integer type, or 'None'.
+
+     If this function returns a 'None', GDB will not print any data for
+     this field.
+
+ -- Function: FrameDecorator.frame_args (self)
+
+     This method must return an iterable, or 'None'.  Returning an empty
+     iterable, or 'None' means frame arguments will not be printed for
+     this frame.  This iterable must contain objects that implement two
+     methods, described here.
+
+     This object must implement a 'argument' method which takes a single
+     'self' parameter and must return a 'gdb.Symbol' (*note Symbols In
+     Python::), or a Python string.  The object must also implement a
+     'value' method which takes a single 'self' parameter and must
+     return a 'gdb.Value' (*note Values From Inferior::), a Python
+     value, or 'None'.  If the 'value' method returns 'None', and the
+     'argument' method returns a 'gdb.Symbol', GDB will look-up and
+     print the value of the 'gdb.Symbol' automatically.
+
+     A brief example:
+
+          class SymValueWrapper():
+
+              def __init__(self, symbol, value):
+                  self.sym = symbol
+                  self.val = value
+
+              def value(self):
+                  return self.val
+
+              def symbol(self):
+                  return self.sym
+
+          class SomeFrameDecorator()
+          ...
+          ...
+              def frame_args(self):
+                  args = []
+                  try:
+                      block = self.inferior_frame.block()
+                  except:
+                      return None
+
+                  # Iterate over all symbols in a block.  Only add
+                  # symbols that are arguments.
+                  for sym in block:
+                      if not sym.is_argument:
+                          continue
+                      args.append(SymValueWrapper(sym,None))
+
+                  # Add example synthetic argument.
+                  args.append(SymValueWrapper(``foo'', 42))
+
+                  return args
+
+ -- Function: FrameDecorator.frame_locals (self)
+
+     This method must return an iterable or 'None'.  Returning an empty
+     iterable, or 'None' means frame local arguments will not be printed
+     for this frame.
+
+     The object interface, the description of the various strategies for
+     reading frame locals, and the example are largely similar to those
+     described in the 'frame_args' function, (*note The frame filter
+     frame_args function: frame_args.).  Below is a modified example:
+
+          class SomeFrameDecorator()
+          ...
+          ...
+              def frame_locals(self):
+                  vars = []
+                  try:
+                      block = self.inferior_frame.block()
+                  except:
+                      return None
+
+                  # Iterate over all symbols in a block.  Add all
+                  # symbols, except arguments.
+                  for sym in block:
+                      if sym.is_argument:
+                          continue
+                      vars.append(SymValueWrapper(sym,None))
+
+                  # Add an example of a synthetic local variable.
+                  vars.append(SymValueWrapper(``bar'', 99))
+
+                  return vars
+
+ -- Function: FrameDecorator.inferior_frame (self):
+
+     This method must return the underlying 'gdb.Frame' that this frame
+     decorator is decorating.  GDB requires the underlying frame for
+     internal frame information to determine how to print certain values
+     when printing a frame.
+
+
+File: gdb.info,  Node: Writing a Frame Filter,  Next: Xmethods In Python,  Prev: Frame Decorator API,  Up: Python API
+
+23.2.2.11 Writing a Frame Filter
+................................
+
+There are three basic elements that a frame filter must implement: it
+must correctly implement the documented interface (*note Frame Filter
+API::), it must register itself with GDB, and finally, it must decide if
+it is to work on the data provided by GDB.  In all cases, whether it
+works on the iterator or not, each frame filter must return an iterator.
+A bare-bones frame filter follows the pattern in the following example.
+
+     import gdb
+
+     class FrameFilter():
+
+         def __init__(self):
+             # Frame filter attribute creation.
+             #
+             # 'name' is the name of the filter that GDB will display.
+             #
+             # 'priority' is the priority of the filter relative to other
+             # filters.
+             #
+             # 'enabled' is a boolean that indicates whether this filter is
+             # enabled and should be executed.
+
+             self.name = "Foo"
+             self.priority = 100
+             self.enabled = True
+
+             # Register this frame filter with the global frame_filters
+             # dictionary.
+             gdb.frame_filters[self.name] = self
+
+         def filter(self, frame_iter):
+             # Just return the iterator.
+             return frame_iter
+
+   The frame filter in the example above implements the three
+requirements for all frame filters.  It implements the API, self
+registers, and makes a decision on the iterator (in this case, it just
+returns the iterator untouched).
+
+   The first step is attribute creation and assignment, and as shown in
+the comments the filter assigns the following attributes: 'name',
+'priority' and whether the filter should be enabled with the 'enabled'
+attribute.
+
+   The second step is registering the frame filter with the dictionary
+or dictionaries that the frame filter has interest in.  As shown in the
+comments, this filter just registers itself with the global dictionary
+'gdb.frame_filters'.  As noted earlier, 'gdb.frame_filters' is a
+dictionary that is initialized in the 'gdb' module when GDB starts.
+What dictionary a filter registers with is an important consideration.
+Generally, if a filter is specific to a set of code, it should be
+registered either in the 'objfile' or 'progspace' dictionaries as they
+are specific to the program currently loaded in GDB.  The global
+dictionary is always present in GDB and is never unloaded.  Any filters
+registered with the global dictionary will exist until GDB exits.  To
+avoid filters that may conflict, it is generally better to register
+frame filters against the dictionaries that more closely align with the
+usage of the filter currently in question.  *Note Python Auto-loading::,
+for further information on auto-loading Python scripts.
+
+   GDB takes a hands-off approach to frame filter registration,
+therefore it is the frame filter's responsibility to ensure registration
+has occurred, and that any exceptions are handled appropriately.  In
+particular, you may wish to handle exceptions relating to Python
+dictionary key uniqueness.  It is mandatory that the dictionary key is
+the same as frame filter's 'name' attribute.  When a user manages frame
+filters (*note Frame Filter Management::), the names GDB will display
+are those contained in the 'name' attribute.
+
+   The final step of this example is the implementation of the 'filter'
+method.  As shown in the example comments, we define the 'filter' method
+and note that the method must take an iterator, and also must return an
+iterator.  In this bare-bones example, the frame filter is not very
+useful as it just returns the iterator untouched.  However this is a
+valid operation for frame filters that have the 'enabled' attribute set,
+but decide not to operate on any frames.
+
+   In the next example, the frame filter operates on all frames and
+utilizes a frame decorator to perform some work on the frames.  *Note
+Frame Decorator API::, for further information on the frame decorator
+interface.
+
+   This example works on inlined frames.  It highlights frames which are
+inlined by tagging them with an "[inlined]" tag.  By applying a frame
+decorator to all frames with the Python 'itertools imap' method, the
+example defers actions to the frame decorator.  Frame decorators are
+only processed when GDB prints the backtrace.
+
+   This introduces a new decision making topic: whether to perform
+decision making operations at the filtering step, or at the printing
+step.  In this example's approach, it does not perform any filtering
+decisions at the filtering step beyond mapping a frame decorator to each
+frame.  This allows the actual decision making to be performed when each
+frame is printed.  This is an important consideration, and well worth
+reflecting upon when designing a frame filter.  An issue that frame
+filters should avoid is unwinding the stack if possible.  Some stacks
+can run very deep, into the tens of thousands in some cases.  To search
+every frame to determine if it is inlined ahead of time may be too
+expensive at the filtering step.  The frame filter cannot know how many
+frames it has to iterate over, and it would have to iterate through them
+all.  This ends up duplicating effort as GDB performs this iteration
+when it prints the frames.
+
+   In this example decision making can be deferred to the printing step.
+As each frame is printed, the frame decorator can examine each frame in
+turn when GDB iterates.  From a performance viewpoint, this is the most
+appropriate decision to make as it avoids duplicating the effort that
+the printing step would undertake anyway.  Also, if there are many frame
+filters unwinding the stack during filtering, it can substantially delay
+the printing of the backtrace which will result in large memory usage,
+and a poor user experience.
+
+     class InlineFilter():
+
+         def __init__(self):
+             self.name = "InlinedFrameFilter"
+             self.priority = 100
+             self.enabled = True
+             gdb.frame_filters[self.name] = self
+
+         def filter(self, frame_iter):
+             frame_iter = itertools.imap(InlinedFrameDecorator,
+                                         frame_iter)
+             return frame_iter
+
+   This frame filter is somewhat similar to the earlier example, except
+that the 'filter' method applies a frame decorator object called
+'InlinedFrameDecorator' to each element in the iterator.  The 'imap'
+Python method is light-weight.  It does not proactively iterate over the
+iterator, but rather creates a new iterator which wraps the existing
+one.
+
+   Below is the frame decorator for this example.
+
+     class InlinedFrameDecorator(FrameDecorator):
+
+         def __init__(self, fobj):
+             super(InlinedFrameDecorator, self).__init__(fobj)
+
+         def function(self):
+             frame = fobj.inferior_frame()
+             name = str(frame.name())
+
+             if frame.type() == gdb.INLINE_FRAME:
+                 name = name + " [inlined]"
+
+             return name
+
+   This frame decorator only defines and overrides the 'function'
+method.  It lets the supplied 'FrameDecorator', which is shipped with
+GDB, perform the other work associated with printing this frame.
+
+   The combination of these two objects create this output from a
+backtrace:
+
+     #0  0x004004e0 in bar () at inline.c:11
+     #1  0x00400566 in max [inlined] (b=6, a=12) at inline.c:21
+     #2  0x00400566 in main () at inline.c:31
+
+   So in the case of this example, a frame decorator is applied to all
+frames, regardless of whether they may be inlined or not.  As GDB
+iterates over the iterator produced by the frame filters, GDB executes
+each frame decorator which then makes a decision on what to print in the
+'function' callback.  Using a strategy like this is a way to defer
+decisions on the frame content to printing time.
+
+Eliding Frames
+--------------
+
+It might be that the above example is not desirable for representing
+inlined frames, and a hierarchical approach may be preferred.  If we
+want to hierarchically represent frames, the 'elided' frame decorator
+interface might be preferable.
+
+   This example approaches the issue with the 'elided' method.  This
+example is quite long, but very simplistic.  It is out-of-scope for this
+section to write a complete example that comprehensively covers all
+approaches of finding and printing inlined frames.  However, this
+example illustrates the approach an author might use.
+
+   This example comprises of three sections.
+
+     class InlineFrameFilter():
+
+         def __init__(self):
+             self.name = "InlinedFrameFilter"
+             self.priority = 100
+             self.enabled = True
+             gdb.frame_filters[self.name] = self
+
+         def filter(self, frame_iter):
+             return ElidingInlineIterator(frame_iter)
+
+   This frame filter is very similar to the other examples.  The only
+difference is this frame filter is wrapping the iterator provided to it
+('frame_iter') with a custom iterator called 'ElidingInlineIterator'.
+This again defers actions to when GDB prints the backtrace, as the
+iterator is not traversed until printing.
+
+   The iterator for this example is as follows.  It is in this section
+of the example where decisions are made on the content of the backtrace.
+
+     class ElidingInlineIterator:
+         def __init__(self, ii):
+             self.input_iterator = ii
+
+         def __iter__(self):
+             return self
+
+         def next(self):
+             frame = next(self.input_iterator)
+
+             if frame.inferior_frame().type() != gdb.INLINE_FRAME:
+                 return frame
+
+             try:
+                 eliding_frame = next(self.input_iterator)
+             except StopIteration:
+                 return frame
+             return ElidingFrameDecorator(eliding_frame, [frame])
+
+   This iterator implements the Python iterator protocol.  When the
+'next' function is called (when GDB prints each frame), the iterator
+checks if this frame decorator, 'frame', is wrapping an inlined frame.
+If it is not, it returns the existing frame decorator untouched.  If it
+is wrapping an inlined frame, it assumes that the inlined frame was
+contained within the next oldest frame, 'eliding_frame', which it
+fetches.  It then creates and returns a frame decorator,
+'ElidingFrameDecorator', which contains both the elided frame, and the
+eliding frame.
+
+     class ElidingInlineDecorator(FrameDecorator):
+
+         def __init__(self, frame, elided_frames):
+             super(ElidingInlineDecorator, self).__init__(frame)
+             self.frame = frame
+             self.elided_frames = elided_frames
+
+         def elided(self):
+             return iter(self.elided_frames)
+
+   This frame decorator overrides one function and returns the inlined
+frame in the 'elided' method.  As before it lets 'FrameDecorator' do the
+rest of the work involved in printing this frame.  This produces the
+following output.
+
+     #0  0x004004e0 in bar () at inline.c:11
+     #2  0x00400529 in main () at inline.c:25
+         #1  0x00400529 in max (b=6, a=12) at inline.c:15
+
+   In that output, 'max' which has been inlined into 'main' is printed
+hierarchically.  Another approach would be to combine the 'function'
+method, and the 'elided' method to both print a marker in the inlined
+frame, and also show the hierarchical relationship.
 
 
 File: gdb.info,  Node: Xmethods In Python,  Next: Xmethod API,  Prev: Writing a Frame Filter,  Up: Python API
@@ -531,6 +971,57 @@ and details of the events they emit:
           A reference to the object file ('gdb.Objfile') which has been
           loaded.  *Note Objfiles In Python::, for details of the
           'gdb.Objfile' object.
+
+'events.clear_objfiles'
+     Emits 'gdb.ClearObjFilesEvent' which indicates that the list of
+     object files for a program space has been reset.
+     'gdb.ClearObjFilesEvent' has one attribute:
+
+      -- Variable: ClearObjFilesEvent.progspace
+          A reference to the program space ('gdb.Progspace') whose
+          objfile list has been cleared.  *Note Progspaces In Python::.
+
+'events.inferior_call_pre'
+     Emits 'gdb.InferiorCallPreEvent' which indicates that a function in
+     the inferior is about to be called.
+
+      -- Variable: InferiorCallPreEvent.ptid
+          The thread in which the call will be run.
+
+      -- Variable: InferiorCallPreEvent.address
+          The location of the function to be called.
+
+'events.inferior_call_post'
+     Emits 'gdb.InferiorCallPostEvent' which indicates that a function
+     in the inferior has returned.
+
+      -- Variable: InferiorCallPostEvent.ptid
+          The thread in which the call was run.
+
+      -- Variable: InferiorCallPostEvent.address
+          The location of the function that was called.
+
+'events.memory_changed'
+     Emits 'gdb.MemoryChangedEvent' which indicates that the memory of
+     the inferior has been modified by the GDB user, for instance via a
+     command like 'set *addr = value'.  The event has the following
+     attributes:
+
+      -- Variable: MemoryChangedEvent.address
+          The start address of the changed region.
+
+      -- Variable: MemoryChangedEvent.length
+          Length in bytes of the changed region.
+
+'events.register_changed'
+     Emits 'gdb.RegisterChangedEvent' which indicates that a register in
+     the inferior has been modified by the GDB user.
+
+      -- Variable: RegisterChangedEvent.frame
+          A gdb.Frame object representing the frame in which the
+          register was modified.
+      -- Variable: RegisterChangedEvent.regnum
+          Denotes which register was modified.
 
 
 File: gdb.info,  Node: Threads In Python,  Next: Commands In Python,  Prev: Events In Python,  Up: Python API
@@ -1042,6 +1533,47 @@ class.
      The 'frame_filters' attribute is a dictionary of frame filter
      objects.  *Note Frame Filter API::, for more information.
 
+   One may add arbitrary attributes to 'gdb.Progspace' objects in the
+usual Python way.  This is useful if, for example, one needs to do some
+extra record keeping associated with the program space.
+
+   In this contrived example, we want to perform some processing when an
+objfile with a certain symbol is loaded, but we only want to do this
+once because it is expensive.  To achieve this we record the results
+with the program space because we can't predict when the desired objfile
+will be loaded.
+
+     (gdb) python
+     def clear_objfiles_handler(event):
+         event.progspace.expensive_computation = None
+     def expensive(symbol):
+         """A mock routine to perform an "expensive" computation on symbol."""
+         print "Computing the answer to the ultimate question ..."
+         return 42
+     def new_objfile_handler(event):
+         objfile = event.new_objfile
+         progspace = objfile.progspace
+         if not hasattr(progspace, 'expensive_computation') or \
+                 progspace.expensive_computation is None:
+             # We use 'main' for the symbol to keep the example simple.
+             # Note: There's no current way to constrain the lookup
+             # to one objfile.
+             symbol = gdb.lookup_global_symbol('main')
+             if symbol is not None:
+                 progspace.expensive_computation = expensive(symbol)
+     gdb.events.clear_objfiles.connect(clear_objfiles_handler)
+     gdb.events.new_objfile.connect(new_objfile_handler)
+     end
+     (gdb) file /tmp/hello
+     Reading symbols from /tmp/hello...done.
+     Computing the answer to the ultimate question ...
+     (gdb) python print gdb.current_progspace().expensive_computation
+     42
+     (gdb) run
+     Starting program: /tmp/hello
+     Hello.
+     [Inferior 1 (process 4242) exited normally]
+
 
 File: gdb.info,  Node: Objfiles In Python,  Next: Frames In Python,  Prev: Progspaces In Python,  Up: Python API
 
@@ -1067,11 +1599,51 @@ module:
      Return a sequence of all the objfiles current known to GDB.  *Note
      Objfiles In Python::.
 
+ -- Function: gdb.lookup_objfile (name [, by_build_id])
+     Look up NAME, a file name or build ID, in the list of objfiles for
+     the current program space (*note Progspaces In Python::).  If the
+     objfile is not found throw the Python 'ValueError' exception.
+
+     If NAME is a relative file name, then it will match any source file
+     name with the same trailing components.  For example, if NAME is
+     'gcc/expr.c', then it will match source file name of
+     '/build/trunk/gcc/expr.c', but not '/build/trunk/libcpp/expr.c' or
+     '/build/trunk/gcc/x-expr.c'.
+
+     If BY_BUILD_ID is provided and is 'True' then NAME is the build ID
+     of the objfile.  Otherwise, NAME is a file name.  This is supported
+     only on some operating systems, notably those which use the ELF
+     format for binary files and the GNU Binutils.  For more details
+     about this feature, see the description of the '--build-id'
+     command-line option in *note Command Line Options:
+     (ld.info)Options.
+
    Each objfile is represented by an instance of the 'gdb.Objfile'
 class.
 
  -- Variable: Objfile.filename
      The file name of the objfile as a string.
+
+ -- Variable: Objfile.owner
+     For separate debug info objfiles this is the corresponding
+     'gdb.Objfile' object that debug info is being provided for.
+     Otherwise this is 'None'.  Separate debug info objfiles are added
+     with the 'gdb.Objfile.add_separate_debug_file' method, described
+     below.
+
+ -- Variable: Objfile.build_id
+     The build ID of the objfile as a string.  If the objfile does not
+     have a build ID then the value is 'None'.
+
+     This is supported only on some operating systems, notably those
+     which use the ELF format for binary files and the GNU Binutils.
+     For more details about this feature, see the description of the
+     '--build-id' command-line option in *note Command Line Options:
+     (ld.info)Options.
+
+ -- Variable: Objfile.progspace
+     The containing program space of the objfile as a 'gdb.Progspace'
+     object.  *Note Progspaces In Python::.
 
  -- Variable: Objfile.pretty_printers
      The 'pretty_printers' attribute is a list of functions.  It is used
@@ -1089,6 +1661,25 @@ class.
      The 'frame_filters' attribute is a dictionary of frame filter
      objects.  *Note Frame Filter API::, for more information.
 
+   One may add arbitrary attributes to 'gdb.Objfile' objects in the
+usual Python way.  This is useful if, for example, one needs to do some
+extra record keeping associated with the objfile.
+
+   In this contrived example we record the time when GDB loaded the
+objfile.
+
+     (gdb) python
+     import datetime
+     def new_objfile_handler(event):
+         # Set the time_loaded attribute of the new objfile.
+         event.new_objfile.time_loaded = datetime.datetime.today()
+     gdb.events.new_objfile.connect(new_objfile_handler)
+     end
+     (gdb) file ./hello
+     Reading symbols from ./hello...done.
+     (gdb) python print gdb.objfiles()[0].time_loaded
+     2014-10-09 11:41:36.770345
+
    A 'gdb.Objfile' object has the following methods:
 
  -- Function: Objfile.is_valid ()
@@ -1097,6 +1688,15 @@ class.
      it refers to is not loaded in GDB any longer.  All other
      'gdb.Objfile' methods will throw an exception if it is invalid at
      the time the method is called.
+
+ -- Function: Objfile.add_separate_debug_file (file)
+     Add FILE to the list of files that GDB will search for debug
+     information for the objfile.  This is useful when the debug info
+     has been removed from the program and stored in a separate file.
+     GDB has built-in support for finding separate debug info files
+     (*note Separate Debug Files::), but if the file doesn't live in one
+     of the standard places that GDB searches then this function can be
+     used to add a debug info file from a different place.
 
 
 File: gdb.info,  Node: Frames In Python,  Next: Blocks In Python,  Prev: Objfiles In Python,  Up: Python API
@@ -1246,6 +1846,11 @@ module:
  -- Function: Frame.find_sal ()
      Return the frame's symtab and line object.  *Note Symbol Tables In
      Python::.
+
+ -- Function: Frame.read_register (register)
+     Return the value of REGISTER in this frame.  The REGISTER argument
+     must be a string (e.g., ''sp'' or ''rax'').  Returns a 'Gdb.Value'
+     object.  Throws an exception if REGISTER does not exist.
 
  -- Function: Frame.read_var (variable [, block])
      Return the value of VARIABLE in this frame.  If the optional
@@ -1619,6 +2224,12 @@ Examining the Symbol Table: Symbols, for more information.
      The symbol table's backing object file.  *Note Objfiles In
      Python::.  This attribute is not writable.
 
+ -- Variable: Symtab.producer
+     The name and possibly version number of the program that compiled
+     the code in the symbol table.  The contents of this string is up to
+     the compiler.  If no producer information is available then 'None'
+     is returned.  This attribute is not writable.
+
    A 'gdb.Symtab' object has the following methods:
 
  -- Function: Symtab.is_valid ()
@@ -1792,14 +2403,15 @@ in the 'gdb' module:
      scope, the watchpoint remains valid even if execution of the
      inferior leaves the scope of that watchpoint.
 
- -- Function: Breakpoint.delete
+ -- Function: Breakpoint.delete ()
      Permanently deletes the GDB breakpoint.  This also invalidates the
      Python 'Breakpoint' object.  Any further access to this object's
      attributes or methods will raise an error.
 
  -- Variable: Breakpoint.enabled
      This attribute is 'True' if the breakpoint is enabled, and 'False'
-     otherwise.  This attribute is writable.
+     otherwise.  This attribute is writable.  You can use it to enable
+     or disable the breakpoint.
 
  -- Variable: Breakpoint.silent
      This attribute is 'True' if the breakpoint is silent, and 'False'
@@ -5743,6 +6355,11 @@ compatible between Unix and MS-Windows hosts.
 'show auto-load scripts-directory'
      Show GDB auto-loaded scripts location.
 
+'add-auto-load-scripts-directory [DIRECTORIES...]'
+     Add an entry (or list of entries) to the list of auto-loaded
+     scripts locations.  Multiple entries may be delimited by the host
+     platform path separator in use.
+
    GDB does not track which files it has already auto-loaded this way.
 GDB will load the associated script every time the corresponding OBJFILE
 is opened.  So your '-gdb.EXT' file should be careful to avoid errors if
@@ -6307,10 +6924,15 @@ window management.
 'winheight NAME +COUNT'
 'winheight NAME -COUNT'
      Change the height of the window NAME by COUNT lines.  Positive
-     counts increase the height, while negative counts decrease it.
+     counts increase the height, while negative counts decrease it.  The
+     NAME parameter can be one of 'src' (the source window), 'cmd' (the
+     command window), 'asm' (the disassembly window), or 'regs' (the
+     register display window).
 
 'tabset NCHARS'
-     Set the width of tab stops to be NCHARS characters.
+     Set the width of tab stops to be NCHARS characters.  This setting
+     affects the display of TAB characters in the source and assembly
+     windows.
 
 
 File: gdb.info,  Node: TUI Configuration,  Prev: TUI Commands,  Up: TUI
@@ -6975,346 +7597,4 @@ Notes:
 
    *Note GDB/MI Stream Records: GDB/MI Stream Records, for more details
 about the various output records.
-
-
-File: gdb.info,  Node: GDB/MI Compatibility with CLI,  Next: GDB/MI Development and Front Ends,  Prev: GDB/MI Command Syntax,  Up: GDB/MI
-
-27.3 GDB/MI Compatibility with CLI
-==================================
-
-For the developers convenience CLI commands can be entered directly, but
-there may be some unexpected behaviour.  For example, commands that
-query the user will behave as if the user replied yes, breakpoint
-command lists are not executed and some CLI commands, such as 'if',
-'when' and 'define', prompt for further input with '>', which is not
-valid MI output.
-
-   This feature may be removed at some stage in the future and it is
-recommended that front ends use the '-interpreter-exec' command (*note
--interpreter-exec::).
-
-
-File: gdb.info,  Node: GDB/MI Development and Front Ends,  Next: GDB/MI Output Records,  Prev: GDB/MI Compatibility with CLI,  Up: GDB/MI
-
-27.4 GDB/MI Development and Front Ends
-======================================
-
-The application which takes the MI output and presents the state of the
-program being debugged to the user is called a "front end".
-
-   Although GDB/MI is still incomplete, it is currently being used by a
-variety of front ends to GDB.  This makes it difficult to introduce new
-functionality without breaking existing usage.  This section tries to
-minimize the problems by describing how the protocol might change.
-
-   Some changes in MI need not break a carefully designed front end, and
-for these the MI version will remain unchanged.  The following is a list
-of changes that may occur within one level, so front ends should parse
-MI output in a way that can handle them:
-
-   * New MI commands may be added.
-
-   * New fields may be added to the output of any MI command.
-
-   * The range of values for fields with specified values, e.g.,
-     'in_scope' (*note -var-update::) may be extended.
-
-   If the changes are likely to break front ends, the MI version level
-will be increased by one.  This will allow the front end to parse the
-output according to the MI version.  Apart from mi0, new versions of GDB
-will not support old versions of MI and it will be the responsibility of
-the front end to work with the new one.
-
-   The best way to avoid unexpected changes in MI that might break your
-front end is to make your project known to GDB developers and follow
-development on <gdb@sourceware.org> and <gdb-patches@sourceware.org>.
-
-
-File: gdb.info,  Node: GDB/MI Output Records,  Next: GDB/MI Simple Examples,  Prev: GDB/MI Development and Front Ends,  Up: GDB/MI
-
-27.5 GDB/MI Output Records
-==========================
-
-* Menu:
-
-* GDB/MI Result Records::
-* GDB/MI Stream Records::
-* GDB/MI Async Records::
-* GDB/MI Breakpoint Information::
-* GDB/MI Frame Information::
-* GDB/MI Thread Information::
-* GDB/MI Ada Exception Information::
-
-
-File: gdb.info,  Node: GDB/MI Result Records,  Next: GDB/MI Stream Records,  Up: GDB/MI Output Records
-
-27.5.1 GDB/MI Result Records
-----------------------------
-
-In addition to a number of out-of-band notifications, the response to a
-GDB/MI command includes one of the following result indications:
-
-'"^done" [ "," RESULTS ]'
-     The synchronous operation was successful, 'RESULTS' are the return
-     values.
-
-'"^running"'
-     This result record is equivalent to '^done'.  Historically, it was
-     output instead of '^done' if the command has resumed the target.
-     This behaviour is maintained for backward compatibility, but all
-     frontends should treat '^done' and '^running' identically and rely
-     on the '*running' output record to determine which threads are
-     resumed.
-
-'"^connected"'
-     GDB has connected to a remote target.
-
-'"^error" "," "msg=" C-STRING [ "," "code=" C-STRING ]'
-     The operation failed.  The 'msg=C-STRING' variable contains the
-     corresponding error message.
-
-     If present, the 'code=C-STRING' variable provides an error code on
-     which consumers can rely on to detect the corresponding error
-     condition.  At present, only one error code is defined:
-
-     '"undefined-command"'
-          Indicates that the command causing the error does not exist.
-
-'"^exit"'
-     GDB has terminated.
-
-
-File: gdb.info,  Node: GDB/MI Stream Records,  Next: GDB/MI Async Records,  Prev: GDB/MI Result Records,  Up: GDB/MI Output Records
-
-27.5.2 GDB/MI Stream Records
-----------------------------
-
-GDB internally maintains a number of output streams: the console, the
-target, and the log.  The output intended for each of these streams is
-funneled through the GDB/MI interface using "stream records".
-
-   Each stream record begins with a unique "prefix character" which
-identifies its stream (*note GDB/MI Output Syntax: GDB/MI Output
-Syntax.).  In addition to the prefix, each stream record contains a
-'STRING-OUTPUT'.  This is either raw text (with an implicit new line) or
-a quoted C string (which does not contain an implicit newline).
-
-'"~" STRING-OUTPUT'
-     The console output stream contains text that should be displayed in
-     the CLI console window.  It contains the textual responses to CLI
-     commands.
-
-'"@" STRING-OUTPUT'
-     The target output stream contains any textual output from the
-     running target.  This is only present when GDB's event loop is
-     truly asynchronous, which is currently only the case for remote
-     targets.
-
-'"&" STRING-OUTPUT'
-     The log stream contains debugging messages being produced by GDB's
-     internals.
-
-
-File: gdb.info,  Node: GDB/MI Async Records,  Next: GDB/MI Breakpoint Information,  Prev: GDB/MI Stream Records,  Up: GDB/MI Output Records
-
-27.5.3 GDB/MI Async Records
----------------------------
-
-"Async" records are used to notify the GDB/MI client of additional
-changes that have occurred.  Those changes can either be a consequence
-of GDB/MI commands (e.g., a breakpoint modified) or a result of target
-activity (e.g., target stopped).
-
-   The following is the list of possible async records:
-
-'*running,thread-id="THREAD"'
-     The target is now running.  The THREAD field tells which specific
-     thread is now running, and can be 'all' if all threads are running.
-     The frontend should assume that no interaction with a running
-     thread is possible after this notification is produced.  The
-     frontend should not assume that this notification is output only
-     once for any command.  GDB may emit this notification several
-     times, either for different threads, because it cannot resume all
-     threads together, or even for a single thread, if the thread must
-     be stepped though some code before letting it run freely.
-
-'*stopped,reason="REASON",thread-id="ID",stopped-threads="STOPPED",core="CORE"'
-     The target has stopped.  The REASON field can have one of the
-     following values:
-
-     'breakpoint-hit'
-          A breakpoint was reached.
-     'watchpoint-trigger'
-          A watchpoint was triggered.
-     'read-watchpoint-trigger'
-          A read watchpoint was triggered.
-     'access-watchpoint-trigger'
-          An access watchpoint was triggered.
-     'function-finished'
-          An -exec-finish or similar CLI command was accomplished.
-     'location-reached'
-          An -exec-until or similar CLI command was accomplished.
-     'watchpoint-scope'
-          A watchpoint has gone out of scope.
-     'end-stepping-range'
-          An -exec-next, -exec-next-instruction, -exec-step,
-          -exec-step-instruction or similar CLI command was
-          accomplished.
-     'exited-signalled'
-          The inferior exited because of a signal.
-     'exited'
-          The inferior exited.
-     'exited-normally'
-          The inferior exited normally.
-     'signal-received'
-          A signal was received by the inferior.
-     'solib-event'
-          The inferior has stopped due to a library being loaded or
-          unloaded.  This can happen when 'stop-on-solib-events' (*note
-          Files::) is set or when a 'catch load' or 'catch unload'
-          catchpoint is in use (*note Set Catchpoints::).
-     'fork'
-          The inferior has forked.  This is reported when 'catch fork'
-          (*note Set Catchpoints::) has been used.
-     'vfork'
-          The inferior has vforked.  This is reported in when 'catch
-          vfork' (*note Set Catchpoints::) has been used.
-     'syscall-entry'
-          The inferior entered a system call.  This is reported when
-          'catch syscall' (*note Set Catchpoints::) has been used.
-     'syscall-entry'
-          The inferior returned from a system call.  This is reported
-          when 'catch syscall' (*note Set Catchpoints::) has been used.
-     'exec'
-          The inferior called 'exec'.  This is reported when 'catch
-          exec' (*note Set Catchpoints::) has been used.
-
-     The ID field identifies the thread that directly caused the stop -
-     for example by hitting a breakpoint.  Depending on whether all-stop
-     mode is in effect (*note All-Stop Mode::), GDB may either stop all
-     threads, or only the thread that directly triggered the stop.  If
-     all threads are stopped, the STOPPED field will have the value of
-     '"all"'.  Otherwise, the value of the STOPPED field will be a list
-     of thread identifiers.  Presently, this list will always include a
-     single thread, but frontend should be prepared to see several
-     threads in the list.  The CORE field reports the processor core on
-     which the stop event has happened.  This field may be absent if
-     such information is not available.
-
-'=thread-group-added,id="ID"'
-'=thread-group-removed,id="ID"'
-     A thread group was either added or removed.  The ID field contains
-     the GDB identifier of the thread group.  When a thread group is
-     added, it generally might not be associated with a running process.
-     When a thread group is removed, its id becomes invalid and cannot
-     be used in any way.
-
-'=thread-group-started,id="ID",pid="PID"'
-     A thread group became associated with a running program, either
-     because the program was just started or the thread group was
-     attached to a program.  The ID field contains the GDB identifier of
-     the thread group.  The PID field contains process identifier,
-     specific to the operating system.
-
-'=thread-group-exited,id="ID"[,exit-code="CODE"]'
-     A thread group is no longer associated with a running program,
-     either because the program has exited, or because it was detached
-     from.  The ID field contains the GDB identifier of the thread
-     group.  The CODE field is the exit code of the inferior; it exists
-     only when the inferior exited with some code.
-
-'=thread-created,id="ID",group-id="GID"'
-'=thread-exited,id="ID",group-id="GID"'
-     A thread either was created, or has exited.  The ID field contains
-     the GDB identifier of the thread.  The GID field identifies the
-     thread group this thread belongs to.
-
-'=thread-selected,id="ID"'
-     Informs that the selected thread was changed as result of the last
-     command.  This notification is not emitted as result of
-     '-thread-select' command but is emitted whenever an MI command that
-     is not documented to change the selected thread actually changes
-     it.  In particular, invoking, directly or indirectly (via
-     user-defined command), the CLI 'thread' command, will generate this
-     notification.
-
-     We suggest that in response to this notification, front ends
-     highlight the selected thread and cause subsequent commands to
-     apply to that thread.
-
-'=library-loaded,...'
-     Reports that a new library file was loaded by the program.  This
-     notification has 4 fields--ID, TARGET-NAME, HOST-NAME, and
-     SYMBOLS-LOADED.  The ID field is an opaque identifier of the
-     library.  For remote debugging case, TARGET-NAME and HOST-NAME
-     fields give the name of the library file on the target, and on the
-     host respectively.  For native debugging, both those fields have
-     the same value.  The SYMBOLS-LOADED field is emitted only for
-     backward compatibility and should not be relied on to convey any
-     useful information.  The THREAD-GROUP field, if present, specifies
-     the id of the thread group in whose context the library was loaded.
-     If the field is absent, it means the library was loaded in the
-     context of all present thread groups.
-
-'=library-unloaded,...'
-     Reports that a library was unloaded by the program.  This
-     notification has 3 fields--ID, TARGET-NAME and HOST-NAME with the
-     same meaning as for the '=library-loaded' notification.  The
-     THREAD-GROUP field, if present, specifies the id of the thread
-     group in whose context the library was unloaded.  If the field is
-     absent, it means the library was unloaded in the context of all
-     present thread groups.
-
-'=traceframe-changed,num=TFNUM,tracepoint=TPNUM'
-'=traceframe-changed,end'
-     Reports that the trace frame was changed and its new number is
-     TFNUM.  The number of the tracepoint associated with this trace
-     frame is TPNUM.
-
-'=tsv-created,name=NAME,initial=INITIAL'
-     Reports that the new trace state variable NAME is created with
-     initial value INITIAL.
-
-'=tsv-deleted,name=NAME'
-'=tsv-deleted'
-     Reports that the trace state variable NAME is deleted or all trace
-     state variables are deleted.
-
-'=tsv-modified,name=NAME,initial=INITIAL[,current=CURRENT]'
-     Reports that the trace state variable NAME is modified with the
-     initial value INITIAL.  The current value CURRENT of trace state
-     variable is optional and is reported if the current value of trace
-     state variable is known.
-
-'=breakpoint-created,bkpt={...}'
-'=breakpoint-modified,bkpt={...}'
-'=breakpoint-deleted,id=NUMBER'
-     Reports that a breakpoint was created, modified, or deleted,
-     respectively.  Only user-visible breakpoints are reported to the MI
-     user.
-
-     The BKPT argument is of the same form as returned by the various
-     breakpoint commands; *Note GDB/MI Breakpoint Commands::.  The
-     NUMBER is the ordinal number of the breakpoint.
-
-     Note that if a breakpoint is emitted in the result record of a
-     command, then it will not also be emitted in an async record.
-
-'=record-started,thread-group="ID"'
-'=record-stopped,thread-group="ID"'
-     Execution log recording was either started or stopped on an
-     inferior.  The ID is the GDB identifier of the thread group
-     corresponding to the affected inferior.
-
-'=cmd-param-changed,param=PARAM,value=VALUE'
-     Reports that a parameter of the command 'set PARAM' is changed to
-     VALUE.  In the multi-word 'set' command, the PARAM is the whole
-     parameter list to 'set' command.  For example, In command 'set
-     check type on', PARAM is 'check type' and VALUE is 'on'.
-
-'=memory-changed,thread-group=ID,addr=ADDR,len=LEN[,type="code"]'
-     Reports that bytes from ADDR to DATA + LEN were written in an
-     inferior.  The ID is the identifier of the thread group
-     corresponding to the affected inferior.  The optional 'type="code"'
-     part is reported if the memory written to holds executable code.
 

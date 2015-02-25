@@ -1,6 +1,6 @@
 /* nto-tdep.c - general QNX Neutrino target functionality.
 
-   Copyright (C) 2003-2014 Free Software Foundation, Inc.
+   Copyright (C) 2003-2015 Free Software Foundation, Inc.
 
    Contributed by QNX Software Systems Ltd.
 
@@ -21,7 +21,6 @@
 
 #include "defs.h"
 #include <sys/stat.h>
-#include <string.h>
 #include "nto-tdep.h"
 #include "top.h"
 #include "inferior.h"

@@ -1,6 +1,6 @@
 /* GDB/Scheme pretty-printing.
 
-   Copyright (C) 2008-2014 Free Software Foundation, Inc.
+   Copyright (C) 2008-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -22,7 +22,6 @@
 
 #include "defs.h"
 #include "charset.h"
-#include "gdb_assert.h"
 #include "symtab.h" /* Needed by language.h.  */
 #include "language.h"
 #include "objfiles.h"

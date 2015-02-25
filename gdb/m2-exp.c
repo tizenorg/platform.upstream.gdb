@@ -66,7 +66,6 @@
 
 
 #include "defs.h"
-#include <string.h>
 #include "expression.h"
 #include "language.h"
 #include "value.h"
@@ -157,7 +156,7 @@ static int parse_number (int);
 static int number_sign = 1;
 
 
-#line 161 "m2-exp.c" /* yacc.c:339  */
+#line 160 "m2-exp.c" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -292,7 +291,7 @@ extern int yydebug;
 typedef union YYSTYPE YYSTYPE;
 union YYSTYPE
 {
-#line 138 "m2-exp.y" /* yacc.c:355  */
+#line 137 "m2-exp.y" /* yacc.c:355  */
 
     LONGEST lval;
     ULONGEST ulval;
@@ -301,7 +300,7 @@ union YYSTYPE
     struct type *tval;
     struct stoken sval;
     int voidval;
-    struct block *bval;
+    const struct block *bval;
     enum exp_opcode opcode;
     struct internalvar *ivar;
 
@@ -309,7 +308,7 @@ union YYSTYPE
     int *ivec;
   
 
-#line 313 "m2-exp.c" /* yacc.c:355  */
+#line 312 "m2-exp.c" /* yacc.c:355  */
 };
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
@@ -324,7 +323,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 328 "m2-exp.c" /* yacc.c:358  */
+#line 327 "m2-exp.c" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -625,15 +624,15 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   207,   207,   208,   211,   220,   225,   224,   231,   235,
-     239,   240,   243,   247,   251,   255,   259,   265,   271,   275,
-     281,   285,   289,   293,   297,   302,   306,   313,   317,   324,
-     330,   333,   337,   341,   345,   347,   357,   353,   365,   372,
-     369,   380,   383,   387,   392,   397,   402,   408,   414,   422,
-     426,   430,   434,   438,   442,   446,   450,   454,   456,   460,
-     464,   468,   472,   476,   480,   484,   491,   497,   503,   511,
-     522,   532,   541,   544,   553,   560,   564,   574,   586,   594,
-     598,   621,   666
+       0,   206,   206,   207,   210,   219,   224,   223,   230,   234,
+     238,   239,   242,   246,   250,   254,   258,   264,   270,   274,
+     280,   284,   288,   292,   296,   301,   305,   312,   316,   323,
+     329,   332,   336,   340,   344,   346,   356,   352,   364,   371,
+     368,   379,   382,   386,   391,   396,   401,   407,   413,   421,
+     425,   429,   433,   437,   441,   445,   449,   453,   455,   459,
+     463,   467,   471,   475,   479,   483,   490,   496,   502,   510,
+     521,   531,   540,   543,   552,   559,   563,   573,   585,   593,
+     597,   620,   665
 };
 #endif
 
@@ -1668,409 +1667,409 @@ yyreduce:
   switch (yyn)
     {
         case 4:
-#line 212 "m2-exp.y" /* yacc.c:1646  */
+#line 211 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, OP_TYPE);
 		  write_exp_elt_type (pstate, (yyvsp[0].tval));
 		  write_exp_elt_opcode (pstate, OP_TYPE);
 		}
-#line 1678 "m2-exp.c" /* yacc.c:1646  */
+#line 1677 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 5:
-#line 221 "m2-exp.y" /* yacc.c:1646  */
+#line 220 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, UNOP_IND); }
-#line 1684 "m2-exp.c" /* yacc.c:1646  */
+#line 1683 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 6:
-#line 225 "m2-exp.y" /* yacc.c:1646  */
+#line 224 "m2-exp.y" /* yacc.c:1646  */
     { number_sign = -1; }
-#line 1690 "m2-exp.c" /* yacc.c:1646  */
+#line 1689 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 7:
-#line 227 "m2-exp.y" /* yacc.c:1646  */
+#line 226 "m2-exp.y" /* yacc.c:1646  */
     { number_sign = 1;
 			  write_exp_elt_opcode (pstate, UNOP_NEG); }
-#line 1697 "m2-exp.c" /* yacc.c:1646  */
+#line 1696 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 8:
-#line 232 "m2-exp.y" /* yacc.c:1646  */
+#line 231 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, UNOP_PLUS); }
-#line 1703 "m2-exp.c" /* yacc.c:1646  */
+#line 1702 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 9:
-#line 236 "m2-exp.y" /* yacc.c:1646  */
+#line 235 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, UNOP_LOGICAL_NOT); }
-#line 1709 "m2-exp.c" /* yacc.c:1646  */
+#line 1708 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 12:
-#line 244 "m2-exp.y" /* yacc.c:1646  */
+#line 243 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, UNOP_CAP); }
-#line 1715 "m2-exp.c" /* yacc.c:1646  */
+#line 1714 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 13:
-#line 248 "m2-exp.y" /* yacc.c:1646  */
+#line 247 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, UNOP_ORD); }
-#line 1721 "m2-exp.c" /* yacc.c:1646  */
+#line 1720 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 14:
-#line 252 "m2-exp.y" /* yacc.c:1646  */
+#line 251 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, UNOP_ABS); }
-#line 1727 "m2-exp.c" /* yacc.c:1646  */
+#line 1726 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 15:
-#line 256 "m2-exp.y" /* yacc.c:1646  */
+#line 255 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, UNOP_HIGH); }
-#line 1733 "m2-exp.c" /* yacc.c:1646  */
+#line 1732 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 16:
-#line 260 "m2-exp.y" /* yacc.c:1646  */
+#line 259 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, UNOP_MIN);
 			  write_exp_elt_type (pstate, (yyvsp[-1].tval));
 			  write_exp_elt_opcode (pstate, UNOP_MIN); }
-#line 1741 "m2-exp.c" /* yacc.c:1646  */
+#line 1740 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 17:
-#line 266 "m2-exp.y" /* yacc.c:1646  */
+#line 265 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, UNOP_MAX);
 			  write_exp_elt_type (pstate, (yyvsp[-1].tval));
 			  write_exp_elt_opcode (pstate, UNOP_MAX); }
-#line 1749 "m2-exp.c" /* yacc.c:1646  */
+#line 1748 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 18:
-#line 272 "m2-exp.y" /* yacc.c:1646  */
+#line 271 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, UNOP_FLOAT); }
-#line 1755 "m2-exp.c" /* yacc.c:1646  */
+#line 1754 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 19:
-#line 276 "m2-exp.y" /* yacc.c:1646  */
+#line 275 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, BINOP_VAL);
 			  write_exp_elt_type (pstate, (yyvsp[-3].tval));
 			  write_exp_elt_opcode (pstate, BINOP_VAL); }
-#line 1763 "m2-exp.c" /* yacc.c:1646  */
+#line 1762 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 20:
-#line 282 "m2-exp.y" /* yacc.c:1646  */
+#line 281 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, UNOP_CHR); }
-#line 1769 "m2-exp.c" /* yacc.c:1646  */
+#line 1768 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 21:
-#line 286 "m2-exp.y" /* yacc.c:1646  */
+#line 285 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, UNOP_ODD); }
-#line 1775 "m2-exp.c" /* yacc.c:1646  */
+#line 1774 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 22:
-#line 290 "m2-exp.y" /* yacc.c:1646  */
+#line 289 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, UNOP_TRUNC); }
-#line 1781 "m2-exp.c" /* yacc.c:1646  */
+#line 1780 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 23:
-#line 294 "m2-exp.y" /* yacc.c:1646  */
+#line 293 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, UNOP_SIZEOF); }
-#line 1787 "m2-exp.c" /* yacc.c:1646  */
+#line 1786 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 24:
-#line 298 "m2-exp.y" /* yacc.c:1646  */
+#line 297 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, UNOP_SIZEOF); }
-#line 1793 "m2-exp.c" /* yacc.c:1646  */
+#line 1792 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 25:
-#line 303 "m2-exp.y" /* yacc.c:1646  */
+#line 302 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, UNOP_PREINCREMENT); }
-#line 1799 "m2-exp.c" /* yacc.c:1646  */
+#line 1798 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 26:
-#line 307 "m2-exp.y" /* yacc.c:1646  */
+#line 306 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, BINOP_ASSIGN_MODIFY);
 			  write_exp_elt_opcode (pstate, BINOP_ADD);
 			  write_exp_elt_opcode (pstate,
 						BINOP_ASSIGN_MODIFY); }
-#line 1808 "m2-exp.c" /* yacc.c:1646  */
+#line 1807 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 27:
-#line 314 "m2-exp.y" /* yacc.c:1646  */
+#line 313 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, UNOP_PREDECREMENT);}
-#line 1814 "m2-exp.c" /* yacc.c:1646  */
+#line 1813 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 28:
-#line 318 "m2-exp.y" /* yacc.c:1646  */
+#line 317 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, BINOP_ASSIGN_MODIFY);
 			  write_exp_elt_opcode (pstate, BINOP_SUB);
 			  write_exp_elt_opcode (pstate,
 						BINOP_ASSIGN_MODIFY); }
-#line 1823 "m2-exp.c" /* yacc.c:1646  */
+#line 1822 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 29:
-#line 325 "m2-exp.y" /* yacc.c:1646  */
+#line 324 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, STRUCTOP_STRUCT);
 			  write_exp_string (pstate, (yyvsp[0].sval));
 			  write_exp_elt_opcode (pstate, STRUCTOP_STRUCT); }
-#line 1831 "m2-exp.c" /* yacc.c:1646  */
+#line 1830 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 31:
-#line 334 "m2-exp.y" /* yacc.c:1646  */
+#line 333 "m2-exp.y" /* yacc.c:1646  */
     { error (_("Sets are not implemented."));}
-#line 1837 "m2-exp.c" /* yacc.c:1646  */
+#line 1836 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 32:
-#line 338 "m2-exp.y" /* yacc.c:1646  */
+#line 337 "m2-exp.y" /* yacc.c:1646  */
     { error (_("Sets are not implemented."));}
-#line 1843 "m2-exp.c" /* yacc.c:1646  */
+#line 1842 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 33:
-#line 342 "m2-exp.y" /* yacc.c:1646  */
+#line 341 "m2-exp.y" /* yacc.c:1646  */
     { error (_("Sets are not implemented."));}
-#line 1849 "m2-exp.c" /* yacc.c:1646  */
+#line 1848 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 34:
-#line 346 "m2-exp.y" /* yacc.c:1646  */
+#line 345 "m2-exp.y" /* yacc.c:1646  */
     { error (_("Sets are not implemented."));}
-#line 1855 "m2-exp.c" /* yacc.c:1646  */
+#line 1854 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 35:
-#line 348 "m2-exp.y" /* yacc.c:1646  */
+#line 347 "m2-exp.y" /* yacc.c:1646  */
     { error (_("Sets are not implemented."));}
-#line 1861 "m2-exp.c" /* yacc.c:1646  */
+#line 1860 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 36:
-#line 357 "m2-exp.y" /* yacc.c:1646  */
+#line 356 "m2-exp.y" /* yacc.c:1646  */
     { start_arglist(); }
-#line 1867 "m2-exp.c" /* yacc.c:1646  */
+#line 1866 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 37:
-#line 359 "m2-exp.y" /* yacc.c:1646  */
+#line 358 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, MULTI_SUBSCRIPT);
 			  write_exp_elt_longcst (pstate,
 						 (LONGEST) end_arglist());
 			  write_exp_elt_opcode (pstate, MULTI_SUBSCRIPT); }
-#line 1876 "m2-exp.c" /* yacc.c:1646  */
+#line 1875 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 38:
-#line 366 "m2-exp.y" /* yacc.c:1646  */
+#line 365 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, BINOP_SUBSCRIPT); }
-#line 1882 "m2-exp.c" /* yacc.c:1646  */
+#line 1881 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 39:
-#line 372 "m2-exp.y" /* yacc.c:1646  */
+#line 371 "m2-exp.y" /* yacc.c:1646  */
     { start_arglist (); }
-#line 1888 "m2-exp.c" /* yacc.c:1646  */
+#line 1887 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 40:
-#line 374 "m2-exp.y" /* yacc.c:1646  */
+#line 373 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, OP_FUNCALL);
 			  write_exp_elt_longcst (pstate,
 						 (LONGEST) end_arglist ());
 			  write_exp_elt_opcode (pstate, OP_FUNCALL); }
-#line 1897 "m2-exp.c" /* yacc.c:1646  */
+#line 1896 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 42:
-#line 384 "m2-exp.y" /* yacc.c:1646  */
+#line 383 "m2-exp.y" /* yacc.c:1646  */
     { arglist_len = 1; }
-#line 1903 "m2-exp.c" /* yacc.c:1646  */
+#line 1902 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 43:
-#line 388 "m2-exp.y" /* yacc.c:1646  */
+#line 387 "m2-exp.y" /* yacc.c:1646  */
     { arglist_len++; }
-#line 1909 "m2-exp.c" /* yacc.c:1646  */
+#line 1908 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 44:
-#line 393 "m2-exp.y" /* yacc.c:1646  */
+#line 392 "m2-exp.y" /* yacc.c:1646  */
     { arglist_len = 1; }
-#line 1915 "m2-exp.c" /* yacc.c:1646  */
+#line 1914 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 45:
-#line 398 "m2-exp.y" /* yacc.c:1646  */
+#line 397 "m2-exp.y" /* yacc.c:1646  */
     { arglist_len++; }
-#line 1921 "m2-exp.c" /* yacc.c:1646  */
+#line 1920 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 46:
-#line 403 "m2-exp.y" /* yacc.c:1646  */
+#line 402 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, UNOP_MEMVAL);
 			  write_exp_elt_type (pstate, (yyvsp[-2].tval));
 			  write_exp_elt_opcode (pstate, UNOP_MEMVAL); }
-#line 1929 "m2-exp.c" /* yacc.c:1646  */
+#line 1928 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 47:
-#line 409 "m2-exp.y" /* yacc.c:1646  */
+#line 408 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, UNOP_CAST);
 			  write_exp_elt_type (pstate, (yyvsp[-3].tval));
 			  write_exp_elt_opcode (pstate, UNOP_CAST); }
-#line 1937 "m2-exp.c" /* yacc.c:1646  */
+#line 1936 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 48:
-#line 415 "m2-exp.y" /* yacc.c:1646  */
+#line 414 "m2-exp.y" /* yacc.c:1646  */
     { }
-#line 1943 "m2-exp.c" /* yacc.c:1646  */
+#line 1942 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 49:
-#line 423 "m2-exp.y" /* yacc.c:1646  */
+#line 422 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, BINOP_REPEAT); }
-#line 1949 "m2-exp.c" /* yacc.c:1646  */
+#line 1948 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 50:
-#line 427 "m2-exp.y" /* yacc.c:1646  */
+#line 426 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, BINOP_MUL); }
-#line 1955 "m2-exp.c" /* yacc.c:1646  */
+#line 1954 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 51:
-#line 431 "m2-exp.y" /* yacc.c:1646  */
+#line 430 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, BINOP_DIV); }
-#line 1961 "m2-exp.c" /* yacc.c:1646  */
+#line 1960 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 52:
-#line 435 "m2-exp.y" /* yacc.c:1646  */
+#line 434 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, BINOP_INTDIV); }
-#line 1967 "m2-exp.c" /* yacc.c:1646  */
+#line 1966 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 53:
-#line 439 "m2-exp.y" /* yacc.c:1646  */
+#line 438 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, BINOP_REM); }
-#line 1973 "m2-exp.c" /* yacc.c:1646  */
+#line 1972 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 54:
-#line 443 "m2-exp.y" /* yacc.c:1646  */
+#line 442 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, BINOP_ADD); }
-#line 1979 "m2-exp.c" /* yacc.c:1646  */
+#line 1978 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 55:
-#line 447 "m2-exp.y" /* yacc.c:1646  */
+#line 446 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, BINOP_SUB); }
-#line 1985 "m2-exp.c" /* yacc.c:1646  */
+#line 1984 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 56:
-#line 451 "m2-exp.y" /* yacc.c:1646  */
+#line 450 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, BINOP_EQUAL); }
-#line 1991 "m2-exp.c" /* yacc.c:1646  */
+#line 1990 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 57:
-#line 455 "m2-exp.y" /* yacc.c:1646  */
+#line 454 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, BINOP_NOTEQUAL); }
-#line 1997 "m2-exp.c" /* yacc.c:1646  */
+#line 1996 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 58:
-#line 457 "m2-exp.y" /* yacc.c:1646  */
+#line 456 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, BINOP_NOTEQUAL); }
-#line 2003 "m2-exp.c" /* yacc.c:1646  */
+#line 2002 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 59:
-#line 461 "m2-exp.y" /* yacc.c:1646  */
+#line 460 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, BINOP_LEQ); }
-#line 2009 "m2-exp.c" /* yacc.c:1646  */
+#line 2008 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 60:
-#line 465 "m2-exp.y" /* yacc.c:1646  */
+#line 464 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, BINOP_GEQ); }
-#line 2015 "m2-exp.c" /* yacc.c:1646  */
+#line 2014 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 61:
-#line 469 "m2-exp.y" /* yacc.c:1646  */
+#line 468 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, BINOP_LESS); }
-#line 2021 "m2-exp.c" /* yacc.c:1646  */
+#line 2020 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 62:
-#line 473 "m2-exp.y" /* yacc.c:1646  */
+#line 472 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, BINOP_GTR); }
-#line 2027 "m2-exp.c" /* yacc.c:1646  */
+#line 2026 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 63:
-#line 477 "m2-exp.y" /* yacc.c:1646  */
+#line 476 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, BINOP_LOGICAL_AND); }
-#line 2033 "m2-exp.c" /* yacc.c:1646  */
+#line 2032 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 64:
-#line 481 "m2-exp.y" /* yacc.c:1646  */
+#line 480 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, BINOP_LOGICAL_OR); }
-#line 2039 "m2-exp.c" /* yacc.c:1646  */
+#line 2038 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 65:
-#line 485 "m2-exp.y" /* yacc.c:1646  */
+#line 484 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, BINOP_ASSIGN); }
-#line 2045 "m2-exp.c" /* yacc.c:1646  */
+#line 2044 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 66:
-#line 492 "m2-exp.y" /* yacc.c:1646  */
+#line 491 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, OP_BOOL);
 			  write_exp_elt_longcst (pstate, (LONGEST) (yyvsp[0].ulval));
 			  write_exp_elt_opcode (pstate, OP_BOOL); }
-#line 2053 "m2-exp.c" /* yacc.c:1646  */
+#line 2052 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 67:
-#line 498 "m2-exp.y" /* yacc.c:1646  */
+#line 497 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, OP_BOOL);
 			  write_exp_elt_longcst (pstate, (LONGEST) (yyvsp[0].ulval));
 			  write_exp_elt_opcode (pstate, OP_BOOL); }
-#line 2061 "m2-exp.c" /* yacc.c:1646  */
+#line 2060 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 68:
-#line 504 "m2-exp.y" /* yacc.c:1646  */
+#line 503 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, OP_LONG);
 			  write_exp_elt_type (pstate,
 					parse_m2_type (pstate)->builtin_int);
 			  write_exp_elt_longcst (pstate, (LONGEST) (yyvsp[0].lval));
 			  write_exp_elt_opcode (pstate, OP_LONG); }
-#line 2071 "m2-exp.c" /* yacc.c:1646  */
+#line 2070 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 69:
-#line 512 "m2-exp.y" /* yacc.c:1646  */
+#line 511 "m2-exp.y" /* yacc.c:1646  */
     {
 			  write_exp_elt_opcode (pstate, OP_LONG);
 			  write_exp_elt_type (pstate,
@@ -2079,68 +2078,68 @@ yyreduce:
 			  write_exp_elt_longcst (pstate, (LONGEST) (yyvsp[0].ulval));
 			  write_exp_elt_opcode (pstate, OP_LONG);
 			}
-#line 2084 "m2-exp.c" /* yacc.c:1646  */
+#line 2083 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 70:
-#line 523 "m2-exp.y" /* yacc.c:1646  */
+#line 522 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, OP_LONG);
 			  write_exp_elt_type (pstate,
 					      parse_m2_type (pstate)
 					      ->builtin_char);
 			  write_exp_elt_longcst (pstate, (LONGEST) (yyvsp[0].ulval));
 			  write_exp_elt_opcode (pstate, OP_LONG); }
-#line 2095 "m2-exp.c" /* yacc.c:1646  */
+#line 2094 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 71:
-#line 533 "m2-exp.y" /* yacc.c:1646  */
+#line 532 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, OP_DOUBLE);
 			  write_exp_elt_type (pstate,
 					      parse_m2_type (pstate)
 					      ->builtin_real);
 			  write_exp_elt_dblcst (pstate, (yyvsp[0].dval));
 			  write_exp_elt_opcode (pstate, OP_DOUBLE); }
-#line 2106 "m2-exp.c" /* yacc.c:1646  */
+#line 2105 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 73:
-#line 545 "m2-exp.y" /* yacc.c:1646  */
+#line 544 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, OP_LONG);
 			  write_exp_elt_type (pstate,
 					    parse_type (pstate)->builtin_int);
 			  write_exp_elt_longcst (pstate,
 						 (LONGEST) TYPE_LENGTH ((yyvsp[-1].tval)));
 			  write_exp_elt_opcode (pstate, OP_LONG); }
-#line 2117 "m2-exp.c" /* yacc.c:1646  */
+#line 2116 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 74:
-#line 554 "m2-exp.y" /* yacc.c:1646  */
+#line 553 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, OP_M2_STRING);
 			  write_exp_string (pstate, (yyvsp[0].sval));
 			  write_exp_elt_opcode (pstate, OP_M2_STRING); }
-#line 2125 "m2-exp.c" /* yacc.c:1646  */
+#line 2124 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 75:
-#line 561 "m2-exp.y" /* yacc.c:1646  */
+#line 560 "m2-exp.y" /* yacc.c:1646  */
     { (yyval.bval) = SYMBOL_BLOCK_VALUE((yyvsp[0].sym)); }
-#line 2131 "m2-exp.c" /* yacc.c:1646  */
+#line 2130 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 76:
-#line 565 "m2-exp.y" /* yacc.c:1646  */
+#line 564 "m2-exp.y" /* yacc.c:1646  */
     { struct symbol *sym
 			    = lookup_symbol (copy_name ((yyvsp[0].sval)),
 					     expression_context_block,
 					     VAR_DOMAIN, 0);
 			  (yyval.sym) = sym;}
-#line 2141 "m2-exp.c" /* yacc.c:1646  */
+#line 2140 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 77:
-#line 575 "m2-exp.y" /* yacc.c:1646  */
+#line 574 "m2-exp.y" /* yacc.c:1646  */
     { struct symbol *tem
 			    = lookup_symbol (copy_name ((yyvsp[0].sval)), (yyvsp[-2].bval),
 					     VAR_DOMAIN, 0);
@@ -2149,20 +2148,20 @@ yyreduce:
 				   copy_name ((yyvsp[0].sval)));
 			  (yyval.sym) = tem;
 			}
-#line 2154 "m2-exp.c" /* yacc.c:1646  */
+#line 2153 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 78:
-#line 587 "m2-exp.y" /* yacc.c:1646  */
+#line 586 "m2-exp.y" /* yacc.c:1646  */
     { write_exp_elt_opcode (pstate, OP_VAR_VALUE);
 			  write_exp_elt_block (pstate, NULL);
 			  write_exp_elt_sym (pstate, (yyvsp[0].sym));
 			  write_exp_elt_opcode (pstate, OP_VAR_VALUE); }
-#line 2163 "m2-exp.c" /* yacc.c:1646  */
+#line 2162 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 80:
-#line 599 "m2-exp.y" /* yacc.c:1646  */
+#line 598 "m2-exp.y" /* yacc.c:1646  */
     { struct symbol *sym;
 			  sym = lookup_symbol (copy_name ((yyvsp[0].sval)), (yyvsp[-2].bval),
 					       VAR_DOMAIN, 0);
@@ -2182,11 +2181,11 @@ yyreduce:
 			  write_exp_elt_block (pstate, block_found);
 			  write_exp_elt_sym (pstate, sym);
 			  write_exp_elt_opcode (pstate, OP_VAR_VALUE); }
-#line 2187 "m2-exp.c" /* yacc.c:1646  */
+#line 2186 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 81:
-#line 622 "m2-exp.y" /* yacc.c:1646  */
+#line 621 "m2-exp.y" /* yacc.c:1646  */
     { struct symbol *sym;
 			  struct field_of_this_result is_a_field_of_this;
 
@@ -2228,20 +2227,20 @@ yyreduce:
 				       copy_name ((yyvsp[0].sval)));
 			    }
 			}
-#line 2233 "m2-exp.c" /* yacc.c:1646  */
+#line 2232 "m2-exp.c" /* yacc.c:1646  */
     break;
 
   case 82:
-#line 667 "m2-exp.y" /* yacc.c:1646  */
+#line 666 "m2-exp.y" /* yacc.c:1646  */
     { (yyval.tval) = lookup_typename (parse_language (pstate),
 						parse_gdbarch (pstate),
 						copy_name ((yyvsp[0].sval)),
 						expression_context_block, 0); }
-#line 2242 "m2-exp.c" /* yacc.c:1646  */
+#line 2241 "m2-exp.c" /* yacc.c:1646  */
     break;
 
 
-#line 2246 "m2-exp.c" /* yacc.c:1646  */
+#line 2245 "m2-exp.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2469,7 +2468,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 674 "m2-exp.y" /* yacc.c:1906  */
+#line 673 "m2-exp.y" /* yacc.c:1906  */
 
 
 /* Take care of parsing a number (anything that starts with a digit).

@@ -1,6 +1,6 @@
 /* General utility routines for GDB/Scheme code.
 
-   Copyright (C) 2014 Free Software Foundation, Inc.
+   Copyright (C) 2014-2015 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -21,9 +21,7 @@
    conventions, et.al.  */
 
 #include "defs.h"
-#include <stdarg.h>
 #include <stdint.h>
-#include "gdb_assert.h"
 #include "guile-internal.h"
 
 /* Define VARIABLES in the gdb module.  */

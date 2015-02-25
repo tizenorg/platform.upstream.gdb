@@ -7,6 +7,7 @@ Url:            http://gnu.org/software/gdb/
 Group:          Development/Toolchain
 Source:         ftp://ftp.gnu.org/gnu/gdb/gdb-%{version}.tar.xz
 Source1001:     gdb.manifest
+Requires:		python
 %define gdb_src gdb-%{version}
 %define gdb_build build-%{_target_platform}
 

@@ -1,3 +1,74 @@
+2015-05-13  Joel Brobecker  <brobecker@adacore.com>
+
+	* version.in: Set GDB version number to 7.9.1.
+
+2015-05-12  Doug Evans  <dje@google.com>
+
+	PR python/18285
+	* NEWS: Document new gdb.XMethodWorker.get_result_type method.
+	* eval.c (evaluate_subexp_standard) <OP_FUNCALL>: Handle
+	EVAL_AVOID_SIDE_EFFECTS for xmethods.
+	* extension-priv.h (struct extension_language_ops)
+	<get_xmethod_result_type>: New member.
+	* extension.c (get_xmethod_result_type): New function.
+	* extension.h (get_xmethod_result_type): Declare.
+	* python/py-xmethods.c (get_result_type_method_name): New static
+	global.
+	(py_get_result_type_method_name): Ditto.
+	(gdbpy_get_xmethod_result_type): New function.
+	(gdbpy_initialize_xmethods): Initialize py_get_result_type_method_name.
+	* python/python-internal.h (gdbpy_get_xmethod_result_type): Declare.
+	* python/python.c (python_extension_ops): Add
+	gdbpy_get_xmethod_result_type.
+	* python/lib/gdb/xmethod.py (XMethodWorker): Add get_result_type.
+	* valarith.c (value_x_binop): Handle EVAL_AVOID_SIDE_EFFECTS for
+	xmethods.
+	(value_x_unop): Ditto.
+	* value.c (result_type_of_xmethod): New function.
+	* value.h (result_type_of_xmethod): Declare.
+
+2015-05-02  Pierre Muller  <muller@sourceware.org>
+
+	PR pascal/17815
+	p-exp.y (yylex): Reorganize code to return the matched pattern
+	for a field of this.
+
+2015-04-28  Doug Evans  <dje@google.com>
+
+	PR python/18299
+	* python/lib/gdb/printing.py (register_pretty_printer): Handle
+	name or __name__ attributes.  Handle gdb module as first argument.
+
+2015-03-31  Matthias Klose  <doko@ubuntu.com>
+
+	* compile/compile.c (compile_to_object): Allow triplets with or
+	without vendor set.
+
+2015-03-21  Eli Zaretskii  <eliz@gnu.org>
+
+	* tui/tui-io.c (tui_expand_tabs): Reinitialize the column counter
+	before the second loop, to avoid undefined behavior.  Reported by
+	Anton Blanchard <anton@samba.org>.
+
+2015-02-26  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	PR build/18033
+	* compile/compile-c-support.c (c_compute_program): Change // comment.
+	* compile/compile-object-load.c (setup_sections): Change // comment.
+
+2015-02-26  Joel Brobecker  <brobecker@adacore.com>
+
+	PR build/18033:
+	* iq2000-tdep.c (iq2000_frame_cache): Delete C++-style comment.
+
+2015-02-20  Joel Brobecker  <brobecker@adacore.com>
+
+	* version.in: Set GDB version number to 7.9.0.DATE-cvs.
+
+2015-02-20  Joel Brobecker  <brobecker@adacore.com>
+
+	GDB 7.9 released.
+
 2015-02-20  David Taylor  <dtaylor@emc.com>
 
 	* common/ax.def (setv): Fix consumed entry in setv DEFOP.

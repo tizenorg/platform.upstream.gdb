@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-02-20 21:14+0400\n"
+"POT-Creation-Date: 2015-05-13 10:40-0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -625,11 +625,11 @@ msgstr ""
 msgid "Attempt to dereference null array pointer."
 msgstr ""
 
-#: ada-lang.c:10963 eval.c:2510 eval.c:3011 valops.c:1580
+#: ada-lang.c:10963 eval.c:2519 eval.c:3020 valops.c:1580
 msgid "Attempt to take contents of a non-pointer value."
 msgstr ""
 
-#: ada-lang.c:11040 eval.c:2748
+#: ada-lang.c:11040 eval.c:2757
 msgid "Attempt to use a type name as an expression"
 msgstr ""
 
@@ -2761,7 +2761,7 @@ msgstr ""
 msgid "no `%s' found"
 msgstr ""
 
-#: ax-gdb.c:2221 eval.c:732 eval.c:2908
+#: ax-gdb.c:2221 eval.c:732 eval.c:2917
 #, possible-c-format
 msgid "There is no field named %s"
 msgstr ""
@@ -2779,17 +2779,17 @@ msgstr ""
 msgid "cannot subscript requested type: cannot call user defined functions"
 msgstr ""
 
-#: ax-gdb.c:2321 eval.c:2133 eval.c:2179 eval.c:2203 jv-lang.c:985
+#: ax-gdb.c:2321 eval.c:2142 eval.c:2188 eval.c:2212 jv-lang.c:985
 #: m2-lang.c:254
 #, possible-c-format
 msgid "cannot subscript something of type `%s'"
 msgstr ""
 
-#: ax-gdb.c:2324 eval.c:2136 eval.c:2206 jv-lang.c:987 m2-lang.c:257
+#: ax-gdb.c:2324 eval.c:2145 eval.c:2215 jv-lang.c:987 m2-lang.c:257
 msgid "cannot subscript requested type"
 msgstr ""
 
-#: ax-gdb.c:2329 valarith.c:930
+#: ax-gdb.c:2329 valarith.c:945
 msgid "Argument to arithmetic operation not a number or boolean."
 msgstr ""
 
@@ -4828,7 +4828,7 @@ msgid "not reached"
 msgstr ""
 
 #: c-exp.y:3323 d-exp.y:1634 f-exp.y:1283 go-exp.y:1646 m2-exp.y:1115
-#: p-exp.y:1768
+#: p-exp.y:1772
 #, possible-c-format
 msgid "A %s in expression, near `%s'."
 msgstr ""
@@ -6742,33 +6742,33 @@ msgstr ""
 msgid "Neither a simple expression, or a multi-line specified."
 msgstr ""
 
-#: compile/compile.c:517
+#: compile/compile.c:519
 msgid "Could not open source file for writing"
 msgstr ""
 
-#: compile/compile.c:520
+#: compile/compile.c:522
 msgid "Could not write to source file"
 msgstr ""
 
-#: compile/compile.c:532
+#: compile/compile.c:534
 msgid "Compilation failed."
 msgstr ""
 
-#: compile/compile.c:598
+#: compile/compile.c:600
 #, possible-c-format
 msgid "Invalid register name \"%s\"."
 msgstr ""
 
-#: compile/compile.c:605
+#: compile/compile.c:607
 #, possible-c-format
 msgid "Cannot find gdbarch register \"%s\"."
 msgstr ""
 
-#: compile/compile.c:616
+#: compile/compile.c:618
 msgid "Command to compile source code and inject it into the inferior."
 msgstr ""
 
-#: compile/compile.c:622
+#: compile/compile.c:624
 msgid ""
 "Compile, inject, and execute code.\n"
 "\n"
@@ -6789,7 +6789,7 @@ msgid ""
 "the end of the source code."
 msgstr ""
 
-#: compile/compile.c:643
+#: compile/compile.c:645
 msgid ""
 "Evaluate a file containing source code.\n"
 "\n"
@@ -6797,27 +6797,27 @@ msgid ""
 "-r|-raw: Suppress automatic 'void _gdb_expr () { CODE }' wrapping."
 msgstr ""
 
-#: compile/compile.c:651
+#: compile/compile.c:653
 msgid "Set compile command debugging."
 msgstr ""
 
-#: compile/compile.c:652
+#: compile/compile.c:654
 msgid "Show compile command debugging."
 msgstr ""
 
-#: compile/compile.c:653
+#: compile/compile.c:655
 msgid "When on, compile command debugging is enabled."
 msgstr ""
 
-#: compile/compile.c:660
+#: compile/compile.c:662
 msgid "Set compile command GCC command-line arguments"
 msgstr ""
 
-#: compile/compile.c:661
+#: compile/compile.c:663
 msgid "Show compile command GCC command-line arguments"
 msgstr ""
 
-#: compile/compile.c:662
+#: compile/compile.c:664
 msgid ""
 "Use options like -I (include file directory) or ABI settings.\n"
 "String quoting is parsed like in shell, for example:\n"
@@ -10339,37 +10339,41 @@ msgstr ""
 msgid "Cannot evaluate function -- may be inlined"
 msgstr ""
 
-#: eval.c:1747
+#: eval.c:1748 valarith.c:495 valarith.c:614
+msgid "Xmethod is missing return type."
+msgstr ""
+
+#: eval.c:1756
 msgid ""
 "Expression of type other than \"Function returning ...\" used as function"
 msgstr ""
 
-#: eval.c:1832
+#: eval.c:1841
 msgid "Cannot perform substring on this type"
 msgstr ""
 
-#: eval.c:1947
+#: eval.c:1956
 msgid "non-pointer-to-member value used in pointer-to-member construct"
 msgstr ""
 
-#: eval.c:2219
+#: eval.c:2228
 #, possible-c-format
 msgid "Too many subscripts for F77 (%d Max)"
 msgstr ""
 
-#: eval.c:2224
+#: eval.c:2233
 msgid "Wrong number of subscripts"
 msgstr ""
 
-#: eval.c:2418
+#: eval.c:2427
 msgid "Non-integral right operand for \"@\" operator."
 msgstr ""
 
-#: eval.c:2489
+#: eval.c:2498
 msgid "Attempt to dereference pointer to member without an object"
 msgstr ""
 
-#: eval.c:2787
+#: eval.c:2796
 msgid "Attempt to use a type as an expression"
 msgstr ""
 
@@ -10381,23 +10385,23 @@ msgstr ""
 #. If there are any cases landing here which mean a user error,
 #. then they should be separate cases, with more descriptive
 #. error messages.
-#: eval.c:2816
+#: eval.c:2825
 msgid "GDB does not (yet) know how to evaluate that kind of expression"
 msgstr ""
 
-#: eval.c:2893
+#: eval.c:2902
 msgid "Attempt to take address of register or constant."
 msgstr ""
 
-#: eval.c:2926 valops.c:1446 valops.c:1461 valops.c:1495
+#: eval.c:2935 valops.c:1446 valops.c:1461 valops.c:1495
 msgid "Attempt to take address of value not located in memory."
 msgstr ""
 
-#: eval.c:3101
+#: eval.c:3110
 msgid "Internal error in eval_type."
 msgstr ""
 
-#: eval.c:3112
+#: eval.c:3121
 msgid "Can't get dimensions for a non-array type"
 msgstr ""
 
@@ -10571,6 +10575,11 @@ msgstr ""
 #: extension.c:944
 #, possible-c-format
 msgid "Error while looking for arg types of a xmethod worker defined in %s."
+msgstr ""
+
+#: extension.c:969
+#, possible-c-format
+msgid "Error while fetching result type of an xmethod worker defined in %s."
 msgstr ""
 
 #: f-exp.y:781 m2-exp.y:746
@@ -12400,7 +12409,7 @@ msgstr ""
 msgid "Show the mode of Guile exception printing on error."
 msgstr ""
 
-#: guile/guile.c:820 python/python.c:1633
+#: guile/guile.c:820 python/python.c:1634
 msgid ""
 "none  == no stack or message will be printed.\n"
 "full == a message and a stack will be printed.\n"
@@ -14824,7 +14833,7 @@ msgid ""
 "The second argument is the command to execute.\n"
 msgstr ""
 
-#: iq2000-tdep.c:487
+#: iq2000-tdep.c:485
 #, possible-c-format
 msgid "breakpoint_from_pc: invalid breakpoint address 0x%lx"
 msgstr ""
@@ -19065,8 +19074,8 @@ msgid "Invalid OpenCL vector size: %d"
 msgstr ""
 
 #: opencl-lang.c:183 opencl-lang.c:212 opencl-lang.c:391 opencl-lang.c:508
-#: opencl-lang.c:601 opencl-lang.c:912 valarith.c:1385 valarith.c:1431
-#: valarith.c:1789 valarith.c:1825 valops.c:882
+#: opencl-lang.c:601 opencl-lang.c:912 valarith.c:1400 valarith.c:1446
+#: valarith.c:1804 valarith.c:1840 valops.c:882
 msgid "Could not determine the vector bounds"
 msgstr ""
 
@@ -19088,11 +19097,11 @@ msgstr ""
 msgid "Vector operations are not supported on scalar types"
 msgstr ""
 
-#: opencl-lang.c:608 opencl-lang.c:919 valarith.c:1441
+#: opencl-lang.c:608 opencl-lang.c:919 valarith.c:1456
 msgid "Cannot perform operation on vectors with different types"
 msgstr ""
 
-#: opencl-lang.c:715 valarith.c:1484
+#: opencl-lang.c:715 valarith.c:1499
 msgid "Argument to operation not a number or boolean."
 msgstr ""
 
@@ -19607,7 +19616,7 @@ msgstr ""
 msgid "expected wchar_t argument for %%lc"
 msgstr ""
 
-#: printcmd.c:2368 printcmd.c:2385 value.c:2632
+#: printcmd.c:2368 printcmd.c:2385 value.c:2644
 msgid "Invalid floating value found in program."
 msgstr ""
 
@@ -20179,9 +20188,9 @@ msgid "Could not get children iterator"
 msgstr ""
 
 #: python/py-prettyprint.c:651 python/py-function.c:152
-#: python/py-xmethods.c:547 python/py-xmethods.c:555 python/py-xmethods.c:571
-#: python/py-xmethods.c:581 python/py-xmethods.c:591 python/python.c:357
-#: python/python.c:461 python/python.c:482
+#: python/py-xmethods.c:649 python/py-xmethods.c:657 python/py-xmethods.c:673
+#: python/py-xmethods.c:683 python/py-xmethods.c:693 python/python.c:358
+#: python/python.c:462 python/python.c:483
 msgid "Error while executing Python code."
 msgstr ""
 
@@ -20378,15 +20387,21 @@ msgstr ""
 msgid "Error while creating breakpoint from GDB."
 msgstr ""
 
-#: python/py-xmethods.c:455
+#: python/py-xmethods.c:457
 msgid ""
 "Arg type returned by the get_arg_types method of a debug method worker "
 "object is not a gdb.Type object."
 msgstr ""
 
-#: python/py-xmethods.c:474
+#: python/py-xmethods.c:476
 msgid ""
 "Arg type returned by the get_arg_types method of an xmethod worker object is "
+"not a gdb.Type object."
+msgstr ""
+
+#: python/py-xmethods.c:593
+msgid ""
+"Type returned by the get_result_type method of an xmethod worker object is "
 "not a gdb.Type object."
 msgstr ""
 
@@ -20648,54 +20663,54 @@ msgstr ""
 msgid "symbol requires a frame to compute its value"
 msgstr ""
 
-#: python/python.c:223 python/python.c:1888
+#: python/python.c:224 python/python.c:1889
 msgid "internal error: Unhandled Python exception"
 msgstr ""
 
-#: python/python.c:251
+#: python/python.c:252
 msgid "Python not initialized"
 msgstr ""
 
-#: python/python.c:401
+#: python/python.c:402
 #, possible-c-format
 msgid "Error while opening file: %s"
 msgstr ""
 
-#: python/python.c:453
+#: python/python.c:454
 msgid "Invalid \"python\" block structure."
 msgstr ""
 
-#: python/python.c:556
+#: python/python.c:557
 msgid "Programmer error: unhandled type."
 msgstr ""
 
-#: python/python.c:584
+#: python/python.c:585
 #, possible-c-format
 msgid "Could not find parameter `%s'."
 msgstr ""
 
-#: python/python.c:588
+#: python/python.c:589
 #, possible-c-format
 msgid "`%s' is not a parameter."
 msgstr ""
 
-#: python/python.c:960
+#: python/python.c:961
 msgid "Posted event is not callable"
 msgstr ""
 
-#: python/python.c:1052
+#: python/python.c:1053
 msgid "Return from prompt_hook must be either a Python string, or None"
 msgstr ""
 
-#: python/python.c:1204
+#: python/python.c:1205
 msgid "Error occurred computing Python errormessage.\n"
 msgstr ""
 
-#: python/python.c:1482
+#: python/python.c:1483
 msgid "Python scripting is not supported in this copy of GDB."
 msgstr ""
 
-#: python/python.c:1574
+#: python/python.c:1575
 msgid ""
 "Start an interactive Python prompt.\n"
 "\n"
@@ -20710,7 +20725,7 @@ msgid ""
 "    5\n"
 msgstr ""
 
-#: python/python.c:1588
+#: python/python.c:1589
 msgid ""
 "Start a Python interactive prompt.\n"
 "\n"
@@ -20718,7 +20733,7 @@ msgid ""
 "This command is only a placeholder."
 msgstr ""
 
-#: python/python.c:1599
+#: python/python.c:1600
 msgid ""
 "Evaluate a Python command.\n"
 "\n"
@@ -20731,7 +20746,7 @@ msgid ""
 "the end of the command."
 msgstr ""
 
-#: python/python.c:1610
+#: python/python.c:1611
 msgid ""
 "Evaluate a Python command.\n"
 "\n"
@@ -20739,21 +20754,21 @@ msgid ""
 "This command is only a placeholder."
 msgstr ""
 
-#: python/python.c:1621 python/python.c:1626
+#: python/python.c:1622 python/python.c:1627
 msgid "Prefix command for python preference settings."
 msgstr ""
 
-#: python/python.c:1631
+#: python/python.c:1632
 msgid "Set mode for Python stack dump on error."
 msgstr ""
 
-#: python/python.c:1632
+#: python/python.c:1633
 msgid "Show the mode of Python stack printing on error."
 msgstr ""
 
 #. This is passed in one call to warning so that blank lines aren't
 #. inserted between each line of text.
-#: python/python.c:1868
+#: python/python.c:1869
 #, possible-c-format
 msgid ""
 "\n"
@@ -28664,122 +28679,122 @@ msgstr ""
 msgid "Invalid binary operation specified."
 msgstr ""
 
-#: valarith.c:505 valarith.c:615
+#: valarith.c:512 valarith.c:630
 #, possible-c-format
 msgid "member function %s not found"
 msgstr ""
 
-#: valarith.c:532
+#: valarith.c:539
 msgid "Can't do that unary op on that type"
 msgstr ""
 
-#: valarith.c:583
+#: valarith.c:590
 msgid "Invalid unary operation specified."
 msgstr ""
 
-#: valarith.c:717
+#: valarith.c:732
 msgid "unimplemented support for boolean repeats"
 msgstr ""
 
-#: valarith.c:721
+#: valarith.c:736
 msgid "can't repeat values of that type"
 msgstr ""
 
-#: valarith.c:733
+#: valarith.c:748
 msgid "Strings can only be concatenated with other strings."
 msgstr ""
 
-#: valarith.c:768
+#: valarith.c:783
 msgid "Booleans can only be concatenated with other bitstrings or booleans."
 msgstr ""
 
-#: valarith.c:771
+#: valarith.c:786
 msgid "unimplemented support for boolean concatenation."
 msgstr ""
 
 #. We don't know how to concatenate these operands.
-#: valarith.c:776
+#: valarith.c:791
 msgid "illegal operands for concatenation."
 msgstr ""
 
-#: valarith.c:790 valarith.c:821
+#: valarith.c:805 valarith.c:836
 msgid "Attempt to raise 0 to negative power."
 msgstr ""
 
 #. The DFP extension to the C language does not allow mixing of
 #. * decimal float types with other float types in expressions
 #. * (see WDTR 24732, page 12).
-#: valarith.c:864
+#: valarith.c:879
 msgid "Mixing decimal floating types with other floating types is not allowed."
 msgstr ""
 
-#: valarith.c:883 valarith.c:902
+#: valarith.c:898 valarith.c:917
 #, possible-c-format
 msgid "Don't know how to convert from %s to %s."
 msgstr ""
 
-#: valarith.c:970
+#: valarith.c:985
 msgid "Operation not valid for decimal floating point number."
 msgstr ""
 
-#: valarith.c:1008
+#: valarith.c:1023
 #, possible-c-format
 msgid "Cannot perform exponentiation: %s"
 msgstr ""
 
-#: valarith.c:1021
+#: valarith.c:1036
 msgid "Integer-only operation on floating point number."
 msgstr ""
 
-#: valarith.c:1069
+#: valarith.c:1084
 msgid "Invalid operation on booleans."
 msgstr ""
 
-#: valarith.c:1129 valarith.c:1140 valarith.c:1255 valarith.c:1266
+#: valarith.c:1144 valarith.c:1155 valarith.c:1270 valarith.c:1281
 msgid "Division by zero"
 msgstr ""
 
-#: valarith.c:1219 valarith.c:1349
+#: valarith.c:1234 valarith.c:1364
 msgid "Invalid binary operation on numbers."
 msgstr ""
 
-#: valarith.c:1396
+#: valarith.c:1411
 msgid "conversion of scalar to vector involves truncation"
 msgstr ""
 
-#: valarith.c:1427
+#: valarith.c:1442
 msgid "Vector operations are only supported among vectors"
 msgstr ""
 
-#: valarith.c:1631
+#: valarith.c:1646
 msgid "Invalid type combination in equality test."
 msgstr ""
 
-#: valarith.c:1713
+#: valarith.c:1728
 msgid "Invalid type combination in ordering comparison."
 msgstr ""
 
-#: valarith.c:1746
+#: valarith.c:1761
 msgid "Argument to positive operation not a number."
 msgstr ""
 
-#: valarith.c:1801
+#: valarith.c:1816
 msgid "Argument to negate operation not a number."
 msgstr ""
 
-#: valarith.c:1836
+#: valarith.c:1851
 msgid "Argument to complement operation not an integer, boolean."
 msgstr ""
 
-#: valarith.c:1877
+#: valarith.c:1892
 msgid "Second argument of 'IN' has wrong type"
 msgstr ""
 
-#: valarith.c:1882
+#: valarith.c:1897
 msgid "First argument of 'IN' has wrong type"
 msgstr ""
 
-#: valarith.c:1886
+#: valarith.c:1901
 msgid "First argument of 'IN' not in range"
 msgstr ""
 
@@ -29421,48 +29436,48 @@ msgid ""
 "use \"set\" as in \"set $foo = 5\" to define them.\n"
 msgstr ""
 
-#: value.c:2796
+#: value.c:2808
 msgid "Value can't be converted to integer."
 msgstr ""
 
 #. FIXME: would like to include fieldval in the message, but
 #. we don't have a sprintf_longest.
-#: value.c:3328
+#: value.c:3340
 #, possible-c-format
 msgid "Value does not fit in %d bits."
 msgstr ""
 
-#: value.c:3379
+#: value.c:3391
 #, possible-c-format
 msgid "Unexpected type (%d) encountered for integer constant."
 msgstr ""
 
-#: value.c:3415
+#: value.c:3427
 #, possible-c-format
 msgid "Unexpected type (%d) encountered for unsigned integer constant."
 msgstr ""
 
-#: value.c:3535
+#: value.c:3547
 msgid "Unexpected type encountered for floating constant."
 msgstr ""
 
-#: value.c:3705
+#: value.c:3717
 msgid "Function return type unknown."
 msgstr ""
 
-#: value.c:3841
+#: value.c:3853
 msgid "infinite loop while fetching a register"
 msgstr ""
 
-#: value.c:3908
+#: value.c:3920
 msgid "Unexpected lazy value type."
 msgstr ""
 
-#: value.c:3924
+#: value.c:3936
 msgid "You must provide one argument for $_isvoid."
 msgstr ""
 
-#: value.c:3934
+#: value.c:3946
 msgid ""
 "Debugger convenience (\"$foo\") variables and functions.\n"
 "Convenience variables are created when you assign them values;\n"
@@ -29475,11 +29490,11 @@ msgid ""
 "Convenience functions are defined via the Python API."
 msgstr ""
 
-#: value.c:3949
+#: value.c:3961
 msgid "Elements of value history around item number IDX (or last ten)."
 msgstr ""
 
-#: value.c:3953
+#: value.c:3965
 msgid ""
 "Initialize a convenience variable if necessary.\n"
 "init-if-undefined VARIABLE = EXPRESSION\n"
@@ -29488,11 +29503,11 @@ msgid ""
 "VARIABLE is already initialized."
 msgstr ""
 
-#: value.c:3960
+#: value.c:3972
 msgid "Placeholder command for showing help on convenience functions."
 msgstr ""
 
-#: value.c:3964
+#: value.c:3976
 msgid ""
 "Check whether an expression is void.\n"
 "Usage: $_isvoid (expression)\n"

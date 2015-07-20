@@ -1,3 +1,24 @@
+2015-05-12  Doug Evans  <dje@google.com>
+
+	* gdb.python/py-xmethods.exp: Add ptype tests.
+	* gdb.python/py-xmethods.py (E_method_char_worker): Add
+	get_result_type method.
+
+2015-05-02  Pierre Muller  <muller@sourceware.org>
+
+	PR pascal/17815
+	* lib/pascal.exp (gpc_compile): Add new option "class".
+	(fpc_compile): Likewise.
+	* gdb.pascal/case-insensitive-symbols.pas: New file.
+	* gdb.pascal/case-insensitive-symbols.exp: New file.
+
+2015-04-28  Doug Evans  <dje@google.com>
+
+	* gdb.python/py-pp-maint.py: Move "replace" testing to ...
+	* gdb.python/py-pp-registration.exp: ... here.  New file.
+	* gdb.python/py-pp-registration.c: New file.
+	* gdb.python/py-pp-registration.py: New file.
+
 2015-02-11  Jan Kratochvil  <jan.kratochvil@redhat.com>
 
 	* gdb.python/py-framefilter.exp (pagination quit - *): New tests.

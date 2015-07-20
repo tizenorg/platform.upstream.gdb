@@ -21,7 +21,7 @@ END-INFO-DIR-ENTRY
    This file documents the GNU debugger GDB.
 
    This is the Tenth Edition, of 'Debugging with GDB: the GNU
-Source-Level Debugger' for GDB (GDB) Version 7.9.
+Source-Level Debugger' for GDB (GDB) Version 7.9.1.
 
    Copyright (C) 1988-2015 Free Software Foundation, Inc.
 
@@ -594,6 +594,12 @@ following interface:
      the xmethod takes a single argument, then a single 'gdb.Type'
      object corresponding to it can be returned.
 
+ -- Function: XMethodWorker.get_result_type (self, *args)
+     This method returns a 'gdb.Type' object representing the type of
+     the result of invoking this xmethod.  The ARGS argument is the same
+     tuple of arguments that would be passed to the '__call__' method of
+     this worker.
+
  -- Function: XMethodWorker.__call__ (self, *args)
      This is the method which does the _work_ of the xmethod.  The ARGS
      arguments is the tuple of arguments to the xmethod.  Each element
@@ -699,6 +705,9 @@ setup above is as follows:
          def get_arg_types(self):
              return None
 
+         def get_result_type(self, obj):
+             return gdb.lookup_type('int')
+
          def __call__(self, obj):
              return obj['a_']
 
@@ -706,6 +715,9 @@ setup above is as follows:
      class MyClassWorker_plus(gdb.xmethod.XMethodWorker):
          def get_arg_types(self):
              return gdb.lookup_type('MyClass')
+
+         def get_result_type(self, obj):
+             return gdb.lookup_type('int')
 
          def __call__(self, obj, other):
              return obj['a_'] + other['a_']
@@ -760,6 +772,9 @@ xmethod workers and xmethod matchers is as follows:
 
          def get_arg_types(self):
              return None
+
+         def get_result_type(self):
+             return gdb.lookup_type('int')
 
          def __call__(self, obj):
              return (self.class_type.sizeof +

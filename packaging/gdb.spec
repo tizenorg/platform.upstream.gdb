@@ -1,5 +1,5 @@
 Name:           gdb
-Version:        7.9
+Version:        7.9.1
 Release:        0
 License:        GPL-3.0+
 Summary:        A GNU source-level debugger for C, C++, Java and other languages
@@ -9,7 +9,7 @@ Source:         ftp://ftp.gnu.org/gnu/gdb/gdb-%{version}.tar.xz
 Source1001:     gdb.manifest
 %define gdb_src gdb-%{version}
 %define gdb_build build-%{_target_platform}
-
+Requires:       python
 BuildRequires:  bison
 BuildRequires:  expat-devel
 BuildRequires:  flex
@@ -42,7 +42,7 @@ and printing their data.
 This package provides a program that allows you to run GDB on a different machine than the one which is running the program being debugged.
 
 %prep
-%setup -q 
+%setup -q
 cp %{SOURCE1001} .
 
 # Remove the info and other generated files added by the FSF release
@@ -83,7 +83,7 @@ cat bfd.lang >> %{name}.lang
 %files
 %defattr(-,root,root)
 %manifest %{name}.manifest
-%license COPYING COPYING.LIB 
+%license COPYING COPYING.LIB
 %{_bindir}/*
 %{_datadir}/gdb
 

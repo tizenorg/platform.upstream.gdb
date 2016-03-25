@@ -14,7 +14,8 @@ BuildRequires:  bison
 BuildRequires:  expat-devel
 BuildRequires:  flex
 BuildRequires:  gettext
-BuildRequires:  python-devel
+BuildRequires:  python < 2.8
+BuildRequires:  python-devel < 2.8
 BuildRequires:  gcc-c++
 BuildRequires:  ncurses-devel
 BuildRequires:  rpm-devel

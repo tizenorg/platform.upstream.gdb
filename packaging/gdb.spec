@@ -1,5 +1,5 @@
 Name:           gdb
-Version:        7.9.1
+Version:        7.10.1
 Release:        0
 License:        GPL-3.0+
 Summary:        A GNU source-level debugger for C, C++, Java and other languages

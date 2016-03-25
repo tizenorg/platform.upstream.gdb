@@ -105,7 +105,7 @@ d_grab (void)
     {
       if (demangle_info->next == NULL)
 	{
-	  more = xmalloc (sizeof (struct demangle_info));
+	  more = XNEW (struct demangle_info);
 	  more->next = NULL;
 	  demangle_info->next = more;
 	}
@@ -809,10 +809,10 @@ static const char *const yytname[] =
   "LEQ", "GEQ", "LSH", "RSH", "'@'", "'+'", "'-'", "'*'", "'/'", "'%'",
   "UNARY", "INCREMENT", "DECREMENT", "ARROW", "'.'", "'['", "']'", "'~'",
   "'!'", "'('", "':'", "$accept", "result", "start", "start_opt",
-  "function", "demangler_special", "operator", "conversion_op",
+  "function", "demangler_special", "oper", "conversion_op",
   "conversion_op_name", "unqualified_name", "colon_name", "name",
   "colon_ext_name", "colon_ext_only", "ext_only_name", "nested_name",
-  "template", "template_params", "template_arg", "function_args",
+  "templ", "template_params", "template_arg", "function_args",
   "function_arglist", "qualifiers_opt", "qualifier", "qualifiers",
   "int_part", "int_seq", "builtin_type", "ptr_operator", "array_indicator",
   "typespec_2", "abstract_declarator", "direct_abstract_declarator",
@@ -2002,7 +2002,7 @@ yyreduce:
 
   case 13:
 #line 435 "cp-name-parser.y" /* yacc.c:1646  */
-    { (yyval.comp) = make_empty ((yyvsp[-1].lval));
+    { (yyval.comp) = make_empty ((enum demangle_component_type) (yyvsp[-1].lval));
 			  d_left ((yyval.comp)) = (yyvsp[0].comp);
 			  d_right ((yyval.comp)) = NULL; }
 #line 2010 "cp-name-parser.c" /* yacc.c:1646  */
@@ -2230,7 +2230,7 @@ yyreduce:
 
   case 48:
 #line 531 "cp-name-parser.y" /* yacc.c:1646  */
-    { (yyval.comp) = fill_comp (DEMANGLE_COMPONENT_CAST, (yyvsp[0].comp), NULL); }
+    { (yyval.comp) = fill_comp (DEMANGLE_COMPONENT_CONVERSION, (yyvsp[0].comp), NULL); }
 #line 2236 "cp-name-parser.c" /* yacc.c:1646  */
     break;
 
@@ -4165,7 +4165,7 @@ yyerror (char *msg)
 static struct demangle_info *
 allocate_info (void)
 {
-  struct demangle_info *info = xmalloc (sizeof (struct demangle_info));
+  struct demangle_info *info = XNEW (struct demangle_info);
 
   info->next = NULL;
   info->used = 0;
@@ -4195,7 +4195,7 @@ cp_new_demangle_parse_info (void)
 {
   struct demangle_parse_info *info;
 
-  info = xmalloc (sizeof (struct demangle_parse_info));
+  info = XNEW (struct demangle_parse_info);
   info->info = NULL;
   info->tree = NULL;
   obstack_init (&info->obstack);

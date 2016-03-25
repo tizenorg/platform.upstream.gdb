@@ -622,7 +622,7 @@ static const yytype_uint16 yyrline[] =
      372,   376,   380,   384,   388,   392,   396,   400,   404,   408,
      412,   416,   420,   424,   428,   432,   436,   440,   444,   448,
      452,   458,   465,   474,   487,   494,   497,   503,   518,   525,
-     542,   560,   572,   578,   584,   600,   655,   657,   664,   677
+     542,   560,   572,   578,   584,   600,   652,   654,   661,   674
 };
 #endif
 
@@ -1896,7 +1896,7 @@ yyreduce:
 			  write_exp_elt_type
 			    (pstate,
 			     parse_type (pstate)->builtin_unsigned_int);
-			  CHECK_TYPEDEF ((yyvsp[-1].tval));
+			  (yyvsp[-1].tval) = check_typedef ((yyvsp[-1].tval));
 			  write_exp_elt_longcst (pstate,
 						 (LONGEST) TYPE_LENGTH ((yyvsp[-1].tval)));
 			  write_exp_elt_opcode (pstate, OP_LONG);
@@ -1927,7 +1927,7 @@ yyreduce:
 
 			  vec->type = (yyvsp[0].tsval).type;
 			  vec->length = (yyvsp[0].tsval).length;
-			  vec->ptr = xmalloc ((yyvsp[0].tsval).length + 1);
+			  vec->ptr = (char *) xmalloc ((yyvsp[0].tsval).length + 1);
 			  memcpy (vec->ptr, (yyvsp[0].tsval).ptr, (yyvsp[0].tsval).length + 1);
 			}
 #line 1935 "go-exp.c" /* yacc.c:1646  */
@@ -1940,10 +1940,10 @@ yyreduce:
 			     for convenience.  */
 			  char *p;
 			  ++(yyval.svec).len;
-			  (yyval.svec).tokens = xrealloc ((yyval.svec).tokens,
-					       (yyval.svec).len * sizeof (struct typed_stoken));
+			  (yyval.svec).tokens = XRESIZEVEC (struct typed_stoken,
+						  (yyval.svec).tokens, (yyval.svec).len);
 
-			  p = xmalloc ((yyvsp[0].tsval).length + 1);
+			  p = (char *) xmalloc ((yyvsp[0].tsval).length + 1);
 			  memcpy (p, (yyvsp[0].tsval).ptr, (yyvsp[0].tsval).length + 1);
 
 			  (yyval.svec).tokens[(yyval.svec).len - 1].type = (yyvsp[0].tsval).type;
@@ -1985,7 +1985,7 @@ yyreduce:
 
   case 64:
 #line 585 "go-exp.y" /* yacc.c:1646  */
-    { struct symbol *sym = (yyvsp[-1].ssym).sym;
+    { struct symbol *sym = (yyvsp[-1].ssym).sym.symbol;
 
 			  if (sym == NULL
 			      || !SYMBOL_IS_ARGUMENT (sym)
@@ -2003,24 +2003,21 @@ yyreduce:
 
   case 65:
 #line 601 "go-exp.y" /* yacc.c:1646  */
-    { struct symbol *sym = (yyvsp[0].ssym).sym;
+    { struct block_symbol sym = (yyvsp[0].ssym).sym;
 
-			  if (sym)
+			  if (sym.symbol)
 			    {
-			      if (symbol_read_needs_frame (sym))
+			      if (symbol_read_needs_frame (sym.symbol))
 				{
 				  if (innermost_block == 0
-				      || contained_in (block_found,
+				      || contained_in (sym.block,
 						       innermost_block))
-				    innermost_block = block_found;
+				    innermost_block = sym.block;
 				}
 
 			      write_exp_elt_opcode (pstate, OP_VAR_VALUE);
-			      /* We want to use the selected frame, not
-				 another more inner frame which happens to
-				 be in the same block.  */
-			      write_exp_elt_block (pstate, NULL);
-			      write_exp_elt_sym (pstate, sym);
+			      write_exp_elt_block (pstate, sym.block);
+			      write_exp_elt_sym (pstate, sym.symbol);
 			      write_exp_elt_opcode (pstate, OP_VAR_VALUE);
 			    }
 			  else if ((yyvsp[0].ssym).is_a_field_of_this)
@@ -2047,30 +2044,30 @@ yyreduce:
 				       copy_name ((yyvsp[0].ssym).stoken));
 			    }
 			}
-#line 2052 "go-exp.c" /* yacc.c:1646  */
+#line 2049 "go-exp.c" /* yacc.c:1646  */
     break;
 
   case 66:
-#line 656 "go-exp.y" /* yacc.c:1646  */
+#line 653 "go-exp.y" /* yacc.c:1646  */
     { (yyval.tval) = lookup_pointer_type ((yyvsp[0].tval)); }
-#line 2058 "go-exp.c" /* yacc.c:1646  */
+#line 2055 "go-exp.c" /* yacc.c:1646  */
     break;
 
   case 67:
-#line 658 "go-exp.y" /* yacc.c:1646  */
+#line 655 "go-exp.y" /* yacc.c:1646  */
     { (yyval.tval) = (yyvsp[0].tsym).type; }
-#line 2064 "go-exp.c" /* yacc.c:1646  */
+#line 2061 "go-exp.c" /* yacc.c:1646  */
     break;
 
   case 68:
-#line 665 "go-exp.y" /* yacc.c:1646  */
+#line 662 "go-exp.y" /* yacc.c:1646  */
     { (yyval.tval) = builtin_go_type (parse_gdbarch (pstate))
 			    ->builtin_uint8; }
-#line 2071 "go-exp.c" /* yacc.c:1646  */
+#line 2068 "go-exp.c" /* yacc.c:1646  */
     break;
 
 
-#line 2075 "go-exp.c" /* yacc.c:1646  */
+#line 2072 "go-exp.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2298,7 +2295,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 687 "go-exp.y" /* yacc.c:1906  */
+#line 684 "go-exp.y" /* yacc.c:1906  */
 
 
 /* Wrapper on parse_c_float to get the type right for Go.  */
@@ -2593,7 +2590,7 @@ parse_string_or_char (const char *tokptr, const char **outptr,
   ++tokptr;
 
   value->type = C_STRING | (quote == '\'' ? C_CHAR : 0); /*FIXME*/
-  value->ptr = obstack_base (&tempbuf);
+  value->ptr = (char *) obstack_base (&tempbuf);
   value->length = obstack_object_size (&tempbuf);
 
   *outptr = tokptr;
@@ -2603,7 +2600,7 @@ parse_string_or_char (const char *tokptr, const char **outptr,
 
 struct token
 {
-  char *operator;
+  char *oper;
   int token;
   enum exp_opcode opcode;
 };
@@ -2690,7 +2687,7 @@ lex_one_token (struct parser_state *par_state)
   tokstart = lexptr;
   /* See if it is a special token of length 3.  */
   for (i = 0; i < sizeof (tokentab3) / sizeof (tokentab3[0]); i++)
-    if (strncmp (tokstart, tokentab3[i].operator, 3) == 0)
+    if (strncmp (tokstart, tokentab3[i].oper, 3) == 0)
       {
 	lexptr += 3;
 	yylval.opcode = tokentab3[i].opcode;
@@ -2699,7 +2696,7 @@ lex_one_token (struct parser_state *par_state)
 
   /* See if it is a special token of length 2.  */
   for (i = 0; i < sizeof (tokentab2) / sizeof (tokentab2[0]); i++)
-    if (strncmp (tokstart, tokentab2[i].operator, 2) == 0)
+    if (strncmp (tokstart, tokentab2[i].oper, 2) == 0)
       {
 	lexptr += 2;
 	yylval.opcode = tokentab2[i].opcode;
@@ -2930,7 +2927,7 @@ lex_one_token (struct parser_state *par_state)
   /* Catch specific keywords.  */
   copy = copy_name (yylval.sval);
   for (i = 0; i < sizeof (ident_tokens) / sizeof (ident_tokens[0]); i++)
-    if (strcmp (copy, ident_tokens[i].operator) == 0)
+    if (strcmp (copy, ident_tokens[i].oper) == 0)
       {
 	/* It is ok to always set this, even though we don't always
 	   strictly need to.  */
@@ -2981,7 +2978,7 @@ build_packaged_name (const char *package, int package_len,
   obstack_grow_str (&name_obstack, ".");
   obstack_grow (&name_obstack, name, name_len);
   obstack_grow (&name_obstack, "", 1);
-  result.ptr = obstack_base (&name_obstack);
+  result.ptr = (char *) obstack_base (&name_obstack);
   result.length = obstack_object_size (&name_obstack) - 1;
 
   return result;
@@ -2997,7 +2994,7 @@ package_name_p (const char *name, const struct block *block)
   struct symbol *sym;
   struct field_of_this_result is_a_field_of_this;
 
-  sym = lookup_symbol (name, block, STRUCT_DOMAIN, &is_a_field_of_this);
+  sym = lookup_symbol (name, block, STRUCT_DOMAIN, &is_a_field_of_this).symbol;
 
   if (sym
       && SYMBOL_CLASS (sym) == LOC_TYPEDEF
@@ -3035,14 +3032,14 @@ static int
 classify_packaged_name (const struct block *block)
 {
   char *copy;
-  struct symbol *sym;
+  struct block_symbol sym;
   struct field_of_this_result is_a_field_of_this;
 
   copy = copy_name (yylval.sval);
 
   sym = lookup_symbol (copy, block, VAR_DOMAIN, &is_a_field_of_this);
 
-  if (sym)
+  if (sym.symbol)
     {
       yylval.ssym.sym = sym;
       yylval.ssym.is_a_field_of_this = is_a_field_of_this.type != NULL;
@@ -3063,7 +3060,7 @@ static int
 classify_name (struct parser_state *par_state, const struct block *block)
 {
   struct type *type;
-  struct symbol *sym;
+  struct block_symbol sym;
   char *copy;
   struct field_of_this_result is_a_field_of_this;
 
@@ -3086,7 +3083,7 @@ classify_name (struct parser_state *par_state, const struct block *block)
 
   sym = lookup_symbol (copy, block, VAR_DOMAIN, &is_a_field_of_this);
 
-  if (sym)
+  if (sym.symbol)
     {
       yylval.ssym.sym = sym;
       yylval.ssym.is_a_field_of_this = is_a_field_of_this.type != NULL;
@@ -3111,7 +3108,7 @@ classify_name (struct parser_state *par_state, const struct block *block)
 	xfree (current_package_name);
 	sym = lookup_symbol (sval.ptr, block, VAR_DOMAIN,
 			     &is_a_field_of_this);
-	if (sym)
+	if (sym.symbol)
 	  {
 	    yylval.ssym.stoken = sval;
 	    yylval.ssym.sym = sym;
@@ -3132,13 +3129,15 @@ classify_name (struct parser_state *par_state, const struct block *block)
 				  0, &newlval);
       if (hextype == INT)
 	{
-	  yylval.ssym.sym = NULL;
+	  yylval.ssym.sym.symbol = NULL;
+	  yylval.ssym.sym.block = NULL;
 	  yylval.ssym.is_a_field_of_this = 0;
 	  return NAME_OR_INT;
 	}
     }
 
-  yylval.ssym.sym = NULL;
+  yylval.ssym.sym.symbol = NULL;
+  yylval.ssym.sym.block = NULL;
   yylval.ssym.is_a_field_of_this = 0;
   return NAME;
 }
